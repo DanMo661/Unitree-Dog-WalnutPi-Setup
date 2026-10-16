@@ -1,12 +1,89 @@
-# 素材清单（大文件不入库，按此获取）
+# 素材清单与自制方法（大文件不入库，按此获取/制备）
 
-| 素材 | 用途 | 获取方式 |
-|---|---|---|
-| `V2.4_07-23_server_WalnutPi-1b_6.1.31_ubuntu22.img` | 核桃派 1B 官方系统镜像 | WalnutPi 官网/官方群下载 |
-| `walnutpi-1b-netplan.img` | 烙好 netplan（eth0 双地址 123.50+144.10）的部署镜像 | 官方镜像上 loop 挂载写入 `/etc/netplan/01-network-manager-all.yaml` 后重新打包；配置内容见 SOP §0，一次制作反复烧 |
-| `wheels2.tar.gz` (~88MB) | 板端 Python 离线依赖（aiortc/fastapi/... 共 52 个 wheel） | 在有外网的机器上按 `requirements.txt` 下载 `pip download -d wheels/`，打包 `tar czf wheels2.tar.gz wheels/`（aarch64 版本） |
-| `libjack-jackd2-0_*.deb` + `libportaudio2_*.deb` | sounddevice 运行时库（arm64） | `apt download libjack-jackd2-0 libportaudio2`（arm64 环境）或 Ubuntu ports 仓库 |
-| `uwc-fork-pkg.tar.gz` | fork 版 unitree_webrtc_connect（修正 Move 通道/参数） | 从修正版源码打包：`tar czf uwc-fork-pkg.tar.gz unitree_webrtc_connect/` |
-| `flash_sd4.ps1` | TF 卡烧录脚本（含 SHA256 全卡校验） | 本仓库 `provisioning/flash_sd4.ps1`；使用前改脚本内 `$img` 路径指向镜像文件 |
+> 与 SOP 的对应关系：§1 烧卡素材 / §2 部署素材 / §3 WiFi 无需素材 / §4 固件工具
 
-> 部署脚本里引用的本地路径（如 `D:\ZcodeRely\...`）按你机器的实际素材存放位置调整。
+## §1 官方系统镜像
+
+核桃派 1B 官方发布（官网 walnutpi.com 或官方群）：`V2.4_07-23_server_WalnutPi-1b_6.1.31_ubuntu22.img`（server 版 Ubuntu 22.04，内核 6.1.31）。
+用其他版本镜像原则上也可，但以下路径/依赖均以该版本实测。
+
+## §2 netplan 部署镜像自制（烙 eth0 双地址，一次制作反复烧）
+
+官方镜像上把网络配置写死进去，这样板子一上电就有 123.50 + 144.10，不用接串口配网。
+在 WSL（或任何 Linux）里：
+
+```bash
+# 1. 把官方镜像挂成回环设备（记住输出里的 /dev/loopX）
+sudo losetup -Pf --show WalnutPi-1b官方.img     # 输出例如 /dev/loop0
+
+# 2. 挂载根分区(第2分区)并写入 netplan 配置
+sudo mkdir -p /mnt/img
+sudo mount /dev/loop0p2 /mnt/img
+sudo tee /mnt/img/etc/netplan/01-network-manager-all.yaml << 'EOF'
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: false
+      addresses:
+        - 192.168.123.50/24
+        - 192.168.144.10/24
+EOF
+
+# 3. 卸载并保存为部署镜像(改个名区分)
+sudo umount /mnt/img
+sudo losetup -d /dev/loop0
+mv WalnutPi-1b官方.img walnutpi-1b-netplan.img
+```
+
+> 只烙 eth0，**不烙 WiFi**（SOP 坑 1.1：WiFi 交给 NetworkManager 双档案）。
+
+## §3 离线依赖 wheels（52 个，~88MB）
+
+板子部署环境可能无外网，全部依赖离线灌入。在有外网的任意机器（Windows/Linux 均可）下载 arm64 版：
+
+```bash
+pip download -r requirements.txt \
+    -d wheels/ \
+    --platform manylinux2014_aarch64 --platform any \
+    --python-version 310 --only-binary=:all:
+tar czf wheels2.tar.gz wheels/
+```
+
+（`requirements.txt` 在仓库 `go2-bridge/` 下；`unitree_webrtc_connect` 这一项 PyPI 原版有缺陷，会被 §5 的 fork 包覆盖，照下无妨。）
+
+## §4 系统 deb（2 个，sounddevice 运行时库）
+
+arm64 版，在 arm64 Linux 环境或 Ubuntu ports 仓库获取：
+
+```bash
+apt download libjack-jackd2-0:arm64 libportaudio2:arm64
+```
+
+地址形式：`http://ports.ubuntu.com/ubuntu-ports/pool/main/...`（按包名搜）。
+缺这两个 deb 的症状：bridge 启动即崩 `PortAudio library not found`（SOP 坑 2.2）。
+
+## §5 fork 版 SDK 库打包（连狗引擎，覆盖 PyPI 原版）
+
+```bash
+git clone https://github.com/DanMo661/unitree_webrtc_connect.git
+cd unitree_webrtc_connect
+tar czf ../uwc-fork-pkg.tar.gz unitree_webrtc_connect/
+```
+
+fork 相对 PyPI 原版的修正：Move 指令走 noreply 通道、SpeedLevel/SwitchAvoidMode 参数名、
+Windows 中文环境编码崩溃、大文件分块传输（对应上游 legion1581 PR #63/#64）。
+`setup2_extras.py` 会把它解压覆盖进板子 venv 的 site-packages。
+
+## §6 固件 ≥1.1.15 的 AES key 获取工具
+
+狗固件 ≥1.1.15 时 WebRTC 信令加密，需逐机取 key 填 `config.AES_KEY`：
+上游库自带 `fetch_aes_key.py`（本仓库 §5 的 fork 里也有），在能通狗 `:9991` 的机器上按其 README 运行即可。
+固件 1.1.1~1.1.14 无此步骤（SOP §4 已说明）。
+
+## §7 烧录脚本
+
+`provisioning/flash_sd4.ps1`（本仓库已带）。使用前改脚本第 2 行：
+```powershell
+$img = 'D:\你的路径\walnutpi-1b-netplan.img'
+```
