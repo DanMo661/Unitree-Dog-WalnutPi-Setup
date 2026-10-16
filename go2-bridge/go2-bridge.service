@@ -1,0 +1,20 @@
+[Unit]
+Description=Go2 SBUS RC bridge (SBUS -> WebRTC MCF)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+# root 必须: GPIO sysfs 导出(/sys/class/gpio/export)只有 root 能写, pi 会静默降级
+# (10-10 dog2 实测踩坑: User=pi 时四路继电器 GPIO 全部导出失败)
+User=root
+WorkingDirectory=/home/pi/go2-bridge
+ExecStart=/home/pi/go2-bridge/.venv/bin/python bridge.py
+Environment=PYTHONUNBUFFERED=1
+SupplementaryGroups=dialout
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

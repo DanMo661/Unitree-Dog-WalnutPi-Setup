@@ -1,0 +1,1306 @@
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+泉州云卓科技 版权所有
+泉 州 云 卓 科 技 有 限 公 司
+云卓 G12
+用户手册
+V2.0
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+泉 州 云 卓 科 技 版 权 所 有
+注意
+本产品使用以下词条因操作不当可能带来的潜在危险加以分级说明。
+注意：如果不遵循说明进行操作，可能会导致财产损失和轻微伤害。
+注意：如果不遵循说明进行操作，可能会导致财产损失、重大事故和严重伤害。
+警告：通过阅读整个用户手册，熟悉产品的功能之后再进行操作。如果没有正确
+操作本产品可能会对自身或他人造成严重伤害，或者导致产品损坏和财产损失。本产
+品较为复杂，需要经过一段时间熟悉后才能安全使用，并且需要具备一些基本常识后
+才能进行操作，如果没有强烈的安全意识，不恰当的操作可能会导致产品损坏和财产
+损失，甚至对自身或他人造成严重伤害。本产品不适合儿童使用。切勿使用非云卓提
+供或建议的部件，必须严格遵守云卓的指引来使用产品。
+云卓官方 QQ 群 云卓官方微信群
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+泉 州 云 卓 科 技 版 权 所 有
+售后服务条款
+1.本条款仅适用于泉州云卓科技有限公司所生产的产品，云卓授权经销商销售的产品亦
+适用本条款。
+2.本公司产品自购买之日起，一周内经我司核实为非人为造成的质量问题，由云卓承担
+返修产品的往返快递费，购买云卓产品一周以上一年以内经我司核实为质量问题，用
+户和云卓各自承担寄出返修产品的快递费。
+3.返修时需提供购买凭证和保修卡或网络平台交易记录。
+4.云卓产品自购买之日起七天内，在正常使用情况下出现非人为造成的质量问题，外观
+无损坏， 凭保修卡及购机凭证在经销商处协商可以免费更换同型号产品；经销商在收
+到更换产品时烦请第一时间通知云卓公司予以备案更换。
+5.云卓产品将由泉州云卓科技有限公司提供终身售后服务，属于非人为造成的质量问题，
+一年内免费保修；对于自购买之日起人为的损坏、改装、拆机及超过一年免费保修期
+的，用户须支付往返邮费及维修费用。
+6.为确保您的权益受到保护，并能及时有效地为您服务，请在购买云卓产品时完整填写
+好保修卡及索要购机凭证。用户享受本售后服务条款必须提供保修卡及购机凭证。
+7.返修产品将于云卓公司收到后的 15 个工作日内寄回给顾客，并附上维修报告。
+8.以上售后服务条款仅限于中国大陆销售的云卓产品。
+港澳台及海外客户的售后问题发至邮箱 sales01@skydroid.xin，具体售后细则视情况
+而定。
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+泉 州 云 卓 科 技 版 权 所 有
+目录
+一、 概述 .................................................................................................................................................1
+1. 产品特性 .................................................................................................................................... 1
+2. 主要用途及适用范围 ............................................................................................................. 1
+3. 使用环境条件 ........................................................................................................................... 1
+4. 工作条件 .................................................................................................................................... 2
+二、部件名称 .......................................................................................................................................... 3
+1. 遥控器 .........................................................................................................................................3
+2. 接收机 .........................................................................................................................................5
+三、准备遥控器 ......................................................................................................................................8
+1. 遥控器充电 ................................................................................................................................8
+2. 天线正确打开 ........................................................................................................................... 8
+3. 室内拉距测试 ........................................................................................................................... 9
+四、使用、操作 ................................................................................................................................... 14
+1. 遥控器开机与关机 ............................................................................................................... 14
+2. 系统桌面 ................................................................................................................................. 14
+3. 调节亮度 ................................................................................................................................. 15
+4. 调节音量 ................................................................................................................................. 17
+5. 语言设置 ................................................................................................................................. 19
+6. 与电脑传输文件 ....................................................................................................................22
+7. 设备助手介绍 ........................................................................................................................ 24
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+泉 州 云 卓 科 技 版 权 所 有
+8. 设备助手介绍－高级选项（密码 999） .......................................................................26
+9. 遥控器对频 .............................................................................................................................28
+10. 图数传连接 .......................................................................................................................... 29
+11. 如何在 G12 遥控器 QGroundContro 地面站显示数传图传 ............................. 32
+11.1 QGC 数传设置 ......................................................................................................... 34
+11.2 QGC 图传设置 ......................................................................................................... 38
+12. 第三方飞控连接示意图 ....................................................................................................42
+13. 使用热点共享数传图传 ....................................................................................................43
+13.1 共享数传（要求安卓系统版本 20250110 及以上） .................................45
+13.2 共享图传（要求安卓系统版本 20250110 及以上） .................................46
+14. 参数 ........................................................................................................................................47
+15. 相关软件下载 ......................................................................................................................50
+五、保养保修 ........................................................................................................................................50
+六、运输储存 ........................................................................................................................................50
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+1
+泉 州 云 卓 科 技 版 权 所 有
+一、概述
+1. 产品特性
+（1）G12 系列采用高通 6nm 处理器，搭载安卓 13（64 位）嵌入式系统，操作流畅，
+生态开放，可安装市面上绝大多数 APP。采用全新高功率、高带宽的 2.4/5.8G 双频无
+线模块，支持自动跳频和 MCS 自主动态调整，图数传距离可达 20KM。
+（2）G12 支持 SIM 卡网口、USB 接口、type-c 接口、ppm 口等丰富接口提供 SDK
+开发包，支持视频悬浮，支持主流飞控的地面站。
+（3）1920*1080 分辨率、5.5 寸高亮显示屏，超大的屏占比，在阳光环境下依然可以
+清晰地查看实时显示信息。
+（4）采用高能量密度的锂离子电池，满电可工作 4～8 个小时，一贯的荒野求生思维
+让您对设备的可靠性毫无牵挂。
+2. 主要用途及适用范围
+G12 适用于对直升机、固定翼、多旋翼、车、船等无人设备的视频图像传输（需
+选配摄像头）、数据传输和操控。
+3. 使用环境条件
+注意：
+a）环境温度：-10°C~55°C。
+b）贮存温度：-20°C ~60°C。
+c）相对湿度：Not exceed 85%。
+d）大气压力：86kPa～106kPa。
+e）使用地点不允许有爆炸危险的介质，周围介质中不应含有腐蚀金属和破坏绝缘的气
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+2
+泉 州 云 卓 科 技 版 权 所 有
+体及导电介 质 ，不允许充满水蒸气及有严重的霉菌存在。
+f）使用地点应具有防御雨、雪、风、沙、灰的设施。
+4. 工作条件
+供电方式和注意事项
+G12 系列地面端内置一体式可充电锂电池，兼容市场标准 TYPE-C 接口，请使用原装
+充电器充电。
+如在地面端充电时遇到冒烟、有异味、漏夜的情况时，请勿继续给地面端充电，请移
+送至本公 司进行 维修。
+请勿在婴儿触碰区域给本产品进行充电，以免发生触电危险。
+请勿在超过 60°C 的环境下对本产品进行充电。
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+3
+泉 州 云 卓 科 技 版 权 所 有
+二、部件名称
+1. 遥控器
+序号 注解 序号 注解
+1 2.4G/5.8G 4dBm 天线 6 按键 B（暂无功能）
+2 按键 C（云台回中） 7 右摇杆 X2、Y2
+3 左摇杆 X1、Y1 8 按键 D（暂无功能）
+4 按键 A（暂无功能） 9 显示屏
+5 开关机按键 10 喊话 MIC
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+4
+泉 州 云 卓 科 技 版 权 所 有
+序号 注解 序号 注解
+11 波轮 G（云台偏航） 15 波轮 H（云台俯仰）
+12 三段开关 E（飞行模式） 16 三段开关 F（暂无功能）
+13 PPM 输出 17 遥控器提手
+14 升级接口
+序号 注解 序号 注解
+18 扬声器 20 SIM 卡槽
+19 TYPE-C（充电口）
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+5
+泉 州 云 卓 科 技 版 权 所 有
+2. 接收机
+GR01
+序号 注解 序号 注解
+1 网口 5 升级接口
+2 对频扩展接口 6 PWM 输出
+3 对频按钮 7 数传接口+SBUS 输出
+4 电源输入口（7.2V～72V） 8 天线接口
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+6
+泉 州 云 卓 科 技 版 权 所 有
+接收机接口定义：
+注：GR01 的 PWM0~2 对应遥控器通道 9~11
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+7
+泉 州 云 卓 科 技 版 权 所 有
+G12 RX
+名称 注解 名称 注解
+ANT 天线
+LED 对频指示灯 ETH0_TX+
+网口 0
+GND 地线 ETH0_TX-
+KEY 对频按钮 ETH0_RX+
+PWM0 PWM9 口（9 通道） ETH0_RX-
+PWM1 PWM10 口（10 通道） GND
+供电+数传口
+GND 地线 5V_IN
+NC 空引脚 UART_RX
+DN
+升级口
+UART_TX
+DP GND
+SBUS 接口
+GND SBUS
+ANT 天线
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+8
+泉 州 云 卓 科 技 版 权 所 有
+三、准备遥控器
+1. 遥控器充电
+使用原装充电器充满约 3～4 小时
+请使用原装充电器充电，为保持遥控器电池最佳状态，请确保每一个月对电池进行一
+次完全充电。
+2. 天线正确打开
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+9
+泉 州 云 卓 科 技 版 权 所 有
+3. 室内拉距测试
+(1) 测试场景：遥控器与接收机隔着 3-4 堵墙。
+(2) 没有对天线进行遮挡的情况下，信号强度如下图所示。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+10
+泉 州 云 卓 科 技 版 权 所 有
+（3）当紧握住遥控器左侧天线时，信号强度如下图所示。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+11
+泉 州 云 卓 科 技 版 权 所 有
+（4）当紧握住遥控器右侧天线时，信号强度如下图所示。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+12
+泉 州 云 卓 科 技 版 权 所 有
+（5）当紧握住接收机左侧天线时，信号强度如下图所示。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+13
+泉 州 云 卓 科 技 版 权 所 有
+（6）当紧握住接收机右侧天线时，信号强度如下图所示。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+14
+泉 州 云 卓 科 技 版 权 所 有
+四、使用、操作
+1. 遥控器开机与关机
+长按电源键 2 秒可以开启遥控器，长按电源键 2 秒，再点击屏幕关机可以关闭遥控器。
+2. 系统桌面
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+15
+泉 州 云 卓 科 技 版 权 所 有
+序号 注解 序号 注解
+1 时间 6 回到桌面
+2 WIFI 信号状态显示 7 返回操作
+3 SIM 卡状态显示 8 图库
+4 电量显示 9 短信
+5 任务中心 10 电话
+从屏幕底部边缘向上滑动可进入应用界面
+3. 调节亮度
+从屏幕顶部向下滑动可进入控制中心，拖动滑动条可调节屏幕亮度。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+16
+泉 州 云 卓 科 技 版 权 所 有
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+17
+泉 州 云 卓 科 技 版 权 所 有
+4. 调节音量
+进入应用界面，点击设置，找到声音选项，拖动滑动条可调节音量大小。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+18
+泉 州 云 卓 科 技 版 权 所 有
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+19
+泉 州 云 卓 科 技 版 权 所 有
+5. 语言设置
+点击设置，选择系统，选择语言输入法，点击语言，选择添加语言，添加好语言后，
+将想要设置的语言拖 动到第一位即可修改系统语言。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+20
+泉 州 云 卓 科 技 版 权 所 有
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+21
+泉 州 云 卓 科 技 版 权 所 有
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+22
+泉 州 云 卓 科 技 版 权 所 有
+6. 与电脑传输文件
+遥控器使用 type-c 口连接电脑，进入控制中心点击查看更多，选择传输文件。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+23
+泉 州 云 卓 科 技 版 权 所 有
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+24
+泉 州 云 卓 科 技 版 权 所 有
+7. 设备助手介绍
+①手型设置：可设置遥控器手型，默认美国手。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+25
+泉 州 云 卓 科 技 版 权 所 有
+②舵量查看：可查看遥控器各个通道的实时舵量值。
+③对频：可查看对频状态和对频信息。
+④视频查看：可查看相机回传视频。
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+26
+泉 州 云 卓 科 技 版 权 所 有
+8. 设备助手介绍－高级选项（密码 999）
+①遥控调参：可自定义按键通道、设置反向和修改舵量最大最小值。
+①
+②
+③
+④
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+27
+泉 州 云 卓 科 技 版 权 所 有
+②波特率设置：修改接收机串口波特率。
+③升级设备：升级 MCU 固件和无线模块固件。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+28
+泉 州 云 卓 科 技 版 权 所 有
+④SN：遥控器查看 SN。
+9. 遥控器对频
+接收机 1：GR01
+方式一：
+①遥控器开机、接收机通电，通电后绿灯常亮，蓝灯间歇闪烁，风扇间歇转动。
+②长按接收机对频按钮，直到蓝灯快速闪烁后松开。
+③打开遥控器上的设备助手，点击对频--〉开始对频，确认对频，等待显示对频成功。
+④对频成功接收机指示灯将会蓝灯常亮。
+方式二：
+①给接收机快速上电 4 次，第 4 次将自动进入对频模式，蓝灯快速闪烁。
+②打开遥控器上的设备助手，点击对频--〉开始对频，确认对频，等待显示对频成功。
+③对频成功接收机指示灯将会蓝灯常亮。
+注：对频时请保持遥控器和接收机在 50CM 以内。
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+29
+泉 州 云 卓 科 技 版 权 所 有
+接收机 2：G12 RX
+方式一：
+①遥控器开机、接收机通电，通电后红灯常亮，绿灯间歇闪烁。
+②短接接收机的 GND 和 KEY 引脚，直到绿灯快速闪烁后松开。
+③打开遥控器上的设备助手，点击对频--〉开始对频，确认对频，等待显示对频成功。
+④对频成功接收机指示灯将会绿灯常亮。
+方式二：
+①给接收机快速上电 4 次，第 4 次将自动进入对频模式，蓝灯快速闪烁。
+②打开遥控器上的设备助手，点击对频--〉开始对频，确认对频，等待显示对频成功。
+③对频成功接收机指示灯将会蓝灯常亮。
+注：对频时请保持遥控器和接收机距离在 50CM 以内。
+10. 图数传连接
+接收机 1：GR01
+按照上图接线，接收机的 SBUS+数传接口连接飞控 SBUS+数传接口，接收机的网口
+连接相机网口（注意：设备供电和其他接线请参考对应说明书）。
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+30
+泉 州 云 卓 科 技 版 权 所 有
+接收机 2：G12 RX
+按照上图接线，接收机的 SBUS+数传接口连接飞控 SBUS+数传接口，接收机的网口
+连接相机网口。
+（1）图传
+以云卓 C10Pro 为例，摄像头供电并且连接至接收机网口，打开云台 FPV 即可看见图
+传画面；
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+31
+泉 州 云 卓 科 技 版 权 所 有
+若使用第三方摄像头，摄像头网段需要设置为 144 网段（192.168.144.XXX），打开
+设备助手--视频查看--点击下方设置按钮--视频流地址--自定义，输入摄像头的 RTSP
+拉流地址。
+注：第三方摄像头 RTSP 地址需要找厂家要。
+若使用 FLY GCS 则在常用设置--其他设置--用户界面-- 视频窗口--C10
+遥控器热点共享图传（要求 meig version 版本 20241130 及以上）。
+（2）数传
+以云卓 FLY GCS 为例，进入地面站，点击左上角，进入切换连接界面。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+32
+泉 州 云 卓 科 技 版 权 所 有
+选择 S2+G12 组合点击进入，点击连接。
+注：若连接不成功，请检查
+①接收机串口波特率是不是与飞控数传口波特率一致；（S2 飞控的波特率为 921600）
+②数传接线定义是否正确（RX 接 TX）。
+11. 如何在 G12 遥控器 QGroundContro 地面站显示数传图传
+开源飞控数传线连接接收机数传口，以 QGroundContro 地面站（以下简称为 QGC
+当前版本 V4.4.3 64 位）为例做参考连接数传，QGC 官网下载链接
+http://qgroundcontrol.com 。
+注意：S2 飞控只能用云卓 FLY 地面站，不要使用 QGC 连接。
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+33
+泉 州 云 卓 科 技 版 权 所 有
+开源 PIX 飞控 SBUS+数传连接示意图：
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+34
+泉 州 云 卓 科 技 版 权 所 有
+11.1 QGC 数传设置
+（1）点击 QGC 左上角的 Q 图标。
+（2）在弹出的弹窗上，选择 Application Settings。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+35
+泉 州 云 卓 科 技 版 权 所 有
+（3）点击通讯连接，再点击添加。
+（4）数传设置：
+① NAME 添加名称；
+② 勾选开始时自动连接；
+③ Type（连接方式）点开选项设置为 UDP；
+④ Port（端口）设置为 14551；
+⑤ Server Addresses 下框内输入数传 IP 地址：127.0.0.1:14552；
+⑥ 点击 Add Server（添加）；
+⑦ 点击确认。
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+36
+泉 州 云 卓 科 技 版 权 所 有
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+37
+泉 州 云 卓 科 技 版 权 所 有
+⑧ 点击选择刚才命名的 UDP；
+⑨ 再点击连接。
+（5）正常连接上飞控数传。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+38
+泉 州 云 卓 科 技 版 权 所 有
+11.2 QGC 图传设置
+以 G12 遥控器 QGC 地面站为例做参考连接 C10PRO 摄像头图传（设备助手后台需要
+关闭）。
+(1) 打开 QGC，点击 QGC 左上角的 Q 图标。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+39
+泉 州 云 卓 科 技 版 权 所 有
+(2) 在弹出的弹窗上，选择 Application Settings。
+(3) 点击 General （常规）。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+40
+泉 州 云 卓 科 技 版 权 所 有
+(4) 将 Source（视频来源）更改为 RTSP Video Stresm。
+(5) 在 RTSP URL 填入网口相机的 RTSP 地址。
+C10PRO/网口三体的图像（需要接 C10PRO）RTSP 地址：
+rtsp://192.168.144.108:554/stream=0。
+C12 双光分别是
+rtsp://192.168.144.108:554/stream=1
+rtsp://192.168.144.108:555/stream=2
+C20 是 rtsp://192.168.144.108:554/main
+第三方摄像头仅支持拉流显示可设置自定义后，在下列输入摄像头对应的 RTSP 拉流
+地址。
+注意：摄像头网段需要设置为 144 网段。
+(6) 勾选低延迟模式
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+41
+泉 州 云 卓 科 技 版 权 所 有
+(7) 点击左上角飞机图标 Back 返回飞行页面。
+(8) 正常连接上图传。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+42
+泉 州 云 卓 科 技 版 权 所 有
+12. 第三方飞控连接示意图
+微克 V9 数传连接 GR01 示意图：
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+43
+泉 州 云 卓 科 技 版 权 所 有
+13. 使用热点共享数传图传
+注意：此教程以使用开源飞控为例，如使用第三方飞控详询飞控技术是否支持此连接。
+遥控器开启热点步骤如下：
+（1）方式一：
+打开设置->网络和互联网->热点和网络共享->WLAN 热点->打开“使用 WLAN 热点”，
+将电脑连 接到遥控器的热点。
+（2）方式二：
+通过网线将电脑网口与遥控器的 TYPE-C 端口连接起来，打开设置->网络和互联网->
+热点和网络共享->打开“以太网络共享”
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+44
+泉 州 云 卓 科 技 版 权 所 有
+（3）方式三：
+通过 A to C 数据线将电脑 TYPE-A 与遥控器的 TYPE-C 端口连接起来，打开设置->网
+络和互联网->热点和网络共享->打开“USB 网络共享”。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+45
+泉 州 云 卓 科 技 版 权 所 有
+13.1 共享数传（要求安卓系统版本 20250110 及以上）
+上述三种方式三选一连接成功后，打开 Mission Planner，连接方式选择 TCP。
+点击连接后，IP 输入 192.168.43.1 输入完成后点击 OK。
+端口号输入 5760 点击 ok，即可连上数传。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+46
+泉 州 云 卓 科 技 版 权 所 有
+13.2 共享图传（要求安卓系统版本 20250110 及以上）
+上述三种方式三选一连接成功后，启动电脑上的 VLC 播放器。在媒体菜单中选择“打
+开网络串流”，然后 输入相机的码流地址，如下图所示，即可实现图传共享。
+注意：如果使用第三方摄像头时，需要设置摄像头的网关为 192.168.144.11 才能共享
+图传。
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+47
+泉 州 云 卓 科 技 版 权 所 有
+14. 参数
+G12 遥控器参数
+显示屏 5.5 寸高亮屏 分辨率 1920*1080
+处理器 高通 6nm 处理器 系统 Android 13
+尺寸 194.3×282.2×94.9mm 重量 683g
+电池 10000mAh 续航时间 4～8 小时
+运行内存 4G 系统存储内存 64G
+工作频段 2.4G/5.8G 通道数 12
+动态调频 自动跳频 射频功率 23dBm@CE/FCC
+遥控距离 5-20KM(地对空，通视） 工作温度 -10℃~55℃
+充电接口 TYPE-C 外部接口
+串口、USB 口、SIM 卡
+槽、TYPE-C
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+48
+泉 州 云 卓 科 技 版 权 所 有
+GR01 接收机参数
+工作频段 2.4G/5.8G 串口波特率 57600/115200/921600
+供电电压 7.2～72V(XT30) 工作电流 12V/300mA
+数传口 1 路 空口速率
+出厂默认 上行 200kbps，
+可开上传模式，最大可达
+1.2Mbps。
+下行 10Mbps（最大可达
+20Mbps，需定制）
+（注意：打开后会影响通讯
+距离，建议近距离使用）
+网口 1 路 尺寸 45.5×60×21.5mm
+SBUS 输出 1 路 重量 37g
+PWM 接口 3 路 工作温度 -10℃~60℃
+射频功率 23dBm@CE/FCC 信道带宽
+1.25MHz/2.5MHz/5MHz/
+10MHz/20MHz/40MHz
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+49
+泉 州 云 卓 科 技 版 权 所 有
+G12 RX 接收机参数
+工作频段 2.4G/5.8G 串口波特率 57600/115200/921600
+供电电压 5V 工作电流 5V/720mA
+数传口 1 路 空口速率
+出厂默认 上行 200kbps，
+可开上传模式，最大可达
+1.2Mbps。
+下行 10Mbps（最大可达
+20Mbps，需定制）
+（注意：打开后会影响通讯
+距离，建议近距离使用）
+网口 1 路 尺寸 51×40.8×23.3mm
+SBUS 输出 1 路 重量 45g
+PWM 接口 2 路 工作温度 -10℃~60℃
+射频功率 23dBm@CE/FCC 信道带宽
+1.25MHz/2.5MHz/5MHz/
+10MHz/20MHz/40MHz
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD 云卓 G12 用户手册 V2.0泉 州 云 卓 科 技 有 限 公 司
+50
+泉 州 云 卓 科 技 版 权 所 有
+15. 相关软件下载
+RCSDK（数传通讯，遥控器、云台、相机相关接口）：
+适用于 H12、H12Pro、H16、H16Pro、H20、H30、G12、G20、三体相机（串口版）、
+三体相机（网口版）、串口双轴云台、C10、C20、C10Pro、C12、电子云台 C01。
+https://gitee.com/skydroid/rcsdk-demo
+图传播放器（适用网口图传/串口图传）：
+https://gitee.com/skydroid/fpv-player-demo
+DEMO https://gitee.com/skydroid/SkydroidDemo
+五、保养保修
+长期停放时的维护、保养：
+将遥控器存放于干燥通风处，减少阳光直射以防止电池过热。若需存放超过三个月，
+则推荐的存放温 度区间为 22 摄氏度至 28 摄氏度。切勿将电池存在于低于零下 20 摄
+氏度或高于 45 摄氏度的场所。
+六、运输储存
+警告
+为避免可能的伤害和损失，务必遵守以下各项：
+由于线材和小零件可能对儿童造成危险，所以务必让儿童远离遥控器的部件。
+注意
+1）切勿让遥控器浸入水中，若入水，请及时用柔软干布擦拭，并立即关闭电源。
+2）禁止机械撞击、碾压、刺穿电池，禁止将电池跌落。
+说明书如有更新，恕不另行通知，请持续关注官网 www.skydroid.xin
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,
+LTD
+Skydroid G12
+Use Manual
+V2.1
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+Caution
+This product uses the following terms to classify and explain potential
+hazards that may arise from improper operation.
+Caution: Failure to follow the instructions may result in property damage
+and minor injury.
+Caution: Failure to follow the instructions may result in property damage,
+major accidents, and serious injury.
+Warning: Operate the product only after reading the entire user manual
+and becoming familiar with its functions. Improper operation of this product
+may cause serious injury to yourself or others, or lead to product damage and
+property loss. This product is relatively complex and requires a period of time
+to become familiar with before it can be used safely; additionally, basic
+knowledge is required to operate it. Without a strong safety awareness,
+improper operation may cause product damage and property loss, and even
+serious injury to yourself or others. This product is not suitable for children. Do
+not use parts that are not provided or recommended by Skydroid. You must
+strictly follow Skydroid's guidelines when using the product.
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+After-Sales Service Terms
+1.These terms apply only to products manufactured by Quanzhou Skydroid
+Technology Co., Ltd. They also apply to products sold by authorized Skydroid
+distributors.
+2.For products of our company, if non-human-caused quality issues are
+verified by our company within one week from the date of purchase, Skydroid
+will bear the round-trip courier fees for the returned and repaired products. If
+quality issues are verified by our company for Skydroid products purchased for
+more than one week but less than one year, the user and Skydroid shall each
+bear the courier fee for sending the product for repair.
+3.When returning a product for repair, the purchase certificate, warranty card,
+or online platform transaction record must be provided.
+4.If a Skydroid product has non-human-caused quality issues under normal use
+within seven days from the date of purchase, and the appearance is
+undamaged, the user can negotiate with the distributor for a free replacement
+of the same-model product with the warranty card and purchase certificate.
+The distributor is requested to notify Skydroid immediately for filing and
+replacement when receiving the product to be replaced.
+5.Quanzhou Skydroid Technology Co., Ltd. provides lifelong after-sales service
+for Skydroid products. For non-human-caused quality issues, free warranty
+service is provided within one year. For damages caused by human factors,
+modifications, disassembly, or products beyond the one-year free warranty
+period from the date of purchase, the user must pay the round-trip shipping
+fees and repair costs.
+6.To ensure your rights are protected and that you can receive timely and
+effective service, please fill out the warranty card completely and request a
+purchase certificate when buying a Skydroid product. Users must provide the
+warranty card and purchase certificate to enjoy the services under these
+after-sales terms.
+7.Repaired products will be sent back to the customer within 15 working days
+after Skydroid receives them, along with a repair report.
+8.The above after-sales service terms apply only to Skydroid products sold in
+Mainland China.
+For after-sales issues of customers in Hong Kong, Macau, Taiwan, and overseas
+regions, please send an email to sales01@skydroid.xin. The specific after-sales
+details will be determined based on the actual situation.
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+Contents
+I. Overview ............................................................................................................................................. 1
+1. Product Features ...................................................................................................................1
+2. Main Uses and Application Scope ...............................................................................1
+3. Operating Environment Conditions ............................................................................2
+4. Working Conditions ............................................................................................................ 2
+Ⅱ. Component Names .....................................................................................................................3
+1. Remote Controller ................................................................................................................3
+2. Receiver ..................................................................................................................................... 5
+Ⅲ. Preparing the Remote Controller ........................................................................................ 8
+1. Charging the Remote Controller .................................................................................. 8
+2. Properly Extending the Antenna .................................................................................. 8
+3. Indoor Range Test ................................................................................................................9
+Ⅳ. Usage and Operation ..............................................................................................................14
+1. Remote Controller Power On and Off .....................................................................14
+2. System Desktop .................................................................................................................. 14
+3. Adjusting Brightness ........................................................................................................15
+4. Adjusting Volume .............................................................................................................. 17
+5. Language Settings .............................................................................................................19
+6. File Transfer with a Computer .....................................................................................22
+7. Introduction to Device Assistant ............................................................................... 24
+8. Device Assistant Introduction - Advanced Options (Password: 999) ......26
+9. Remote Controller Frequency Pairing .....................................................................29
+10. How to Display Data Transmission and Image Transmission on the G12
+Remote Controller's QGroundControl Ground Station ....................................... 34
+11. QGC Data Transmission Settings .............................................................................36
+12. QGC Image Transmission Settings ......................................................................... 40
+13. Schematic Diagram of Third-Party Flight Controller Connection ..........44
+14. Sharing Data Transmission and Image Transmission via Hotspot ......... 45
+15. Sharing Data Transmission (Requires Android System Version 20250110
+or Later) ....................................................................................................................................... 47
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+16. Sharing Image Transmission (Requires Android System Version
+20250110 or Later) ................................................................................................................. 48
+17. Related Software Downloads .................................................................................... 52
+Ⅴ.Maintenance and Warranty ...................................................................................................52
+VI. Transportation and Storage .................................................................................................52
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+1
+I. Overview
+1. Product Features
+(1) The G12 series adopts a Qualcomm 6nm processor and is equipped with an
+Android 13 (64-bit) embedded system, ensuring smooth operation and an
+open ecosystem that supports the installation of most applications available
+on the market. It uses an all-new high-power, high-bandwidth 2.4/5.8G
+dual-band wireless module, supporting automatic frequency hopping and MCS
+autonomous dynamic adjustment, with an image and data transmission range
+of up to 20km.
+(2) The G12 is equipped with a variety of interfaces including SIM card Ethernet
+port, USB port, Type-C port, and PPM port. It provides an SDK development kit,
+supports video floating window, and is compatible with ground stations of
+mainstream flight controllers.
+(3) It features a 5.5-inch high-brightness display with a 1920*1080 resolution
+and an ultra-large screen-to-body ratio, allowing clear viewing of real-time
+displayed information even in direct sunlight.
+(4) Powered by a high-energy-density lithium-ion battery, it can work for 4 to 8
+hours on a full charge. The consistent "wilderness survival" design philosophy
+ensures you have no worries about the device's reliability.
+2. Main Uses and Application Scope
+The G12 is suitable for video image transmission (a camera is required as an
+optional accessory), data transmission, and control of unmanned devices such
+as helicopters, fixed-wing aircraft, multi-rotor drones, unmanned vehicles, and
+unmanned boats.
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+2
+3. Operating Environment Conditions
+Caution:
+a) Ambient temperature: -10°C ~ 55°C.
+b) Storage temperature: -20°C ~ 50°C.
+c) Relative humidity: Not exceed 85%.
+d) Atmospheric pressure: 86kPa ~ 106kPa.
+e) The location of use must be free from explosive hazardous media. The
+surrounding media shall not contain gases or conductive media that corrode
+metals, damage insulation, or be filled with water vapor or severe mold.
+f) The location of use shall be equipped with facilities to protect against rain,
+snow, wind, sand, and dust.
+4. Working Conditions
+Power Supply Method and Precautions
+The G12 series ground unit is equipped with a built-in integrated rechargeable
+lithium-ion battery and is compatible with standard Type-C interfaces on the
+market. Please use the original charger for charging.
+If smoke, abnormal odor, or liquid leakage occurs while charging the ground
+unit, do not continue charging it. Please send the unit to our company for
+repair.
+Do not charge this product in areas accessible to infants to prevent electric
+shock hazards.
+Do not charge this product in an environment where the temperature exceeds
+60°C.
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+3
+Ⅱ. Component Names
+1. Remote Controller
+Number Annotation Number Annotation
+1 2.4G/5.8G 4dBm Antenna 6 B Button (no function yet)
+2 C Button (gimbal back to
+centre)
+7 Right joystick X2, Y2
+3 Left joystick X1, Y1 8 D Button(no function yet)
+4 A Button (no function yet) 9 Display
+5 Switch button 10 Microphone MIC
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+4
+Number Annotation Number Annotation
+11 Jog Wheel G (gimbal yaw) 15 Jog wheel H (Gimbal Pitch)
+12 Three-position switch E
+(flight mode)
+16 Three-position switch F (no
+function yet)
+13 PPM Output 17 Remote Control Handle
+14 Upgrade Interface
+Number Annotation Number Annotation
+18 Speaker 20 SIM slot
+19 TYPE-C (Charging Port)
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+5
+2. Receiver
+GR01
+Number Annotation Number Annotation
+1 LAN Port 5 Upgrade Interface
+2
+Frequency Pairing Expansion
+Interface
+6 PWM Output
+3 Frequency Pairing Button 7
+Data Transmission Interface +
+SBUS Output
+4 Power Input Port (7.2V ~ 72V) 8 Antenna Interface
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+6
+Definition of Receiver Interface
+Note: PWM0~2 of GR01 correspond to Channels 9~11 of the Remote
+Controller
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+7
+G12 RX
+Name Annotation Name Annotation
+ANT Antenna
+LED Frequency pairing
+indicator light ETH0_TX+
+Network port 0
+GND Ground wire ETH0_TX-
+KEY Frequency pairing
+button ETH0_RX+
+PWM0
+PWM9 port
+（9channels）
+ETH0_RX-
+PWM1
+PWM10 port
+（10channels）
+GND
+Power Supply+ Data
+transmission portGND Ground wire 5V_IN
+NC Unconnected Pin UART_RX
+DN
+Upgrade port
+UART_TX
+DP GND
+SBUS interfaceGND SBUS
+ANT Antenna
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+8
+Ⅲ. Preparing the Remote Controller
+1. Charging the Remote Controller
+Use the original charger for charging, and it takes approximately 3–4 hours to
+fully charge.
+Please charge the remote controller using the original charger. To maintain the
+remote controller battery in optimal condition, ensure the battery is fully
+charged once a month.
+2. Properly Extending the Antenna
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+9
+3. Indoor Range Test
+(1) Test Scenario: Place the remote controller and the receiver with 3–4 walls
+between them.
+(2) When the antenna is not blocked, the signal strength is as shown in the
+figure below.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+10
+(3) When holding the left antenna of the remote controller tightly, the signal
+strength is as shown in the figure below.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+11
+(4) When you firmly hold the right antenna of the remote controller, the signal
+strength is as shown in the figure below.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+12
+(5) When you firmly hold the left antenna of the receiver, the signal strength is
+as shown in the figure below.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+13
+(6) When you firmly hold the right antenna of the receiver, the signal strength
+is as shown in the figure below.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+14
+Ⅳ. Usage and Operation
+1. Remote Controller Power On and Off
+Press and hold the power button for 2 seconds to turn on the remote controller.
+To turn off the remote controller, press and hold the power button for 2
+seconds, then tap the screen to confirm shutdown.
+2. System Desktop
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+15
+Number Annotation Number Annotation
+1 Time 6 Return to Desktop
+2 WIFI Signal Status Display 7 Back Operation
+3 SIM Card Status Display 8 Gallery
+4 Battery Level Display 9 SMS
+5 Task Center 10 Phone
+Swipe upward from the bottom edge of the screen to access the app interface.
+3. Adjusting Brightness
+Swipe downward from the top of the screen to access the Control Center, then
+drag the slider to adjust the screen brightness.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+16
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+17
+4. Adjusting Volume
+Access the app interface, tap Settings, locate the Sound option, then drag the
+slider to adjust the volume level.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+18
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+19
+5. Language Settings
+Tap Settings, select System, then choose Language & Input Method. Tap
+Language, select Add Language, and after adding the desired language, drag it
+to the top of the list to change the system language.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+20
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+21
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+22
+6. File Transfer with a Computer
+Connect the remote controller to the computer via its Type-C port, access the
+Control Center, tap View More, then select Transfer Files.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+23
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+24
+7. Introduction to Device Assistant
+① Hand Mode Setting: The remote controller's hand mode can be set, with
+American Hand as the default.
+①
+②
+③
+④
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+25
+② Servo Travel Check: The real-time servo travel values of each channel on the
+remote controller can be viewed.
+③ Frequency Pairing: The frequency pairing status and frequency pairing
+information can be viewed.
+④ Video Viewing: The video streamed back from the camera can be viewed.
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+26
+8. Device Assistant Introduction - Advanced Options (Password: 999)
+①
+②
+③
+④
+⑥
+⑤
+⑦
+⑧
+⑨
+⑩
+⑪
+⑫
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+27
+① Remote Control Parameter Adjustment: You can customize button channels,
+set reversal, and modify the maximum and minimum servo travel values.
+② Baud Rate Setting: Modify the baud rate of the receiver's serial port.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+28
+③ Device Upgrade: Upgrade the MCU firmware and wireless module firmware.
+④ SN: View the SN of the remote control.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+29
+9. Remote Controller Frequency Pairing
+Receiver 1: GR01
+Method 1:
+① Power on the remote controller and power up the receiver. After power-up,
+the green light stays on, the blue light flashes intermittently, and the fan runs
+intermittently.
+② Press and hold the receiver's pairing button until the blue light flashes
+rapidly, then release it.
+③ Open the Device Assistant on the remote controller, tap Pairing → Start
+Pairing, confirm the pairing, and wait for the "Pairing Successful" prompt.
+④ Upon successful pairing, the receiver's indicator light will stay solid blue.
+Method 2:
+① Power the receiver on and off quickly four times, then power it on a fifth
+time to activate the pairing mode. The blue light will flash rapidly.
+② Open the Device Assistant on the remote controller, tap Pairing → Start
+Pairing, confirm the pairing, and wait for the "Pairing Successful" prompt.
+③ Upon successful pairing, the receiver's indicator light will stay solid blue.
+Note: Keep the remote controller and receiver within 50 cm during pairing.
+Receiver 2: G12 RX
+Method 1:
+① Power on the remote controller and power up the receiver. After power-up,
+the red light stays on and the green light flashes intermittently.
+② Short-circuit the GND and KEY pins of the receiver until the green light
+flashes rapidly, then release.
+③ Open the Device Assistant on the remote controller, tap Pairing → Start
+Pairing, confirm the pairing, and wait for the "Pairing Successful" prompt.
+④ Upon successful pairing, the receiver's indicator light will stay solid green.
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+30
+Method 2:
+① Power the receiver on and off quickly four times, then power it on a fifth
+time to activate the pairing mode. The blue light will flash rapidly.
+② Open the Device Assistant on the remote controller, tap Pairing → Start
+Pairing, confirm the pairing, and wait for the "Pairing Successful" prompt.
+③ Upon successful pairing, the receiver's indicator light will stay solid blue.
+Note: Keep the distance between the remote controller and the receiver within
+50 cm during pairing.
+Image and Data Transmission Connection
+Receiver 1: GR01
+Wiring Instructions:
+Connect according to the diagram above: connect the SBUS + data
+transmission interface of the receiver to the SBUS + data transmission
+interface of the flight controller, and connect the network port of the receiver
+to the network port of the camera.
+Note: For device power supply and other wiring, please refer to the
+corresponding instruction manual.
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+31
+Receiver 2: G12 RX
+Wiring Instructions:
+Connect according to the diagram above: connect the SBUS + data
+transmission interface of the receiver to the SBUS + data transmission
+interface of the flight controller, and connect the network port of the receiver
+to the network port of the camera.
+(1) Image Transmission
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+32
+Example: Skydroid C10Pro
+For the Skydroid C10Pro camera: Power on the camera and connect it to the
+receiver's network port. Then, open the gimbal's FPV (First-Person View)
+function to view the image transmission feed.
+If using a third-party camera:
+First, set the camera's network segment to the 144 segment (i.e., IP address in
+the range of 192.168.144.XXX).
+Open the Device Assistant on the remote controller, select Video Viewing, tap
+the Settings button at the bottom, go to Video Stream Address, and
+choose Customize. Enter the RTSP (Real-Time Streaming Protocol) pull stream
+address of the camera.
+Note: The RTSP address for third-party cameras must be obtained from the
+camera manufacturer.
+If using FLY GCS (Ground Control Station):
+Navigate to Common Settings → Other Settings → User Interface → Video
+Window, and select C10 to enable the video feed.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+33
+Remote Controller Hotspot Sharing for Image Transmission (Requires meig
+version 20241130 or later)
+(2) Data Transmission
+Take Skydroid FLY GCS as an example: Enter the ground control station, tap the
+top-left corner, and access the connection switching interface.
+Select the "S2 + G12" combination, tap to enter, then tap Connect.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+34
+Note: If the connection fails, please check the following:
+① Whether the serial port baud rate of the receiver is consistent with that of
+the flight controller's data transmission port; (The baud rate of the S2 flight
+controller is 921600.)
+② Whether the data transmission wiring definition is correct (connect RX to
+TX).
+10. How to Display Data Transmission and Image Transmission on the G12
+Remote Controller's QGroundControl Ground Station
+Connect the open-source flight controller's data transmission cable to the
+receiver's data transmission port. Take the QGroundControl (hereinafter
+referred to as QGC, current version: V4.4.3 64-bit) ground station as an
+example to connect the data transmission. The official QGC download link is:
+http://qgroundcontrol.com
+Note: The S2 flight controller can only use the Skydroid FLY ground station; do
+not connect it using QGC.
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+35
+Schematic Diagram of Open-Source PIX Flight Controller SBUS + Data
+Transmission Connection:
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+36
+11. QGC Data Transmission Settings
+(1) Click the Q icon in the top-left corner of QGC.
+(2) In the pop-up window, select Application Settings.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+37
+(3) Click Comm Links, then click Add.
+(4) Data transmission settings:
+① Add a name in the NAME field;
+② Check Auto-connect on start;
+③ Open the Type (connection method) dropdown and set it to UDP;
+④ Set Port to 14551;
+⑤ Enter the data transmission IP address in the box under Server Addresses:
+127.0.0.1:14552;
+⑥ Click Add Server;
+⑦ Click OK.
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+38
+⑧ Select the UDP you just named;
+⑨ Then click Connect.
+①
+②
+③
+④
+⑤ ⑥
+⑦
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+39
+(5) Establish a normal connection with the flight controller's data transmission.
+⑧
+⑨
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+40
+12. QGC Image Transmission Settings
+Take the G12 remote controller's QGC ground station as a reference example to
+connect the C10PRO camera for image transmission (the G12 Assistant
+background needs to be closed).
+(1) Open QGC and click the Q icon in the upper - left corner of QGC.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+41
+(2) In the pop-up window, select Application Settings.
+(3) Click General (General Settings).
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+42
+(4) Change Source (Video Source) to RTSP Video Stream.
+(5) Enter the RTSP address of the network camera in the RTSP URL field.
+RTSP address for C10PRO/network three-body image (requires C10PRO
+connection):
+rtsp://192.168.144.108:554/stream=0
+C12 dual-optical cameras:
+rtsp://192.168.144.108:554/stream=1
+rtsp://192.168.144.108:555/stream=2
+C20:rtsp://192.168.144.108:554/main
+Third-party cameras only support stream pulling for display. After setting a
+custom configuration, enter the corresponding RTSP stream address of the
+camera below.
+Note: The camera network segment must be set to the 144 segment.
+(6) Check the Low Latency Mode option.
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+43
+(7) Click the airplane icon in the top-left corner to go back to the flight page.
+(8) Establish a normal connection with the image transmission.
+(7)
+(5)
+(6)
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+44
+13. Schematic Diagram of Third-Party Flight Controller Connection
+Schematic Diagram of Weike V9 Data Transmission Connecting to GR01:
+Note: This tutorial uses an open-source flight controller as an example. If a
+third-party flight controller is used, please consult the flight controller
+technical support to confirm whether this connection method is supported.
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+45
+14. Sharing Data Transmission and Image Transmission via Hotspot
+① Method 1: Open Settings -> Network & Internet -> Hotspot &
+Tethering -> WLAN Hotspot, enable Use WLAN Hotspot, and then connect the
+computer to the remote controller's hotspot.
+② Method 2:
+Connect the computer's Ethernet port to the remote controller's TYPE-C port
+using an Ethernet cable, then open Settings → Network & Internet → Hotspot
+& Tethering and enable Ethernet Tethering.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+46
+③ Method 3:
+Connect the computer's TYPE-A port to the remote controller's TYPE-C port
+using an A-to-C data cable, then open Settings → Network & Internet →
+Hotspot & Tethering and enable USB Tethering.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+47
+15. Sharing Data Transmission (Requires Android System Version 20250110
+or Later)
+After successfully connecting via one of the three methods mentioned above,
+open Mission Planner and select TCP as the connection method.
+After clicking Connect, enter the IP address 192.168.43.1 and click OK once
+finished.
+Enter the port number 5760 and click OK to connect to the data transmission.
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+48
+16. Sharing Image Transmission (Requires Android System Version
+20250110 or Later)
+After successfully connecting via one of the three methods mentioned above,
+launch the VLC media player on your computer. In the Media menu, select
+Open Network Stream, then enter the camera's stream address as shown in the
+figure below to enable image transmission sharing.
+Note: When using a third-party camera, you need to set the camera's gateway
+to 192.168.144.11 to share the image transmission.
+
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+49
+①Parameter
+G12 Remote Control Parameters
+Display
+5.5 inch high brightness
+screen
+Resolution 1920*1080
+Processor Qualcomm 6nm processor
+Computer
+Type
+Android 13
+Size 194.3(L)*282.2(W)*94.9(H)mm Weight 683g
+Battery 10000mA/H Endurance 4~8 hours
+Operating
+Memory
+4G
+System
+Storage
+Memory
+64G
+Operating
+Frequency
+Band
+2.4G/5.8G
+Channels
+Number
+12
+Dynamic
+FM
+Automatic frequency hopping RF Power 23dBm@CE/FCC
+Remote
+Control
+Distance
+5-20KM((ground-to-air,
+visual）
+Operating
+Temperature
+-10℃~55℃
+Charging
+Interface
+TYPE-C
+External
+Interface
+Serial port, USB
+port, SIM card
+slot, TYPE-C
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+50
+GR01 receiver parameters
+Frequency
+band
+2.4G/5.8G Serial Baud Rate 57600/115200/921600
+Supply
+Voltage
+7.2-72V(XT30) Operating Current 12V/300mA
+Data
+Transmission
+Port
+1 channel Empty port rate
+Factory default settings:
+Uplink: 200kbps. Upload
+mode can be enabled,
+with a maximum of
+1.2Mbps.
+Downlink: 10Mbps
+(maximum 20Mbps,
+requires customization).
+Note: Enabling this will
+affect communication
+distance; it is
+recommended for
+short-distance use only.
+Network port 1 channel Dimension 45.5(L)*60(W)*21.5(H)mm
+SBUS output 1 channel Weight 37g
+PWM interface 3 channels
+Operating
+Temperature
+-10℃~60℃
+RF Power 23dBm@CE/FCC
+Channel
+Bandwidth
+1.25MHz/2.5MHz/5MHz/
+10MHz/20MHz/40MHz
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+51
+G12 RX receiver parameters
+Frequency
+band
+2.4G/5.8G
+Serial Baud
+Rate
+57600/115200/921600
+Supply
+Voltage
+5V
+Operating
+Current
+12V/300mA
+Data
+Transmission
+Port
+1 channel
+Empty port
+rate
+Factory default settings:
+Uplink: 200kbps. Upload
+mode can be enabled,
+with a maximum speed of
+1.2Mbps.
+Downlink:10Mbps
+(maximum speed up to
+20Mbps, requires
+customization).
+Note: Enabling this
+function will affect the
+communication distance;
+short-distance use is
+recommended.
+Network port 1 channel Dimension 51(L)*40.8(W)*23.3(H)mm
+SBUS output 1 channel Weight 45g
+PWM
+interface
+2 channels
+Operating
+Temperature
+-10℃~60℃
+RF Power 23dBm@CE/FCC
+Channel
+Bandwidth
+1.25MHz/2.5MHz/5MHz/
+10MHz/20MHz/40MHz
+QUAN ZHOU SKYDROID TECHNOLOGY CO.,LTD SKYDROID Use Manual V2.1泉州云卓科技有限公司
+52
+17. Related Software Downloads
+RCSDK (for data transmission communication, and interfaces related to remote
+controllers, gimbals, and cameras):
+Compatible with H12, H12Pro, H16, H16Pro, H20, H30, G12, G20, Three-body
+Camera (serial port version), Three-body Camera (Ethernet version), Serial Port
+2-Axis Gimbal, C10, C20, C10Pro, C12, and Electronic Gimbal C01.
+https://gitee.com/skydroid/rcsdk-demo
+Image Transmission Player (supports Ethernet/serial port image transmission):
+https://gitee.com/skydroid/fpv-player-demo
+DEMO: https://gitee.com/skydroid/SkydroidDemo
+Ⅴ.Maintenance and Warranty
+Maintenance During Long-Term Storage:
+Store the remote controller in a dry and well-ventilated place, and minimize
+direct sunlight exposure to prevent battery overheating. If storage is required
+for more than three months, the recommended storage temperature range is
+22°C to 28°C. Do not store the battery in an environment where the
+temperature is below -20°C or above 45°C.
+VI. Transportation and Storage
+Warning
+To avoid potential injury and damage, please strictly adhere to the following
+items:
+Keep children away from the remote controller’s components, as wires and
+small parts may pose a hazard to children.
+Note
+Do not immerse the remote controller in water. If it gets wet, wipe it
+immediately with a soft, dry cloth and turn off the power right away.
+Do not subject the battery to mechanical impact, crushing, or puncturing, and
+do not drop the battery.
+For any updates to this manual, no separate notification will be sent. Please
+continue to follow the official website: www.skydroid.xin

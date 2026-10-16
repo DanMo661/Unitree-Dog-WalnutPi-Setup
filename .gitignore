@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.apk
+*.img
+*.tar.gz
+*.deb
+sbus_diag_tmp/

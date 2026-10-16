@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SBUS 调试台</title>
+<style>
+:root{
+  --bg:#0c0e0d; --panel:#141716; --line:#262c29; --txt:#e6ebe8; --dim:#8b948f;
+  --ok:#5ad191; --warn:#f0b35e; --bad:#ff6459; --accent:#7ee2a8;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  min-height:100dvh; background:var(--bg); color:var(--txt);
+  font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  display:flex; flex-direction:column; align-items:center;
+  padding:10px 14px 30px;
+}
+.num{font-family:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;
+     font-variant-numeric:tabular-nums}
+.wrap{width:100%;max-width:760px;display:flex;flex-direction:column;gap:14px}
+
+header{display:flex;align-items:center;justify-content:space-between;
+       padding:10px 2px 4px;gap:8px;flex-wrap:wrap}
+h1{font-size:15px;margin:0;letter-spacing:.12em;color:var(--dim);font-weight:600}
+h1 b{color:var(--txt);letter-spacing:.04em}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dim);
+      border:1px solid var(--line);border-radius:999px;padding:4px 10px;background:var(--panel)}
+.chip.main{font-size:13px;color:var(--txt);padding:6px 12px}
+.dot{width:8px;height:8px;border-radius:50%;background:#3a423e;flex:none}
+.dot.ok{background:var(--ok);box-shadow:0 0 7px #5ad19166}
+.dot.warn{background:var(--warn);box-shadow:0 0 7px #f0b35e55}
+.dot.bad{background:var(--bad);box-shadow:0 0 7px #ff645955}
+
+.banner{text-align:center;font-size:13px;padding:9px 12px;display:none;
+        border-radius:10px;margin-bottom:10px}
+.banner.offline{display:block;background:#3a1f1c;color:#ff8f85}
+.banner.action{display:block;background:#33270f;color:var(--warn);font-weight:600}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+       padding:14px 16px}
+.pt{font-size:12px;color:var(--dim);letter-spacing:.1em;margin:0 0 10px}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:10px}
+.stat{background:#101312;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stat .v{font-size:26px;line-height:1.15;font-weight:600}
+.stat .v small{font-size:13px;color:var(--dim);font-weight:400;margin-left:2px}
+.stat .k{font-size:11px;color:var(--dim);margin-top:3px}
+.stat.bad .v{color:var(--bad)}
+.stat.warn .v{color:var(--warn)}
+
+canvas{display:block;width:100%;height:110px}
+
+.chrow{display:grid;grid-template-columns:150px 1fr 52px;gap:10px;align-items:center;
+       padding:3px 0}
+.chrow .lbl{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chrow .lbl b{color:var(--txt);font-weight:500}
+.bar{position:relative;height:14px;background:#101312;border:1px solid var(--line);
+     border-radius:4px;overflow:hidden}
+.bar .fill{position:absolute;left:0;top:0;bottom:0;width:0;
+           background:linear-gradient(90deg,#2f6b4d,#4fae7c);transition:width .12s}
+.bar.dirty .fill{background:linear-gradient(90deg,#6b5427,#ae8a4f)}
+.bar .tick{position:absolute;top:-1px;bottom:-1px;width:0;border-left:1px dashed #8b948f}
+.bar .tick i{position:absolute;top:-4px;left:-3px;width:5px;height:5px;border-radius:50%;
+             background:var(--warn)}
+.chrow .val{font-size:12px;text-align:right;color:var(--txt)}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.card{background:#101312;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.card .t{font-size:11px;color:var(--dim);letter-spacing:.06em;margin-bottom:8px;
+         display:flex;justify-content:space-between}
+.card .t em{font-style:normal;color:var(--accent)}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg span{flex:1;text-align:center;font-size:13px;color:#a8b0ab;padding:7px 4px}
+.seg span + span{border-left:1px solid var(--line)}
+.seg span.on{background:#223028;color:var(--accent);font-weight:600}
+.seg span.on.hot{background:#2b2416;color:var(--warn)}
+.bigval{font-size:26px;font-weight:600;padding:2px 0 4px}
+
+.tip{font-size:12px;color:var(--dim);text-align:center;line-height:1.7;margin:0}
+a{color:var(--accent)}
+.logbtn{cursor:pointer;user-select:none}
+.logbtn.main{border-color:var(--accent);color:var(--accent)}
+#logPanel pre{max-height:320px;overflow:auto;font:11px/1.55 ui-monospace,monospace;
+  white-space:pre-wrap;word-break:break-all;background:#101312;border:1px solid var(--line);
+  border-radius:8px;padding:8px 10px;margin:0;color:#c8d2cc}
+</style>
+</head>
+<body>
+<div class="banner" id="banner"></div>
+<div class="wrap">
+<header>
+  <h1><b>SBUS</b> 调试台</h1>
+  <div class="chips">
+    <span class="chip"><span class="dot" id="dLink"></span><span id="tLink">狗连接</span></span>
+    <span class="chip"><span class="dot" id="dRc"></span><span id="tRc">RC 上锁</span></span>
+    <span class="chip main"><span class="dot" id="dSbus"></span><span id="tSbus">SBUS</span></span>
+    <span class="chip"><span class="dot" id="dNet"></span><span id="tNet">网络遥控</span></span>
+    <span class="chip logbtn" id="logBtn">☰ 日志</span>
+  </div>
+</header>
+
+<div class="panel">
+  <div class="pt" id="lockTitle">控制状态</div>
+  <div id="lockLine" style="font-size:14px">—</div>
+</div>
+
+<div class="stats">
+  <div class="stat" id="sFps"><div class="v num">—<small>fps</small></div><div class="k">帧率 (1s 滑窗)</div></div>
+  <div class="stat" id="sLoss"><div class="v num">—<small>%</small></div><div class="k">丢帧率 (fs+lost/总)</div></div>
+  <div class="stat" id="sTotal"><div class="v num">—</div><div class="k">总帧数</div></div>
+  <div class="stat" id="sFs"><div class="v num">—</div><div class="k">fs 失控帧</div></div>
+  <div class="stat" id="sLost"><div class="v num">—</div><div class="k">lost 丢帧标志</div></div>
+  <div class="stat" id="sIv"><div class="v num">—<small>ms</small></div><div class="k">最近帧间隔 (&gt;25 计丢)</div></div>
+</div>
+
+<div class="panel">
+  <div class="pt">每秒帧数 · 最近 60s（右端为当前秒）</div>
+  <canvas id="chart"></canvas>
+</div>
+
+<div class="panel">
+  <div class="pt">16 通道原始值（282 ~ 1722，虚线为判定阈值）</div>
+  <div id="chs"></div>
+</div>
+
+<div class="panel" id="logPanel" hidden>
+  <div class="pt" style="display:flex;justify-content:space-between;align-items:center">
+    <span>板端实时日志 · 最近 600 行（每 2s 刷新）</span><span id="logLive" style="color:var(--ok)"></span>
+  </div>
+  <pre id="logPre">(点开中…)</pre>
+</div>
+
+<div class="cards">
+  <div class="card"><div class="t">A 键 <em id="kArm"></em></div>
+    <div class="seg" id="cArm"><span>上锁</span><span>解锁</span></div></div>
+  <div class="card"><div class="t">B 键（动作）</div>
+    <div class="seg" id="cB"><span>低位</span><span>高位</span></div></div>
+  <div class="card"><div class="t">C 键（站/趴）</div>
+    <div class="seg" id="cC"><span>趴下</span><span>站立</span></div></div>
+  <div class="card"><div class="t">三挡 <em id="kGear"></em></div>
+    <div class="seg" id="cGear"><span>1 经济</span><span>2 自由</span><span>3 奔跑</span></div></div>
+  <div class="card"><div class="t">左拨杆 → 舵机</div>
+    <div class="bigval num" id="cServo">—<small style="font-size:13px;color:var(--dim)">°</small></div></div>
+</div>
+
+<p class="tip">遥控页 <a href="/">/</a> · 黄灯=丢帧狗已站定等待恢复 · 10s 无干净帧才缓降趴下<br>
+帧间隔为串口批次推断均值（批间隔/批帧数），丢帧另有接收机 fs/lost 标志佐证</p>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const ARM_ON = 1350, STAND_ON = 1000, B_MID = 1002;
+const CH_LO = 282, CH_HI = 1722;
+/* 通道映射名与阈值刻度(config.py 镜像; 改 config 时同步这里) */
+const CHS = [
+  {n:"转向 · 右横"}, {n:"前后 · 左竖"}, {n:"右竖 · 未用"}, {n:"侧移 · 左横"},
+  {n:"A 键", tick:ARM_ON, tickName:"解锁"}, {n:"B 键"}, {n:"C 键", tick:STAND_ON, tickName:"站"},
+  {n:"左拨杆 · 舵机"}, {n:"D 键 · 退役"}, {n:"三挡"}, {n:"右拨杆 · 未用"},
+  {n:""}, {n:""}, {n:""}, {n:""}, {n:""}
+];
+const NOM = (v) => Math.max(0, Math.min(1, (v - CH_LO) / (CH_HI - CH_LO)));
+const gearOf = v => Math.min(3, Math.max(1, Math.round((v - 172) / (1811 - 172) * 2) + 1));
+
+/* 构建通道行 */
+const chsEl = $("chs");
+const rows = CHS.map((c, i) => {
+  const row = document.createElement("div"); row.className = "chrow";
+  row.innerHTML = `<div class="lbl"><b>ch${i}</b> ${c.n}</div>
+    <div class="bar"><div class="fill"></div>${c.tick ? `<div class="tick" style="left:${NOM(c.tick)*100}%"><i></i></div>` : ""}</div>
+    <div class="val num">—</div>`;
+  chsEl.appendChild(row);
+  return {fill: row.querySelector(".fill"), val: row.querySelector(".val"),
+          bar: row.querySelector(".bar")};
+});
+
+/* 60s 柱状图 */
+const cv = $("chart"), cx = cv.getContext("2d");
+function drawChart(hist){
+  const dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+  if (cv.width !== w * dpr){ cv.width = w * dpr; cv.height = h * dpr; }
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cx.clearRect(0, 0, w, h);
+  const max = Math.max(20, ...hist), n = hist.length, bw = w / n;
+  for (let i = 0; i < n; i++){
+    const v = hist[i] / max, x = i * bw;
+    cx.fillStyle = i === n - 1 ? "#4fae7c" : (v ? "#2f6b4d" : "#1a201d");
+    const bh = Math.max(v ? 2 : 1, v * (h - 14));
+    cx.fillRect(x + bw * 0.15, h - 12 - bh, bw * 0.7, bh);
+  }
+  cx.fillStyle = "#8b948f"; cx.font = "11px ui-monospace,monospace";
+  cx.fillText("0", 2, h - 2); cx.textAlign = "right";
+  cx.fillText(String(max), w - 2, h - 2); cx.textAlign = "left";
+  cx.fillText("-60s", 2, 10); cx.textAlign = "right"; cx.fillText("现在", w - 2, 10);
+}
+
+/* 灯/横幅/卡片 */
+function dot(el, cls){ el.className = "dot" + (cls ? " " + cls : ""); }
+function seg(id, on, hot){
+  $(id).querySelectorAll("span").forEach((s, i) => s.classList.toggle("on", i === on));
+  if (hot !== undefined)
+    $(id).querySelectorAll("span").forEach((s, i) => s.classList.toggle("hot", i === on && hot));
+}
+function setStat(id, v, cls){ const el = $(id); el.querySelector(".v").innerHTML = v;
+  el.className = "stat" + (cls ? " " + cls : ""); }
+
+function render(s){
+  window.lastStatus = s;   /* App 端 evaluateJavascript 轮询动作状态用 */
+  if (document.hidden) return;   /* 息屏/后台: 状态照记(App轮询不受影响), 渲染全跳省电 */
+  /* 狗连接 / RC */
+  const L = s.link;
+  dot($("dLink"), L === "up" ? "ok" : L === "connecting" ? "warn" : "bad");
+  $("tLink").textContent = L === "up" ? "狗在线" : L === "connecting" ? "狗连接中" :
+    L === "lib_missing" ? "驱动未装" : "狗离线";
+  dot($("dRc"), s.rc ? "ok" : "");
+  $("tRc").textContent = s.rc ? "RC 解锁" : "RC 上锁";
+
+  /* SBUS 链路质量灯 */
+  const dS = $("dSbus"), tS = $("tSbus");
+  if (s.sbus && s.sbus_clean){ dot(dS, "ok"); tS.textContent = "数据干净"; }
+  else if (s.sbus){ dot(dS, "warn"); tS.textContent = "丢包 · 狗已站定"; }
+  else { dot(dS, "bad"); tS.textContent = "无帧"; }
+
+  /* 网络遥控链路灯(App 杆量通道, 新鲜时优先于 SBUS) */
+  const dN = $("dNet"), tN = $("tNet");
+  if (s.net_ok){ dot(dN, "ok"); tN.textContent = "App 在控"; }
+  else { dot(dN, ""); tN.textContent = "网络遥控"; }
+
+  /* 控制状态横幅: 链路断最优先压顶(解锁是本地状态, 链路断时指令根本发不出去) */
+  const MODE_NAMES = {0:"趴下", 1:"站立", 2:"行走", 3:"坐姿"};
+  const banner = $("banner");
+  const acting = s.action || (s.action_left || 0) > 0;
+  const m = s.mode;
+  let lockTxt, lockCls, lockOk = false;
+  if (L !== "up")       { lockTxt = L === "connecting" ? "狗连接中 · 指令暂发不出去" : "狗离线 · 解锁/摇杆指令发不出去 (查狗电/网线)"; lockCls = "offline"; }
+  else if (!s.rc)       { lockTxt = "未解锁 · 摇杆无效 (A 键翻拨解锁)"; lockCls = "action"; }
+  else if (acting)      { lockTxt = `动作播放中: ${s.action || "?"} (剩 ${(s.action_left || 0).toFixed(1)}s) 摇杆无效`; lockCls = "action"; }
+  else if (m === 0)     { lockTxt = "趴下 · 摇杆无效 (C 键拨上站立)"; lockCls = "action"; }
+  else if (m === 1)     { lockTxt = "站立平衡 · 摇杆无效 (等待进入行走)"; lockCls = "action"; }
+  else if (m === 3)     { lockTxt = "坐姿 · 摇杆无效 (C 键拨上起立)"; lockCls = "action"; }
+  else if (m === 2)     { lockTxt = "可控 —— 摇杆有效"; lockCls = ""; lockOk = true; }
+  else                  { lockTxt = `模式 ${m} · 摇杆无效`; lockCls = "action"; }
+  if (!lockOk){
+    banner.className = "banner " + lockCls;
+    banner.textContent = lockTxt;
+  } else {
+    banner.className = "banner";
+    banner.textContent = "";
+  }
+  $("lockTitle").textContent = "控制状态";
+  $("lockLine").innerHTML = lockOk
+    ? `<span style="color:var(--ok)">${lockTxt} · ${MODE_NAMES[m] || ""}</span>`
+    : `<span style="color:var(--warn)">${lockTxt} · 当前模式: ${MODE_NAMES[m] || m}</span>`;
+
+  /* 大数字 */
+  const loss = s.total ? (s.fs_cnt + s.lost_cnt) / s.total * 100 : null;
+  setStat("sFps", `${s.fps}<small>fps</small>`);
+  setStat("sLoss", loss === null ? "—" : `${loss.toFixed(2)}<small>%</small>`,
+          loss === null ? "" : loss > 5 ? "bad" : loss > 1 ? "warn" : "");
+  setStat("sTotal", String(s.total));
+  setStat("sFs", String(s.fs_cnt), s.fs_cnt ? "warn" : "");
+  setStat("sLost", String(s.lost_cnt), s.lost_cnt ? "warn" : "");
+  setStat("sIv", s.last_iv === null || s.last_iv === undefined ? "—" : `${s.last_iv}<small>ms</small>`,
+          s.last_iv > 25 ? "bad" : "");
+
+  drawChart(s.hist || []);
+  window.lastHist = s.hist || [];
+
+  /* 通道条 */
+  const ch = s.ch;
+  rows.forEach((r, i) => {
+    if (!ch){ r.fill.style.width = "0"; r.val.textContent = "—"; return; }
+    const v = ch[i];
+    r.fill.style.width = (NOM(v) * 100).toFixed(1) + "%";
+    r.val.textContent = v;
+  });
+
+  /* 按键卡片(从 ch 推导) */
+  if (ch){
+    seg("cArm", ch[4] > ARM_ON ? 1 : 0);
+    $("kArm").textContent = s.rc ? "RC 解锁中" : "";
+    seg("cB", ch[5] > B_MID ? 1 : 0);
+    seg("cC", ch[6] > STAND_ON ? 1 : 0);
+    seg("cGear", gearOf(ch[9]) - 1);
+    $("kGear").textContent = s.gear ? `狗已同步挡${s.gear}` : "未同步";
+    $("cServo").innerHTML = `${((ch[7] - 282) / 1440 * 180).toFixed(0)}<small style="font-size:13px;color:var(--dim)">°</small>`;
+  } else {
+    ["cArm","cB","cC","cGear"].forEach(id => seg(id, -1));
+    $("kArm").textContent = ""; $("kGear").textContent = "";
+    $("cServo").innerHTML = `—<small style="font-size:13px;color:var(--dim)">°</small>`;
+  }
+}
+
+/* WS 自动重连 */
+let ws = null, retry = 0;
+function connect(){
+  if (!location.host){ $("banner").className = "banner offline";
+    $("banner").textContent = "请通过 http://板子IP:8000/sbus 打开本页"; return; }
+  ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onopen = () => { retry = 0; };
+  ws.onmessage = e => { try { render(JSON.parse(e.data)); } catch (err) {} };
+  /* 只让 onclose 排重连: onerror 后必跟 onclose, 两个都排会每轮翻倍攒出连接风暴 */
+  ws.onerror = () => {
+    $("banner").className = "banner offline";
+    $("banner").textContent = "连接断开，正在重连…";
+  };
+  ws.onclose = () => {
+    $("banner").className = "banner offline";
+    $("banner").textContent = "连接断开，正在重连…";
+    setTimeout(connect, Math.min(1000 * ++retry, 5000));
+  };
+}
+connect();
+addEventListener("resize", () => { if (window.lastHist) drawChart(window.lastHist); });
+
+/* 日志面板: /logs = 板端内存环形日志, 不用连网线看 journal */
+let logOn = false, logTimer = null;
+const logPre = $("logPre");
+function fetchLogs(){
+  if (document.hidden) return;
+  fetch("/logs").then(r => r.text()).then(t => {
+    const atBottom = logPre.scrollTop + logPre.clientHeight >= logPre.scrollHeight - 40;
+    logPre.textContent = t || "(暂无日志)";
+    $("logLive").textContent = "● " + new Date().toLocaleTimeString();
+    if (atBottom) logPre.scrollTop = logPre.scrollHeight;   /* 用户没往上翻才贴底 */
+  }).catch(() => {});
+}
+$("logBtn").onclick = () => {
+  logOn = !logOn;
+  $("logPanel").hidden = !logOn;
+  $("logBtn").classList.toggle("main", logOn);
+  if (logOn){ fetchLogs(); logTimer = setInterval(fetchLogs, 2000); }
+  else { clearInterval(logTimer); logTimer = null; }
+};
+addEventListener("visibilitychange", () => { if (!document.hidden && logOn) fetchLogs(); });
+</script>
+</body>
+</html>
