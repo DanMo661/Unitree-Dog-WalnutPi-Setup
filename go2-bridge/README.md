@@ -66,7 +66,7 @@ journalctl -u go2-bridge -f        # 看日志
 
 ## 两种连狗方式（config.py 的 METHOD）
 
-- **LocalSTA**：狗和板子连同一 WiFi/路由器。家里调试推荐，板子保持 192.168.8.21 可 SSH/网页。
+- **LocalSTA**：狗和板子连同一 WiFi/路由器。家里调试推荐，板子保持其静态 IP 可 SSH/网页。
 - **LocalAP**：板子连狗热点 GO2-XXXXXX（App 里可查密码）。外场推荐，但板子离开家网，远程 SSH 断。
 
 ## 15001 控制口行协议（v29+）

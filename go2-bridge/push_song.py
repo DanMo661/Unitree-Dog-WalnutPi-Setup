@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """把本地 pcm(16k单声道) 推到板子预设音频库 /root/pa-files/<名>.pcm
-用法: BRIDGE_HOST=192.168.8.51 BRIDGE_PW=pi python push_song.py <本地.pcm> <板上的名字>
+用法: BRIDGE_HOST=<板子IP> BRIDGE_PW=<板子密码> python push_song.py <本地.pcm> <板上的名字>
 流程: SFTP(pi)先落 /tmp, 再 sudo 挪进 /root/pa-files, 最后 UDP LIST 验证在库
 """
 import os
@@ -14,7 +14,7 @@ def main():
     src, name = sys.argv[1], sys.argv[2]
     if " " in name:
         raise SystemExit("名字不能带空格(PLAY 行协议按词切分)")
-    host = os.environ.get("BRIDGE_HOST", "192.168.8.51")
+    host = os.environ.get("BRIDGE_HOST", "192.168.123.50")
     pw = os.environ.get("BRIDGE_PW", "pi")
 
     cli = paramiko.SSHClient()

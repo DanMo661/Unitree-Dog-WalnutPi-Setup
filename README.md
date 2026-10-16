@@ -60,7 +60,7 @@ BRIDGE_USER=pi BRIDGE_PW=<板子密码> BRIDGE_HOST=192.168.123.50 python deploy
 ```bash
 HOME_PSK=<主WiFi密码> python board_wifi_setup.py \
     --home-ssid "<现场主WiFi名>" --hotspot-ssid "<手机热点名>" --hotspot-psk "<热点密码>" \
-    --home-ip 192.168.X.5X    # ★ 每块板不同! dog2=.51 dog3=.52 ...
+    --home-ip 192.168.X.5X    # ★ 每块板不同! 第1块板=.51 第2块=.52 依次递增
 ```
 
 ### 第 4 步 · 狗侧联调（零操作）

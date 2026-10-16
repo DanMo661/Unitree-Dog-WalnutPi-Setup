@@ -2,7 +2,7 @@
 """所有可调参数集中在这 —— 改完 sudo systemctl restart go2-bridge 生效"""
 
 # ---- 连接狗的方式 ----
-# "LocalSTA": 狗和板子连同一路由器/WiFi。家里调试用这个, 板子留在 192.168.8.21 可 SSH。
+# "LocalSTA": 狗和板子连同一路由器/WiFi(主WiFi)。板子连上后用其静态IP可 SSH。
 # "LocalAP":  板子连狗热点 GO2-XXXXXX(外场推荐), 此时板子离开家网, SSH/网页远程断开。
 METHOD   = "LocalSTA"
 ROBOT_IP = "192.168.123.161"  # LocalSTA 用: 实测本狗 webrtc_bridge 在 .161:9991 (con_notify 新协议; .18 是旧文档示例, 本狗不通)

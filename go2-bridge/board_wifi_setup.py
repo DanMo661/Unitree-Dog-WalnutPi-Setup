@@ -85,12 +85,13 @@ def main():
     ap.add_argument("--hotspot-psk", required=True)
     ap.add_argument("--home-ssid", default=HOME_SSID,
                     help="现场主WiFi名(公司/家里), 也可用环境变量 HOME_SSID")
-    ap.add_argument("--home-ip", default="192.168.8.51",
-                    help="主WiFi网段下板子的静态 IP, 每块板不同(dog2=.51 dog3=.52 ...)")
+    ap.add_argument("--home-ip", required=True,
+                    help="主WiFi网段下板子的静态 IP, 每块板不同(第1块=.51 第2块=.52 依次递增)")
     ap.add_argument("--host", default=os.environ.get("BRIDGE_HOST", "192.168.123.50"))
     ap.add_argument("--pw", default=os.environ.get("BRIDGE_PW", "pi"))
     a = ap.parse_args()
     HOME_SSID = a.home_ssid
+    GW = a.home_ip.rsplit('.', 1)[0] + '.1'   # 网关/DNS 按主网段自动推导(x.x.x.1)
     if not HOME_SSID or not HOME_PSK:
         sys.exit("缺 --home-ssid / HOME_PSK(主WiFi密码): 主WiFi档案没法建")
     cli = paramiko.SSHClient()
@@ -121,7 +122,7 @@ def main():
     P(f"sudo -S nmcli connection add type wifi ifname wlan0 con-name home ssid '{HOME_SSID}' "
       f"wifi-sec.key-mgmt wpa-psk wifi-sec.psk '{HOME_PSK}' "
       f"ipv4.method manual ipv4.addresses {a.home_ip}/24 "
-      f"ipv4.gateway 192.168.8.1 ipv4.dns '192.168.8.1 223.5.5.5' "
+      f"ipv4.gateway {GW} ipv4.dns '{GW} 223.5.5.5' "
       f"ipv6.method auto connection.autoconnect yes connection.autoconnect-priority 10 "
       f"connection.autoconnect-retries 0 "
       f"wifi.powersave 2", check=True)
