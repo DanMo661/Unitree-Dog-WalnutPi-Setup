@@ -70,15 +70,22 @@ BRIDGE_USER=pi BRIDGE_PW=pi BRIDGE_HOST=192.168.123.50 python deploy_page.py   #
 
 ---
 
-## 3. WiFi 双档案（板子，一条命令）
+## 3. WiFi 双档案 = 无线调试的根基（板子，一条命令）
+
+设计：**主 WiFi（公司/家里/现场所在网络）= 静态 IP + 高优先级(10)**，在场必连、IP 固定好找；
+**手机热点 = DHCP + 低优先级(5) 兜底**——主 WiFi 不在场时自动顶上，走到哪儿都能调试。
+切换全自动（NetworkManager 按优先级漫游），无需人工干预。
 
 ```bash
-BRIDGE_HOST=192.168.123.50 BRIDGE_PW=pi HOME_PSK=<家里WiFi密码> \
-python board_wifi_setup.py --hotspot-ssid <手机热点名> --hotspot-psk <热点密码> \
-    --home-ip 192.168.8.5X    # ★ 每块板不同！dog2=.51 dog3=.52 dog4=.53 ...
+HOME_PSK=<主WiFi密码> BRIDGE_HOST=192.168.123.50 BRIDGE_PW=<板子密码> \
+python board_wifi_setup.py \
+    --home-ssid "<现场主WiFi名(公司/家里)>" \
+    --hotspot-ssid "<手机热点名>" --hotspot-psk "<热点密码>" \
+    --home-ip 192.168.X.5X    # ★ 主网下板子静态IP, 每块板不同! dog2=.51 dog3=.52 dog4=.53...
 ```
 
-产物：家里路由器=静态 IP（优先连）；手机热点=DHCP（外场调试）；NM 层强制关省电；`wifi_watchdog.service`（关联但网关连续两轮丢包>50% 自动重连）。
+产物：两个连接档案（NM 接管 wlan0）+ NM 层强制关省电 + `wifi_watchdog.service`（关联着但网关连续两轮丢包>50% 自动重连）。
+验收：主 WiFi 在场 → 板子拿静态 IP 可 `ssh`；主 WiFi 消失 → 60 秒内自动落到手机热点（IP 看手机热点客户端列表）；主 WiFi 恢复 → 自动切回。
 
 **坑 3.1**：**手机热点默认最大连接数 2**——PC+平板一占满，板子永远进不来，现象是"ping 偶尔回一句、TCP 全死"，别误诊成驱动僵死。把热点上限调到 3+。
 **坑 3.2**：NetworkManager 的 autoconnect 默认只重试几次，被热点拒绝几次后档案会被判死不再尝试（现象：名额空出来板子也不回来）——脚本已设 `autoconnect-retries 0` 无限重试。

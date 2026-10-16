@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
-"""板子 wlan0 从 netplan 挪交给 NetworkManager, 建家里/热点双档案 + 看门狗.
+"""板子 wlan0 从 netplan 挪交给 NetworkManager, 建 主WiFi/手机热点 双档案 + 看门狗.
 
-用法(PC 上跑, 网线直连):
-  BRIDGE_HOST=192.168.123.50 BRIDGE_PW=pi python board_wifi_setup.py \
-      --hotspot-ssid "REDMI Turbo 4" --hotspot-psk "xxxx"
+无线调试设计: 主WiFi(公司/家里/现场) = 静态IP + 高优先级(10), 在场必连;
+             手机热点 = DHCP + 低优先级(5) 兜底, 主WiFi不在场时自动顶上, 随处可调试.
 
-eth0(123.50 + 144.10 桥)不动。家里档案保持静态 .51 优先, 热点档案 DHCP。
+用法(PC 上跑, 网线直连或同网段可达):
+  HOME_PSK=<主WiFi密码> python board_wifi_setup.py \
+      --home-ssid "<现场主WiFi名>" \
+      --hotspot-ssid "<手机热点名>" --hotspot-psk "<热点密码>" \
+      --home-ip 192.168.X.5X    # ★ 主网下板子静态IP, 每块板不同(dog2=.51 dog3=.52 ...)
+
+eth0(123.50 + 144.10 桥)不动。
 """
 import argparse
 import os
@@ -14,8 +19,8 @@ import time
 
 import paramiko
 
-HOME_SSID = "尧祐智能"
-HOME_PSK = os.environ.get("HOME_PSK", "")  # 家里WiFi密码, 经环境变量传入不进仓库
+HOME_SSID = os.environ.get("HOME_SSID", "")   # 现场主WiFi名, 经 --home-ssid 或环境变量传入
+HOME_PSK = os.environ.get("HOME_PSK", "")     # 主WiFi密码, 经环境变量传入不进仓库
 
 WATCHDOG_SH = """#!/bin/bash
 # wifi_watchdog: wlan0 关联但网关丢包>=50% 连续2轮 -> 重连(NM autoconnect 接管)
@@ -78,12 +83,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--hotspot-ssid", required=True)
     ap.add_argument("--hotspot-psk", required=True)
+    ap.add_argument("--home-ssid", default=HOME_SSID,
+                    help="现场主WiFi名(公司/家里), 也可用环境变量 HOME_SSID")
     ap.add_argument("--home-ip", default="192.168.8.51",
-                    help="家里路由器下的静态 IP(dog2=.51, dog3=.52, 各板不同)")
+                    help="主WiFi网段下板子的静态 IP, 每块板不同(dog2=.51 dog3=.52 ...)")
     ap.add_argument("--host", default=os.environ.get("BRIDGE_HOST", "192.168.123.50"))
     ap.add_argument("--pw", default=os.environ.get("BRIDGE_PW", "pi"))
     a = ap.parse_args()
-
+    HOME_SSID = a.home_ssid
+    if not HOME_SSID or not HOME_PSK:
+        sys.exit("缺 --home-ssid / HOME_PSK(主WiFi密码): 主WiFi档案没法建")
     cli = paramiko.SSHClient()
     cli.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     cli.connect(a.host, username="pi", password=a.pw, timeout=8, look_for_keys=False, allow_agent=False)
