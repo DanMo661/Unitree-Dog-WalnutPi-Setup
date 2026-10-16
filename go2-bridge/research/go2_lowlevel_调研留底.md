@@ -12,7 +12,7 @@
   纯 Python，依赖 `cyclonedds==0.10.2` + numpy（opencv 只有相机示例要）。
 - cyclonedds aarch64 wheel 待板上验证；不行就源码编译（纯 C，cmake 无第三方依赖，
   FAQ 官方路径：clone releases/0.10.x → cmake install → CYCLONEDDS_HOME pip -e）。
-- 参考示例已存本地：`D:\ZcodeRely\go2-lowlevel-ref\`
+- 参考示例已存本地：`<本地参考代码目录>`
   （go2_stand_example.py / unitree_legged_const.py / motion_switcher_example.py）
 
 ### 通信机制（从官方示例实证）

@@ -6,6 +6,7 @@
 import sys
 import time
 
+import config
 from sbus import Sbus
 
 port = sys.argv[1] if len(sys.argv) > 1 else config.SBUS_PORT

@@ -5,12 +5,14 @@
 用法: python setup3_dog3.py
 之后: python setup2_extras.py -> deploy_page.py
 """
+import os
 import pathlib
 import time
 
 import paramiko
 
-HOST, USER, PW = "192.168.123.50", "pi", "pi"
+HOST, USER = "192.168.123.50", "pi"
+PW = os.environ.get("BRIDGE_PW", "pi")
 LOCAL = pathlib.Path(__file__).parent
 BRIDGE_FILES = ["bridge.py", "config.py", "sbus.py", "servo.py", "pa.py",
                 "pa_recv.py", "netrc.py", "requirements.txt"]

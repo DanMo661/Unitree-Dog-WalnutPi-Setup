@@ -13,6 +13,7 @@
 eth0(123.50 + 144.10 桥)不动。
 """
 import argparse
+import ipaddress
 import os
 import sys
 import time
@@ -93,6 +94,8 @@ def main():
     ap.add_argument("--pw", default=os.environ.get("BRIDGE_PW", "pi"))
     a = ap.parse_args()
     HOME_SSID = a.home_ssid
+    for opt in ("home_ip",) + (("home_gw",) if a.home_gw else ()):
+        ipaddress.IPv4Address(getattr(a, opt))   # 非法 IP 立即报错, 不等到 nmcli
     GW = a.home_gw or (a.home_ip.rsplit('.', 1)[0] + '.1')  # 网关/DNS: 显式指定, 缺省按 x.x.x.1 推导
     if not HOME_SSID or not HOME_PSK:
         sys.exit("缺 --home-ssid / HOME_PSK(主WiFi密码): 主WiFi档案没法建")

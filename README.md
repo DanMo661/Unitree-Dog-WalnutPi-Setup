@@ -50,6 +50,7 @@ powershell -ExecutionPolicy Bypass -File provisioning\flash_sd4.ps1
 ### 第 2 步 · 板子装机（三条命令）
 卡进板子、板子进狗（eth0 网线接狗内交换机）、PC 也插交换机并设静态 `192.168.123.99/24`，`ping 192.168.123.50` 通后（PC 需 Python3+paramiko，命令在 Git Bash 执行）：
 ```bash
+cd go2-bridge
 python setup3_dog3.py     # 代码 + 离线依赖 + venv + root 版 systemd 服务
 python setup2_extras.py   # 官方 SDK 库(fork 修正版) + 音频 deb + PWM 权限
 BRIDGE_USER=pi BRIDGE_PW=<板子密码> BRIDGE_HOST=192.168.123.50 python deploy_page.py   # 遥控器 App 安装/更新页

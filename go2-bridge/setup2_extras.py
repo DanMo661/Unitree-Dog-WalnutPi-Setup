@@ -10,10 +10,11 @@ import sys
 
 import paramiko
 
-HOST, USER, PW = "192.168.123.50", "pi", "pi"
+HOST, USER = "192.168.123.50", "pi"
+PW = os.environ.get("BRIDGE_PW", "pi")
 SP = "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages"
 FORK_TAR_CANDIDATES = [
-    pathlib.Path(os.environ.get("TEMP", r"C:\Users\Administrator\AppData\Local\Temp"))
+    pathlib.Path(os.environ.get("TEMP", ""))
     / "uwc-fork-pkg.tar.gz",
     pathlib.Path(r"D:\ZcodeRely\uwc-fork-pkg.tar.gz"),
 ]
@@ -30,7 +31,7 @@ PWM_RULE = ('SUBSYSTEM=="pwm", ACTION=="add|change", '
 
 fork_tar = next((p for p in FORK_TAR_CANDIDATES if p.exists()), None)
 if not fork_tar:
-    sys.exit("找不到 fork 包 tar (先跑: cd /d/ZcodeRely/uwc-fork-tmp && tar czf %%TEMP%%\\uwc-fork-pkg.tar.gz unitree_webrtc_connect/)")
+    sys.exit("找不到 fork 包 uwc-fork-pkg.tar.gz (制作方法见 assets/MANIFEST.md 第五节)")
 
 c = paramiko.SSHClient()
 c.set_missing_host_key_policy(paramiko.AutoAddPolicy())

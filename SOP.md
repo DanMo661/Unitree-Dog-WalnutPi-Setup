@@ -72,10 +72,10 @@ GR01 供电：按接收机型号 5V 供电（GR01 类是 7.2~72V XT30 供电，�
 powershell -ExecutionPolicy Bypass -File flash_sd4.ps1
 ```
 
-脚本自动：识别唯一 14-16GB USB 盘 → diskpart clean → 写镜像 → **全卡 SHA256 回读校验** → 输出 `RESULT: PASS` 才算成（PASS 以外一律重烧）。
+脚本自动：识别唯一 8-64GB USB 盘 → diskpart clean → 写镜像 → **全卡 SHA256 回读校验** → 输出 `RESULT: PASS` 才算成（PASS 以外一律重烧）。
 
 **坑 1.1**：镜像里**只烙 eth0，不烙 WiFi**。WiFi 故意留给 NetworkManager 双档案（§3），netplan 不支持"不同 SSID 不同 IP"，烙进去反而死板。
-**坑 1.2**：多合一读卡器会枚举多个 0GB 空 USB 盘，脚本按"USB + 14~16GB + 恰好一张"判定目标；别用会弹 GUI 的 Rufus CLI。
+**坑 1.2**：多合一读卡器会枚举多个 0GB 空 USB 盘，脚本按"USB + 8~64GB + 恰好一张"判定目标；读卡器名不含 Mass Storage 时打警告继续；别用会弹 GUI 的 Rufus CLI。
 **坑 1.3**：`Access denied` 报错 = Windows 句柄残留，**直接重跑一遍就好**。
 **坑 1.4**：烧完脚本已把盘脱机，直接拔卡；重插才会挂盘符（看到两个分区属正常）。
 
