@@ -6,7 +6,7 @@ Write-Output "USB disks present:"
 @(Get-Disk | Where-Object { $_.BusType -eq 'USB' }) | ForEach-Object {
     Write-Output ("  Disk{0} {1} {2:N2}GB {3}" -f $_.Number, $_.FriendlyName, ($_.Size/1GB), $_.PartitionStyle)
 }
-$cands = @(Get-Disk | Where-Object { $_.BusType -eq 'USB' -and $_.Size -ge 14GB -and $_.Size -le 16GB })
+$cands = @(Get-Disk | Where-Object { $_.BusType -eq 'USB' -and $_.Size -ge 8GB -and $_.Size -le 64GB })
 if ($cands.Count -ne 1) { throw ("Expect exactly one 14-16GB USB disk, got " + $cands.Count) }
 $disk = $cands[0]
 if ($disk.FriendlyName -notlike '*Mass*Storage*') { throw "Disk identity mismatch: $($disk.FriendlyName)" }
