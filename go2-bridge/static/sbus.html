@@ -142,11 +142,11 @@ a{color:var(--accent)}
     <div class="seg" id="cC"><span>趴下</span><span>站立</span></div></div>
   <div class="card"><div class="t">三挡 <em id="kGear"></em></div>
     <div class="seg" id="cGear"><span>1 经济</span><span>2 自由</span><span>3 奔跑</span></div></div>
-  <div class="card"><div class="t">左拨杆 → 舵机</div>
+  <div class="card"><div class="t">左拨杆 · 未用</div>
     <div class="bigval num" id="cServo">—<small style="font-size:13px;color:var(--dim)">°</small></div></div>
 </div>
 
-<p class="tip">遥控页 <a href="/">/</a> · 黄灯=丢帧狗已站定等待恢复 · 10s 无干净帧才缓降趴下<br>
+<p class="tip">遥控页 <a href="/">/</a> · 黄灯=丢帧狗已站定等待恢复 · 30s 真失联上锁停走(保持姿态)<br>
 帧间隔为串口批次推断均值（批间隔/批帧数），丢帧另有接收机 fs/lost 标志佐证</p>
 </div>
 
@@ -158,7 +158,7 @@ const CH_LO = 282, CH_HI = 1722;
 const CHS = [
   {n:"转向 · 右横"}, {n:"前后 · 左竖"}, {n:"右竖 · 未用"}, {n:"侧移 · 左横"},
   {n:"A 键", tick:ARM_ON, tickName:"解锁"}, {n:"B 键"}, {n:"C 键", tick:STAND_ON, tickName:"站"},
-  {n:"左拨杆 · 舵机"}, {n:"D 键 · 退役"}, {n:"三挡"}, {n:"右拨杆 · 未用"},
+  {n:"左拨杆 · 未用"}, {n:"D 键 · 继电器"}, {n:"三挡"}, {n:"右拨杆 · 未用"},
   {n:""}, {n:""}, {n:""}, {n:""}, {n:""}
 ];
 const NOM = (v) => Math.max(0, Math.min(1, (v - CH_LO) / (CH_HI - CH_LO)));

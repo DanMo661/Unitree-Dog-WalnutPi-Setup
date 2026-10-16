@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Stop'
-# v2: 多合一读卡器会枚举多个 0GB 空 USB 盘, 目标判定改为 "USB + 14~16GB 恰好一张"
+# v3: 目标判定 = "USB + 8~64GB 恰好一张"(TF卡最低8GB); 读卡器名不再硬性拦截,不匹配时打警告
 $img = 'D:\ZcodeRely\walnutpi\walnutpi-1b-netplan.img'
 
 Write-Output "USB disks present:"
@@ -7,9 +7,9 @@ Write-Output "USB disks present:"
     Write-Output ("  Disk{0} {1} {2:N2}GB {3}" -f $_.Number, $_.FriendlyName, ($_.Size/1GB), $_.PartitionStyle)
 }
 $cands = @(Get-Disk | Where-Object { $_.BusType -eq 'USB' -and $_.Size -ge 8GB -and $_.Size -le 64GB })
-if ($cands.Count -ne 1) { throw ("Expect exactly one 14-16GB USB disk, got " + $cands.Count) }
+if ($cands.Count -ne 1) { throw ("Expect exactly one 8-64GB USB disk, got " + $cands.Count) }
 $disk = $cands[0]
-if ($disk.FriendlyName -notlike '*Mass*Storage*') { throw "Disk identity mismatch: $($disk.FriendlyName)" }
+if ($disk.FriendlyName -notlike '*Mass*Storage*') { Write-Output ("WARN: 读卡器名不含 Mass Storage: " + $disk.FriendlyName + " (继续, 请确认目标是你的 TF 卡)") }
 if ($disk.IsOffline) { Set-Disk -Number $disk.Number -IsOffline $false; Start-Sleep 2 }
 Write-Output ("TARGET: Disk{0} = {1}, {2:N2}GB" -f $disk.Number, $disk.FriendlyName, ($disk.Size/1GB))
 

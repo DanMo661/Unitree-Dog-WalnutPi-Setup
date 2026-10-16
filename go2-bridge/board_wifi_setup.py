@@ -87,11 +87,13 @@ def main():
                     help="现场主WiFi名(公司/家里), 也可用环境变量 HOME_SSID")
     ap.add_argument("--home-ip", required=True,
                     help="主WiFi网段下板子的静态 IP, 每块板不同(第1块=.51 第2块=.52 依次递增)")
+    ap.add_argument("--home-gw", default=None,
+                    help="主网网关(默认按 x.x.x.1 推导; 网关是 .254/.0.1 的现场显式传)")
     ap.add_argument("--host", default=os.environ.get("BRIDGE_HOST", "192.168.123.50"))
     ap.add_argument("--pw", default=os.environ.get("BRIDGE_PW", "pi"))
     a = ap.parse_args()
     HOME_SSID = a.home_ssid
-    GW = a.home_ip.rsplit('.', 1)[0] + '.1'   # 网关/DNS 按主网段自动推导(x.x.x.1)
+    GW = a.home_gw or (a.home_ip.rsplit('.', 1)[0] + '.1')  # 网关/DNS: 显式指定, 缺省按 x.x.x.1 推导
     if not HOME_SSID or not HOME_PSK:
         sys.exit("缺 --home-ssid / HOME_PSK(主WiFi密码): 主WiFi档案没法建")
     cli = paramiko.SSHClient()

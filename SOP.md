@@ -46,6 +46,8 @@ GR01 供电：按接收机型号 5V 供电（GR01 类是 7.2~72V XT30 供电，�
 
 > 如果换别的板子：找一个普通 TTL 串口，把 `config.py` 的 `SBUS_PORT` 改成对应 `/dev/ttyS*` 或 `/dev/ttyUSB*` 即可，反相器一样要。
 
+**术语**：MCF=狗的运动控制指令集（解锁/步态/摇杆都走它）；con_notify=狗的 WebRTC 信令协议（9991 端口）；noreply=不等回包的发送通道（高频 Move 用）；NM=NetworkManager（Linux 网络管理器）。
+
 **坑 0.1**：123 段和 144 段是同一个物理网络的两套逻辑段（板子 eth0 双地址），别当成两个网络。
 **坑 0.2**：每条狗内部都是独立局域网，多条狗可以都用 123.50/.161 互不冲突；**WiFi 侧 IP 必须每板不同**（见 §3）。
 **坑 0.3**：忘了反相器的话现象是"串口有数据但全是坏帧/乱码"——SBUS 帧头 0x0F 对不上。先查反相再查别的。
@@ -60,7 +62,7 @@ GR01 供电：按接收机型号 5V 供电（GR01 类是 7.2~72V XT30 供电，�
 |---|---|
 | 官方系统镜像 | 核桃派官方发布（官网/官方群），server 版 Ubuntu 22.04 |
 | **netplan 部署镜像**（烙好 eth0 双地址） | 拿官方镜像自制：WSL 里 `losetup -Pf --show 官方.img` → 挂载第 2 分区 → 把 §0.2 表里 eth0 那两行地址写进 `/etc/netplan/01-network-manager-all.yaml` → 卸载。完整可复制命令在 MANIFEST §2 |
-| 烧录脚本 | 本仓库 `provisioning/flash_sd4.ps1`，**用前改脚本第 2 行 `$img = '...'` 指向你的镜像路径** |
+| 烧录脚本 | 本仓库 `provisioning/flash_sd4.ps1`，**用前改脚本开头的 `$img = '...'` 一行指向你的镜像路径** |
 
 ### 1.2 烧
 
@@ -81,7 +83,9 @@ powershell -ExecutionPolicy Bypass -File flash_sd4.ps1
 
 ## 2. 板子部署（PC → 板，三条命令）
 
-### 2.1 前置：把 PC 接进狗内网络
+### 2.1 前置：PC 侧准备 + 接进狗内网络
+
+PC 需要：Python 3 + `pip install paramiko`（部署脚本用）；以下命令在 **Git Bash** 里执行（`VAR=x cmd` 是 bash 语法，PowerShell 不认）。
 
 1. 卡进板子、板子进狗、板子 eth0 网线接狗内交换机、狗上电
 2. PC 也插交换机任一口，把有线网卡设静态（管理员 PowerShell）：
@@ -110,7 +114,7 @@ App 安装包已由 `deploy_page.py` 放到板子 `http://192.168.144.10:15080`�
 装好后 App 检查更新自动走 15080 页，无需再管。
 
 **坑 2.1**：镜像缺 `python3.10-venv`（ensurepip 被拆包）——`python3 -m venv --without-pip` 建环境 + 系统 `pip3 --target` 定向灌入，脚本已处理，手工装时别直接 `pip install`。
-**坑 2.2**：`sounddevice` 运行时需要 `libportaudio2`（镜像没有，需离线传 deb，`setup2_extras.py` 已带）。缺它 bridge 启动即崩 `OSError: PortAudio library not found`——这不是部署坏了，是缺第二步。
+**坑 2.2**：`sounddevice` 运行时需要 `libportaudio2`（镜像没有，需离线传 deb，`setup2_extras.py` 已带）。缺它时 `setup2_extras.py` 最后的 `FORK_OK` 自检会报 `OSError: PortAudio library not found`——这不是部署坏了，是第二步的 deb 没到位。
 **坑 2.3**：连狗库必须用 **fork 修正版** `unitree_webrtc_connect`（PyPI 原版的 Move 通道和参数是错的）。extras 步会自动覆盖之。
 **坑 2.4**：systemd 服务必须 `User=root`——GPIO 的 `/sys/class/gpio/export` 只有 root 能写，`User=pi` 时四路继电器**静默**不报错。
 **坑 2.5**：首启日志出现 `到狗链路不通(网线/狗未开机), 等待恢复...` 是**正常等待循环**，狗开机后自动连，不需要重启服务。
@@ -174,15 +178,16 @@ curl http://192.168.123.50:8000/sbus        # SBUS/网络遥控调试台（浏�
 
 1. 浏览器开调试台 `http://192.168.123.50:8000/sbus`——页面上部是 16 通道卡片（ch0~ch15），每张卡实时显示该通道原始值（0~2047 区间）；旁边是帧率图和链路灯
 2. 遥控器上**逐个拨动**：A 键、C 键、B 键、D 键、三段拨杆、左右摇杆四个方向——每动一个，看**哪张卡的数字在跳**，记下：通道号 + 低位值 + 高位值（摇杆记中位值）
-3. 对照改 `config.py`（每项含义看文件内注释，都在一处）：
+3. 对照改配置（注意不止 `config.py` 一处，见下）：
    - `CH_ARM / CH_STAND / CH_GEAR / CH_B`：A/C/拨杆/B 各自的真实通道号
    - `ARM_ON / STAND_ON / RELAY_ON_RAW`：判定阈值放在该通道两档值的**正中间**
    - `CH_ROLL, CH_PITCH, CH_YAW`：三个摇杆轴的通道号；`SIGN_*`：方向反了就乘 -1
-   - `axis()` 函数里的中值 `1002` 与半行程 `720`（中位值/行程不同就改）
+   - `axis()` 函数（在 `bridge.py` 顶部）里的中值 `1002` 与半行程 `720`——中位值/行程不同要改这里
+   - B/D 键触发阈值 `ch[cid] > 1002` 也在 `bridge.py`（KEY_ACTIONS 循环里），新遥控器中值不是 1002 就要跟着改
 4. 重推生效：`BRIDGE_HOST=192.168.123.50 BRIDGE_PW=<板子密码> python deploy_pc.py`（上传+校验+重启+验活全自动）
 5. 验收：A 键完整翻拨一个来回 → `/logs` 出现 `已解锁(RC)`；C 拨上 → `模式 -> 走`，狗起立
 
-**坑 5.1**：`sbus_monitor.py` 可以直接打串口原始流做标定（要停服务独占串口：`sudo systemctl stop go2-bridge`，标完记得 `start`）。
+**坑 5.1**：标定工具两个：`calibrate.py`（N 秒采样输出每通道 min/max/中值，最省事）和 `sbus_monitor.py`（实时帧流）。都要停服务独占串口：`sudo systemctl stop go2-bridge`，标完记得 `start`。
 **坑 5.2**：解锁是**边沿触发**（上锁→解锁的翻拨才认），A 一直停在解锁位不算。测试时记得完整拨一个来回。
 **坑 5.3**：接收机没插天线时帧流照样有（SBUS 是有线），但遥控距离≈0，别把"没反应"当标定问题。
 

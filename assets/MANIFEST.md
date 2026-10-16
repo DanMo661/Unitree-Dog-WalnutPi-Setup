@@ -18,6 +18,7 @@ sudo losetup -Pf --show WalnutPi-1b官方.img     # 输出例如 /dev/loop0
 
 # 2. 挂载根分区(第2分区)并写入 netplan 配置
 sudo mkdir -p /mnt/img
+lsblk -f /dev/loop0        # 先确认分区布局: ext4 的根分区通常是 p2
 sudo mount /dev/loop0p2 /mnt/img
 sudo tee /mnt/img/etc/netplan/01-network-manager-all.yaml << 'EOF'
 network:
@@ -43,10 +44,13 @@ mv WalnutPi-1b官方.img walnutpi-1b-netplan.img
 板子部署环境可能无外网，全部依赖离线灌入。在有外网的任意机器（Windows/Linux 均可）下载 arm64 版：
 
 ```bash
-pip download -r requirements.txt \
+# 版本锁: unitree_webrtc_connect 必须 ==2.0.0 (2.2.0 引入 pyaudio/opencv 等
+# 无 aarch64 wheel 的依赖, 下载直接失败; 板上实际用本页 §5 fork 包覆盖, 版本只影响依赖解析)
+pip download \
     -d wheels/ \
     --platform manylinux2014_aarch64 --platform any \
-    --python-version 310 --only-binary=:all:
+    --python-version 310 --only-binary=:all: \
+    unitree_webrtc_connect==2.0.0 pyserial fastapi uvicorn
 tar czf wheels2.tar.gz wheels/
 ```
 
@@ -61,7 +65,7 @@ apt download libjack-jackd2-0:arm64 libportaudio2:arm64
 ```
 
 地址形式：`http://ports.ubuntu.com/ubuntu-ports/pool/main/...`（按包名搜）。
-缺这两个 deb 的症状：bridge 启动即崩 `PortAudio library not found`（SOP 坑 2.2）。
+缺这两个 deb 的症状：`setup2_extras.py` 的 `FORK_OK` 自检报 `PortAudio library not found`（SOP 坑 2.2）。
 
 ## §5 fork 版 SDK 库打包（连狗引擎，覆盖 PyPI 原版）
 
@@ -81,9 +85,16 @@ Windows 中文环境编码崩溃、大文件分块传输（对应上游 legion15
 上游库自带 `fetch_aes_key.py`（本仓库 §5 的 fork 里也有），在能通狗 `:9991` 的机器上按其 README 运行即可。
 固件 1.1.1~1.1.14 无此步骤（SOP §4 已说明）。
 
-## §7 烧录脚本
+## §7 遥控器 App 安装包（PaSend.apk / GO2控制台）
 
-`provisioning/flash_sd4.ps1`（本仓库已带）。使用前改脚本第 2 行：
+App 源码在仓库 `go2-bridge/android-app/`（单 Activity Java，无第三方依赖）。
+成品 APK 不入 git（.gitignore 排除二进制），两个来路：
+- 部署时用环境变量指定本地成品：`BRIDGE_APK=<APK路径> python deploy_page.py`（缺省找脚本同目录 `PaSend-v35-网络遥控.apk`）
+- 或自行构建：任意 Android 工程套入该 Java 源码 + `AndroidManifest.xml`（权限/组件声明都在），`aapt+d8+apksigner` 或 Android Studio 皆可
+
+## §8 烧录脚本
+
+`provisioning/flash_sd4.ps1`（本仓库已带）。使用前改脚本开头的 `$img = ...` 一行：
 ```powershell
 $img = 'D:\你的路径\walnutpi-1b-netplan.img'
 ```

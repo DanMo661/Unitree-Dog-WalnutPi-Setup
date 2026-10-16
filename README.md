@@ -43,12 +43,12 @@ GR01 接收机(2.4G 收包)    核桃派只是其中一种
 ### 第 1 步 · 烧 TF 卡
 读卡器插机箱后面板（TF 卡最低 8GB，推荐 16GB 及以上）：
 ```powershell
-powershell -ExecutionPolicy Bypass -File flash_sd4.ps1
+powershell -ExecutionPolicy Bypass -File provisioning\flash_sd4.ps1
 ```
 自动识别目标卡 → 写镜像 → **全卡 SHA256 回读校验**，`RESULT: PASS` 才算成。
 
 ### 第 2 步 · 板子装机（三条命令）
-卡进板子、板子进狗（eth0 网线接狗内交换机）、PC 也插交换机并设静态 `192.168.123.99/24`，`ping 192.168.123.50` 通后：
+卡进板子、板子进狗（eth0 网线接狗内交换机）、PC 也插交换机并设静态 `192.168.123.99/24`，`ping 192.168.123.50` 通后（PC 需 Python3+paramiko，命令在 Git Bash 执行）：
 ```bash
 python setup3_dog3.py     # 代码 + 离线依赖 + venv + root 版 systemd 服务
 python setup2_extras.py   # 官方 SDK 库(fork 修正版) + 音频 deb + PWM 权限

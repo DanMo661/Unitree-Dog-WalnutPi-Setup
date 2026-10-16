@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-"""dog3 板子全套装机: 当前代码 + 离线 wheels + venv + root 版 systemd 服务
-前置: 镜像已烙 netplan(123.50/144.10), 板可 SSH; 素材 wheels2.tar.gz 在本目录
+"""板子全套装机: 当前代码 + 离线 wheels + venv + root 版 systemd 服务
+前置: 镜像已烙 netplan(123.50/144.10), 板可 SSH(ping 192.168.123.50 通)
+素材: wheels2.tar.gz(本目录或环境变量 WHEELS_TAR, 制作见 assets/MANIFEST.md)
 用法: python setup3_dog3.py
 之后: python setup2_extras.py -> deploy_page.py
 """
@@ -12,7 +13,7 @@ import paramiko
 HOST, USER, PW = "192.168.123.50", "pi", "pi"
 LOCAL = pathlib.Path(__file__).parent
 BRIDGE_FILES = ["bridge.py", "config.py", "sbus.py", "servo.py", "pa.py",
-                "pa_recv.py", "netrc.py", "sbus_diag.py", "requirements.txt"]
+                "pa_recv.py", "netrc.py", "requirements.txt"]
 RDIR = "/home/pi/go2-bridge"
 
 c = paramiko.SSHClient()
@@ -36,8 +37,11 @@ sftp.close()
 print(run("ls %s/ %s/static/ | head -16" % (RDIR, RDIR)))
 
 print("== 2. 传离线 wheels (88MB, 几分钟) ==")
+WHEELS = pathlib.Path(os.environ.get("WHEELS_TAR", LOCAL / "wheels2.tar.gz"))
+if not WHEELS.exists():
+    raise SystemExit("找不到 wheels 包: %s (可用环境变量 WHEELS_TAR=<路径> 指定, 制作方法见 assets/MANIFEST.md)" % WHEELS)
 sftp = c.open_sftp()
-sftp.put(str(LOCAL / "wheels2.tar.gz"), "/tmp/wheels2.tar.gz")
+sftp.put(str(WHEELS), "/tmp/wheels2.tar.gz")
 sftp.close()
 print(run("cd /tmp && tar xzf wheels2.tar.gz -C %s && ls %s/wheels | wc -l" % (RDIR, RDIR)), "个 wheel")
 
