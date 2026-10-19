@@ -539,6 +539,203 @@ class Dog:
                 else "断链重连: 停走保持姿态, 请重新解锁")
 
 
+# ---- FSM 影子模式(P0-3 / T1.3): 旧逻辑照跑, core/fsm.py 的 DogFsm 并行对照, 只比不发 ----
+
+_SHADOW = None        # FsmShadow 单例; None = 影子关闭(FSM_SHADOW=False 或 core/ 未部署)
+
+
+def _collapse(cmds):
+    """相邻去重: 旧侧四路 GPIO 同电平各记一条, FSM 只出一条; 归一成可比序列"""
+    out = []
+    for c in cmds:
+        if not out or out[-1] != c:
+            out.append(c)
+    return out
+
+
+class _RecLink:
+    """只读透传包装: 记录 rc_loop 线程窗口内旧路径实际下发的狗指令。
+    其他线程(网页/断链复位)的提交不在帧窗口内不记账 —— 其 FSM 对应事件只同步
+    状态、输出不参与比较(两边口径一致, 见 FsmShadow 类注释)。"""
+
+    def __init__(self, inner, thread):
+        self.inner = inner
+        self._thread = thread
+        self.cmds = []
+
+    def submit(self, name, **p):
+        if threading.current_thread() is self._thread:
+            self.cmds.append((name, dict(p)))
+        return self.inner.submit(name, **p)
+
+    def take(self):
+        out = self.cmds[:]
+        self.cmds.clear()
+        return out
+
+
+class _RecRelay:
+    """只读透传包装: 按执行层去重语义(servo.py set_us 变化 <25us 不写盘 / 电平
+    不变不写盘)记录旧路径请求的继电器目标变化。种子与 DogFsm._relay_us/_gpio_lv
+    一致(us=None 首次必记 / lv=False 上电低); 退化硬件(本机无 sysfs)同样按工作板
+    记账, 保证影子两侧可比。"""
+
+    def __init__(self, inner):
+        self.inner = inner
+        self._us = None
+        self._lv = False
+        self.relay = []
+        self.gpio = []
+
+    @property
+    def cur_us(self):          # _relay_journal 写前快照透传
+        return self.inner.cur_us
+
+    @property
+    def level(self):
+        return self.inner.level
+
+    @property
+    def gpio_num(self):
+        return self.inner.gpio_num
+
+    def set_us(self, us):
+        if self._us is None or abs(us - self._us) >= 25.0:
+            self._us = us
+            self.relay.append(("relay", us))
+        return self.inner.set_us(us)
+
+    def set_level(self, on):
+        on = bool(on)
+        if self._lv != on:
+            self._lv = on
+            self.gpio.append(("gpio", on))
+        return self.inner.set_level(on)
+
+    def take(self):
+        out = self.relay + self.gpio
+        self.relay.clear()
+        self.gpio.clear()
+        return out
+
+
+class FsmShadow:
+    """DogFsm 影子驱动: 旧逻辑照跑, FSM 并行吃同样事件, 逐帧对照指令序列。
+    影子输出绝不落地(不 submit / 不写 sysfs; ("log",...) 也不打 —— 控制台输出
+    零变化), 只有差异才记 "FSM 差异" 日志 + journal(fsm_divergence)。
+    事件喂法(接线层契约, 见 core/fsm.py 头注释):
+      rc_loop 线程 frame/tick/safety/serial_reopened —— 输出进本帧比较窗口;
+      跨线程 link(轮询 state)/web_cmd/trick —— 只同步 FSM 状态, 输出丢弃
+      (旧侧对应指令在其他线程发出, 不在 rc_loop 帧窗口内, 无从对比)。"""
+
+    def __init__(self, d):
+        from core.fsm import DogFsm   # 惰性导入: 不部署 core/ 时 bridge 仍能启动(影子自停)
+        self.lock = threading.Lock()
+        self.fsm = DogFsm()
+        # 启动快照: rc_loop 可能晚于 DogLink 首连(或测试直接预置 mode), 把已发生的抄进来
+        self.fsm.mode = d.mode
+        self.fsm.link_gen = self.fsm.link_gen_cur = state.link_gen
+        self.fsm.link_up = (state.link == "up")
+        self._last_link = state.link
+        self._out = []
+        self._rl = None               # 旧侧狗指令记录器
+        self._rr = []                 # 旧侧继电器记录器([sv1] + svs)
+
+    def wrap_link(self, inner):
+        self._rl = _RecLink(inner, threading.current_thread())
+        return self._rl
+
+    def wrap_relay(self, sv1, svs):
+        self._rr = [_RecRelay(s) for s in [sv1] + list(svs)]
+        return self._rr[0], self._rr[1:]
+
+    # ---- 跨线程事件: 只同步状态, 输出丢弃 ----
+
+    def link_poll(self):
+        with self.lock:
+            if state.link_gen != self.fsm.link_gen_cur:
+                self.fsm.link(state.link_gen)     # DogLink (重)连 = dog.reset() 语义
+            if state.link != self._last_link:
+                self._last_link = state.link
+                self.fsm.set_link(state.link == "up")
+
+    def web_cmd(self, cmd, vx=None, vy=None, vyaw=None):
+        with self.lock:
+            self.fsm.web_cmd(cmd, vx=vx, vy=vy, vyaw=vyaw)
+
+    def trick(self, name, dur):
+        with self.lock:
+            self.fsm.set_link(state.link == "up")  # 与 _trick_gate 同刻的链路口径
+            self.fsm.trick(name, dur)
+
+    # ---- rc_loop 线程事件: 输出进本帧比较窗口 ----
+
+    def frame(self, ch, fs, lost, source, now):
+        with self.lock:
+            self._out += self.fsm.frame(ch, fs, lost, source=source, now=now)
+
+    def tick(self, now):
+        # 干净帧的 drain 已在 frame() 内做过(此处传同值 now 幂等), 兼网页摇杆驱动;
+        # 无帧/坏帧时传当下时刻 —— 与旧路径 d.tick() 的调用时刻对齐
+        with self.lock:
+            self._out += self.fsm.tick(now=now)
+
+    def safety(self, gap_clean, now):
+        with self.lock:
+            self._out += self.fsm.safety(gap_clean, now=now)
+
+    def serial_reopened(self):
+        with self.lock:
+            self.fsm.serial_reopened()
+
+    def serial_offline(self):
+        with self.lock:
+            self.fsm.serial_offline()
+
+    def compare(self, f, nf, gap_clean):
+        """帧尾对照: 旧侧(rc_loop 线程提交 + 继电器目标) vs FSM 本帧输出。
+        指令/继电器两类各自按序比(执行器相互独立, 类间顺序无语义); 四路 GPIO
+        相邻同值归一成一条再比。"""
+        with self.lock:
+            fsm_out, self._out = self._out, []
+            fsm_sub = [c for c in fsm_out if c[0] == "submit"]
+            fsm_rg = _collapse([c for c in fsm_out if c[0] in ("relay", "gpio")])
+            old_sub = [("submit", n, p)
+                       for n, p in (self._rl.take() if self._rl else [])]
+            old_rg = _collapse([c for r in self._rr for c in r.take()])
+            snap = {"mode": self.fsm.mode, "armed": self.fsm.armed,
+                    "gear_sent": self.fsm.gear_sent, "moving": self.fsm.moving}
+        if fsm_sub == old_sub and fsm_rg == old_rg:
+            return
+        ch, fs, lost = f if f is not None else (None, None, None)
+        journal.record("fsm_divergence",
+                       src=("netrc" if nf is not None else "sbus") if f is not None else None,
+                       fs=fs, lost=lost, gap=round(gap_clean, 3),
+                       ch=list(ch) if ch else None,
+                       old_sub=old_sub, fsm_sub=fsm_sub,
+                       old_relay=old_rg, fsm_relay=fsm_rg, fsm=snap)
+        log("FSM 差异: 旧=%s 新=%s (fsm=%s)" % (old_sub + old_rg, fsm_sub + fsm_rg, snap))
+
+
+def _shadow_safe(meth):
+    """影子保险丝: 任一喂点异常即整体停用影子并只记一次日志 —— 影子自身的问题
+    绝不波及旧路径(对齐 journal.py 的静默纪律, 但留一行线索)"""
+    def wrap(self, *a, **kw):
+        global _SHADOW
+        try:
+            return meth(self, *a, **kw)
+        except Exception as e:
+            if _SHADOW is self:
+                _SHADOW = None
+                log("FSM 影子异常, 已停用影子(旧路径不受影响):", repr(e))
+    return wrap
+
+
+for _m in ("link_poll", "web_cmd", "trick", "frame", "tick", "safety",
+           "serial_reopened", "serial_offline", "compare"):
+    setattr(FsmShadow, _m, _shadow_safe(getattr(FsmShadow, _m)))
+
+
 def _relay_journal(sv1, svs, was_us, was_lv):
     """journal 埋点(kind=relay): 只记实际写盘成功的 PWM 目标脉宽 / GPIO 电平翻转。
     was_us/was_lv 为写入前快照(sv1.cur_us / [s.level]); servo/GpioOut 内部只在
@@ -551,6 +748,12 @@ def _relay_journal(sv1, svs, was_us, was_lv):
 
 
 def rc_loop(d, pa):
+    global _SHADOW
+    if config.FSM_SHADOW and _SHADOW is None:
+        try:
+            _SHADOW = FsmShadow(d)   # main() 已建则复用; 测试直跑 rc_loop 时在此创建
+        except ImportError:
+            log("core/fsm.py 不可用, FSM 影子模式停用(部署清单需补 core/, 旧路径不受影响)")
     sbus = Sbus(config.SBUS_PORT, on_frames=sbus_stats.feed)
     armed = False
     last_clean = time.monotonic()   # 最近干净帧时刻: 失控保护计时锚点(hold/趴下都看它)
@@ -565,6 +768,9 @@ def rc_loop(d, pa):
     svs = [GpioOut(g, log) for g in config.RELAY_GPIOS]   # 38/40/37/35脚: IO电平
     sv1 = Servo(config.SERVO_CHIP, config.SERVO1_CH,      # 15脚(PI11)=PWM1: 飞控继电器
                 config.SERVO_MIN_US, config.SERVO_MAX_US, log)
+    if _SHADOW is not None:              # 影子: 旧路径硬件/指令出口套只读透传记录器(语义不变)
+        sv1, svs = _SHADOW.wrap_relay(sv1, svs)
+        d.link = _SHADOW.wrap_link(d.link)
     while True:
         if not sbus.opened:
             if sbus.open():
@@ -573,9 +779,13 @@ def rc_loop(d, pa):
                 state.rc_armed = False
                 state.gear = None
                 prev_high = None
+                if _SHADOW is not None:
+                    _SHADOW.serial_reopened()
             else:
                 state.sbus_ok = False
                 state.sbus_clean = False
+                if _SHADOW is not None:
+                    _SHADOW.serial_offline()   # FSM 镜像同步掉线(否则切 live 后 /state 误报链路正常)
                 time.sleep(3)
                 continue
         t0 = time.monotonic()      # 节拍锚点: read 超时计入周期, 免得 20ms+50ms 串联变 14Hz
@@ -584,10 +794,14 @@ def rc_loop(d, pa):
         if nf is not None:
             f = (nf, False, False)   # 网络遥控新鲜(300ms)则优先; 通道语义与 SBUS 一致, 下游全复用
         now = time.monotonic()
+        if _SHADOW is not None:
+            _SHADOW.link_poll()            # 影子: (重)连/set_link 事件按 state 轮询补喂
         bad = False
         j_must = False                # journal: 本帧必记(坏帧 / A 键解锁上锁边沿帧)
         if f is not None:
             ch, fs, lost = f
+            if _SHADOW is not None:
+                _SHADOW.frame(ch, fs, lost, "netrc" if nf is not None else "sbus", now)
             if fs or lost:                  # 坏帧: 链路活着但数据脏, 不作控制输入
                 bad = True
                 j_must = True
@@ -669,6 +883,8 @@ def rc_loop(d, pa):
                 stand_prev = stand   # 每帧更新(含上锁期): 解锁瞬间才不会把陈旧电平当边沿
         if f is None or bad:                # 无帧/坏帧都照常补发到点的延迟指令
             d.tick()
+        if _SHADOW is not None:             # 影子 tick: 干净帧同 now 幂等 drain, 兼网页摇杆;
+            _SHADOW.tick(now if f is not None and not bad else time.monotonic())
 
         gap_clean = now - last_clean
         state.sbus_ok = (now - last_any) < 1.0     # 链路活着(坏帧也算)
@@ -697,11 +913,17 @@ def rc_loop(d, pa):
                     state.rc_armed = False
                     d.hold()           # 停走即可, 姿态交给狗自己保持
 
+        if _SHADOW is not None:             # 影子: 同一 gap_clean/now 喂失控保护
+            _SHADOW.safety(gap_clean, now)
+
         # 网页端: 仅 RC 上锁时接管
         if not armed and state.web_armed:
             d.move(state.web_vx * config.VX_MAX,
                    state.web_vy * config.VY_MAX,
                    state.web_vyaw * config.VYAW_MAX)
+
+        if _SHADOW is not None:             # 影子: 帧尾对照, 差异才记日志/journal
+            _SHADOW.compare(f, nf, gap_clean)
 
         time.sleep(max(0.0, 1.0 / config.SEND_HZ - (time.monotonic() - t0)))
 
@@ -761,10 +983,15 @@ def web_server(d):
                             d.set_mode(1)
                         elif c == "walk":
                             d.set_mode(2)
+                        if _SHADOW is not None:
+                            _SHADOW.web_cmd(c)        # 影子: 同步网页指令(输出不比)
                     elif "vx" in m:   # 摇杆消息三键齐全才赋值; 心跳{ping:1}不得清零速度
                         state.web_vx = clamp01(m.get("vx", 0.0))
                         state.web_vy = clamp01(m.get("vy", 0.0))
                         state.web_vyaw = clamp01(m.get("vyaw", 0.0))
+                        if _SHADOW is not None:
+                            _SHADOW.web_cmd("axes", vx=m.get("vx", 0.0),
+                                            vy=m.get("vy", 0.0), vyaw=m.get("vyaw", 0.0))
                 now = time.monotonic()
                 if now - last_status > 0.5:
                     last_status = now
@@ -791,25 +1018,35 @@ def web_server(d):
             state.web_vx = state.web_vy = state.web_vyaw = 0.0
             if not state.rc_armed:
                 d.set_mode(0)
+            if _SHADOW is not None:
+                _SHADOW.web_cmd("closed")
 
     uvicorn.run(app, host="0.0.0.0", port=config.WEB_PORT, log_level="warning")
 
 
 def main():
-    global dog
+    global dog, _SHADOW
     # journal 黑匣子最先就位: 之后所有线程的记录才不会丢头几条; 失败只一行警告, 不挡启动
     if config.JOURNAL_ENABLED and not journal.init(config.JOURNAL_DIR or None,
                                                    config.JOURNAL_MAX_MB):
         log("警告: journal 黑匣子目录不可写, 本次运行不落盘")
     link = DogLink()
     dog = Dog(link)
+    if config.FSM_SHADOW:
+        try:
+            _SHADOW = FsmShadow(dog)   # 先于 web/pa 线程: 启动期指令从第一条起就有影子
+        except ImportError:
+            log("core/fsm.py 不可用, FSM 影子模式停用(部署清单需补 core/, 旧路径不受影响)")
     pa = Pa(config.DEFAULT_VOLUME, log)
 
     def _trick_gate(name, dur):
         # 给 App 分别人话回包: 链路断(狗收不到) vs 条件不满足(未解锁/非行走/占用中)
         if state.link != "up":
             return "LINKDOWN"
-        return "OK" if dog.trick(name, dur) else "NOTSTAND"
+        ok = dog.trick(name, dur)
+        if _SHADOW is not None:
+            _SHADOW.trick(name, dur)   # 影子: 同步动作状态(输出不比)
+        return "OK" if ok else "NOTSTAND"
 
     pa_recv.trick_cb = _trick_gate    # 15001 TRICK 指令 -> 动作网关(配乐板端联动)
     pa_recv.state_cb = lambda: (state.rc_armed, state.mode, state.gear)

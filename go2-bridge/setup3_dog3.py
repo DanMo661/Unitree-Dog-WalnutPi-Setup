@@ -12,7 +12,8 @@ import paramiko
 HOST, USER, PW = "192.168.123.50", "pi", "pi"
 LOCAL = pathlib.Path(__file__).parent
 BRIDGE_FILES = ["bridge.py", "config.py", "sbus.py", "servo.py", "pa.py",
-                "pa_recv.py", "netrc.py", "journal.py", "sbus_diag.py", "requirements.txt"]
+                "pa_recv.py", "netrc.py", "journal.py",
+                "core/__init__.py", "core/fsm.py", "sbus_diag.py", "requirements.txt"]
 RDIR = "/home/pi/go2-bridge"
 
 c = paramiko.SSHClient()
@@ -26,7 +27,7 @@ def run(cmd, t=120):
 
 
 print("== 1. 建目录 + 传当前代码 ==")
-run("mkdir -p %s/static" % RDIR)
+run("mkdir -p %s/static %s/core" % (RDIR, RDIR))
 sftp = c.open_sftp()
 for f in BRIDGE_FILES:
     sftp.put(str(LOCAL / f), "%s/%s" % (RDIR, f))

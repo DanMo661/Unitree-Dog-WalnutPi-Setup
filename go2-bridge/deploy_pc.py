@@ -19,7 +19,8 @@ USER = "pi"
 REMOTE_DIR = "/home/pi/go2-bridge"
 # 板上运行时文件全集(netrc.py 按源码目录里有没有而增删)
 FILES = ["bridge.py", "config.py", "sbus.py", "servo.py", "pa.py", "pa_recv.py",
-         "journal.py", "static/index.html", "static/sbus.html"]
+         "journal.py", "core/__init__.py", "core/fsm.py",
+         "static/index.html", "static/sbus.html"]
 
 
 def md5(p):
@@ -80,6 +81,7 @@ def main():
         return
 
     # ---- 上传 + 校验 ----
+    run("mkdir -p %s/core" % REMOTE_DIR)   # core/ 子目录: sftp.put 不会自动建目录
     sftp = c.open_sftp()
     for f in files:
         sftp.put(str(src / f), REMOTE_DIR + "/" + f)
