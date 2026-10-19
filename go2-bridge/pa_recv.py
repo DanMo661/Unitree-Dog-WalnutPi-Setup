@@ -7,8 +7,12 @@ UDP:15003 预设上传(二进制分块): UPB sid 名 大小 crc32hex / UPC sid �
                       / UPE sid (板端整文件校验后落盘)
 预设文件存 ~/pa-files/<名>.pcm(16k 单声道 raw), 播放走软件增益(音量随 App 实时变)
 对讲与预设播放互斥: TALK 1 自动停播放; 对讲中拒绝 PLAY(对讲优先)
+独立服务(P0-1/T2.2): 由 go2-audio.service 直接跑本文件, 不再进 bridge 进程;
+  TRICK 动作 -> UDP 127.0.0.1:TRICK_PORT 问桥, "RC" 轮询 -> HTTP 读桥 /state,
+  且每秒把 ready/volume/talk/playing 写到 AUDIO_STATE_PATH 供桥的 /state 合并
 """
 import audioop
+import json
 import os
 import re
 import shutil
@@ -16,6 +20,7 @@ import socket
 import subprocess
 import threading
 import time
+import urllib.request
 import zlib
 
 FILES_DIR = os.path.join(os.path.expanduser("~"), "pa-files")
@@ -32,8 +37,9 @@ _close_now = [False]                  # TALK 0 置位: _loop 下个 tick 立即�
 _prestart = [False]                   # TALK 1 置位: 趁命令先于音频流的空档预启 aplay
 _aplay = [None]                       # None=未探测 / False=缺失 / str=路径(缓存 which 结果)
 _aplay_warn_t = [0.0]
-trick_cb = None                       # bridge.main 注入 Dog.trick; 15001 TRICK 指令用
-state_cb = None                       # bridge.main 注入: 返回 (rc_armed, mode, gear); 15001 "RC" 查询用
+# P0-1/T2.2 音频拆独立进程: 不再由 bridge 注入 trick_cb/state_cb,
+# TRICK 走本地 UDP(TRICK_PORT)、"RC" 轮询走 HTTP 读桥的 /state, 见下方"与 go2-bridge 的本地通信"
+_ready = [False]                      # 控制口绑定成功 = 服务就绪(状态文件 ready 字段用)
 
 
 def start(pa, config, log=print):
@@ -47,6 +53,7 @@ def start(pa, config, log=print):
     threading.Thread(target=_loop, args=(pa, config, log), daemon=True).start()
     threading.Thread(target=_ctrl_loop, args=(pa, config, log), daemon=True).start()
     threading.Thread(target=_up_loop, args=(pa, config, log), daemon=True).start()
+    threading.Thread(target=_state_write_loop, args=(pa, config, log), daemon=True).start()
 
 
 # ============ 预设文件播放(板端本地, 走软件增益) ============
@@ -111,6 +118,8 @@ def _player_thread(name, pa, log):
             # 只清自己的引用: 被 _stop_player join 超时仍存活时, 别误清掉新起的播放器
             _player["proc"] = None
             _player["t"] = None
+            if not _player["stop"]:
+                _player["name"] = None   # 自然播完必须清名, 否则 /state.audio.playing 永久停在旧名
         if not _player["stop"]:
             log("播放完成: %s (%.1fs)" % (name, time.monotonic() - t0))
 
@@ -169,6 +178,56 @@ def _list_files():
     return out
 
 
+# ============ 与 go2-bridge 的本地通信(P0-1/T2.2 音频拆独立进程后) ============
+
+def _trick_query(name, dur, config):
+    """App 动作 -> 桥: 向 127.0.0.1:TRICK_PORT 发一行 "TRICK 名 时长", 等 1s 回包。
+    回包 OK/LINKDOWN/NOTSTAND 原样透传(与拆分前的进程内 trick_cb 同口径);
+    桥不可达(超时/拒绝)抛 OSError -> 调用方回 ERR NOTREADY;
+    回包无法识别抛 ValueError -> 调用方回 ERR NOTSTAND(动作没法保证执行, 不谎报成功)。"""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(1.0)
+    try:
+        s.sendto(("TRICK %s %d" % (name, dur)).encode("utf-8"),
+                 ("127.0.0.1", config.TRICK_PORT))
+        r = s.recvfrom(64)[0].decode("utf-8", "replace").strip()
+        if r not in ("OK", "LINKDOWN", "NOTSTAND"):
+            raise ValueError("回包无法识别: %r" % r)
+        return r
+    finally:
+        s.close()
+
+
+def _state_query(config):
+    """App "RC" 轮询 -> 桥: HTTP 读 /state(stdlib urllib, 零新依赖)取 rc_armed/mode/gear。
+    失败抛异常, 调用方回 ERR NOTREADY(与拆分前 state_cb 异常同口径)。
+    空 ProxyHandler: 127.0.0.1 必须直连, 防环境里的 http_proxy 把回环请求劫去代理。"""
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    with opener.open("http://127.0.0.1:%d/state" % config.WEB_PORT, timeout=1.0) as r:
+        m = json.load(r)
+    return bool(m["rc_armed"]), int(m["mode"]), m["gear"]
+
+
+def _state_write_loop(pa, config, log):
+    """每秒写音频状态文件(P0-1/T2.2): 桥的 /state 读它合并 audio 字段,
+    音频服务死/未部署 = 文件停更 -> 桥侧 audio.ready:false。
+    临时文件+os.replace 原子替换(防桥读到半截 JSON); /run 是 tmpfs 不磨卡。"""
+    path = getattr(config, "AUDIO_STATE_PATH", "/run/go2-audio.json")
+    warn_t = 0.0
+    while True:
+        try:
+            tmp = path + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump({"ready": _ready[0], "volume": pa.volume,
+                           "talk": bool(_talk["on"]), "playing": _player["name"]}, f)
+            os.replace(tmp, path)
+        except Exception as e:
+            if time.monotonic() - warn_t > 60:       # 持续失败也别刷屏
+                warn_t = time.monotonic()
+                log("音频状态文件写入失败:", repr(e))
+        time.sleep(1.0)
+
+
 # ============ 控制通道 ============
 
 def _ctrl_loop(pa, config, log):
@@ -180,6 +239,7 @@ def _ctrl_loop(pa, config, log):
         log("喊话控制端口 %d 被占, 停用: %r" % (config.PA_CTRL_PORT, e))
         return
     log("喊话控制就绪: UDP :%d (HELLO/VOL/LIST/PLAY/TALK/RATE)" % config.PA_CTRL_PORT)
+    _ready[0] = True                    # 状态文件 ready 字段: 控制口活着才算就绪
     while True:
         try:
             data, addr = sock.recvfrom(2048)
@@ -192,14 +252,12 @@ def _ctrl_loop(pa, config, log):
             reply = "OK PA %d" % _rate[0]
         elif line == "RC":
             # App 手动控制面板轮询: 桥的真实解锁/模式/挡位(防 UI 与桥状态脱钩的盲区)
-            if state_cb is None:
+            # P0-1/T2.2 拆分后: HTTP 读桥的 /state(不再由 bridge 注入 state_cb)
+            try:
+                rc, mode, gear = _state_query(config)
+                reply = "RC %d %d %s" % (1 if rc else 0, mode, gear)
+            except Exception:
                 reply = "ERR NOTREADY"
-            else:
-                try:
-                    rc, mode, gear = state_cb()
-                    reply = "RC %d %d %s" % (1 if rc else 0, mode, gear)
-                except Exception:
-                    reply = "ERR NOTREADY"
         elif line == "VOL?":
             reply = "VOL %d" % pa.volume
         elif parts[0] == "VOL":
@@ -258,11 +316,14 @@ def _ctrl_loop(pa, config, log):
             dur = getattr(config, "TRICKS", {}).get(name)
             if dur is None:
                 reply = "ERR BADTRICK"
-            elif trick_cb is None:
-                reply = "ERR NOTREADY"
             else:
                 try:
-                    r = trick_cb(name, dur)      # "OK" / "LINKDOWN" / "NOTSTAND"
+                    r = _trick_query(name, dur, config)   # "OK" / "LINKDOWN" / "NOTSTAND" / "NOTREADY"
+                except OSError as e:
+                    # 桥不可达(超时/拒绝/回环坏): 与 RC 查询同口径回 NOTREADY,
+                    # App 会提示"板子没连上"而不是误导成"需先解锁站立"
+                    r = "NOTREADY"
+                    log("TRICK 桥不可达:", name, repr(e))
                 except Exception as e:
                     r = "NOTSTAND"
                     log("TRICK 异常:", name, repr(e))
@@ -290,6 +351,8 @@ def _ctrl_loop(pa, config, log):
                     continue
                 elif r == "LINKDOWN":
                     reply = "ERR LINKDOWN"
+                elif r == "NOTREADY":
+                    reply = "ERR NOTREADY"
                 else:
                     reply = "ERR NOTSTAND"
         elif parts[0] == "DEL" and len(parts) >= 2:
@@ -662,3 +725,22 @@ def _send(sock, addr, s):
         sock.sendto(s.encode("utf-8"), addr)
     except Exception:
         pass
+
+
+# ============ 独立服务入口(go2-audio.service, P0-1/T2.2) ============
+
+if __name__ == "__main__":
+    # 音频拆独立进程: start() 起 4 线程(音频/控制/上传/状态文件), 主线程只保活。
+    import config
+    from pa import Pa
+
+    def _log(*a):
+        print(time.strftime("[%H:%M:%S]") + " " + " ".join(str(x) for x in a), flush=True)
+
+    _pa = Pa(config.DEFAULT_VOLUME, _log)
+    start(_pa, config, _log)
+    _log("go2-audio 独立运行: 控制 :%d / 音频 :%d / 上传 :%d, TRICK -> 127.0.0.1:%d, RC -> :%d/state"
+         % (config.PA_CTRL_PORT, config.PA_UDP_PORT, config.PA_UP_PORT,
+            config.TRICK_PORT, config.WEB_PORT))
+    while True:
+        time.sleep(3600)

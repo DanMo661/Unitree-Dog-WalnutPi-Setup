@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""板子装机第二步: fork连狗库 + portaudio deb + pwm udev 规则
-前置: setup3_dog3.py 已跑完(板在 192.168.123.50 可 SSH)
-素材: fork 包 uwc-fork-pkg.tar.gz + 两个 deb(libjack/libportaudio, 目录用环境变量 DEBS_DIR 指定, 缺省脚本内置路径)
+"""板#2 bringup 第三步: fork连狗库 + portaudio deb + pwm udev 规则 + 安装页
+前置: setup2_serial_netplan.py + setup2_ssh.py 已跑完(板在 192.168.123.50 可 SSH)
+素材: fork 包 tar(wheels 同目录或 %TEMP%) + D:\\ZcodeRely\\walnutpi\\debs\\ 两个 deb
 用法: python setup2_extras.py
 """
 import os
@@ -10,28 +10,21 @@ import sys
 
 import paramiko
 
-HOST, USER = "192.168.123.50", "pi"
-PW = os.environ.get("BRIDGE_PW", "pi")
+HOST, USER, PW = "192.168.123.50", "pi", "pi"
 SP = "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages"
 FORK_TAR_CANDIDATES = [
-    pathlib.Path(os.environ.get("TEMP", ""))
+    pathlib.Path(os.environ.get("TEMP", r"C:\Users\Administrator\AppData\Local\Temp"))
     / "uwc-fork-pkg.tar.gz",
     pathlib.Path(r"D:\ZcodeRely\uwc-fork-pkg.tar.gz"),
 ]
-import glob as _glob
-_DEBS_DIR = os.environ.get("DEBS_DIR", r"D:\ZcodeRely\walnutpi\debs")
-def _find_deb(pat):
-    hits = sorted(_glob.glob(os.path.join(_DEBS_DIR, pat)))
-    if not hits:
-        raise SystemExit("在 %s 找不到 %s (环境变量 DEBS_DIR 可指定目录, deb 获取见 assets/MANIFEST.md)" % (_DEBS_DIR, pat))
-    return hits[0]
-DEBS = [_find_deb("libjack-jackd2-0_*.deb"), _find_deb("libportaudio2_*.deb")]
+DEBS = [r"D:\ZcodeRely\walnutpi\debs\libjack-jackd2-0_1.9.20%7edfsg-1_arm64.deb",
+        r"D:\ZcodeRely\walnutpi\debs\libportaudio2_19.6.0-1.1_arm64.deb"]
 PWM_RULE = ('SUBSYSTEM=="pwm", ACTION=="add|change", '
             'RUN+="/bin/sh -c \'chown -R pi:pi /sys%p; chmod -R g+w /sys%p\'"\n')
 
 fork_tar = next((p for p in FORK_TAR_CANDIDATES if p.exists()), None)
 if not fork_tar:
-    sys.exit("找不到 fork 包 uwc-fork-pkg.tar.gz (制作方法见 assets/MANIFEST.md 第五节)")
+    sys.exit("找不到 fork 包 tar (先跑: cd /d/ZcodeRely/uwc-fork-tmp && tar czf %%TEMP%%\\uwc-fork-pkg.tar.gz unitree_webrtc_connect/)")
 
 c = paramiko.SSHClient()
 c.set_missing_host_key_policy(paramiko.AutoAddPolicy())

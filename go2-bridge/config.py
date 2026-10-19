@@ -74,6 +74,8 @@ PA_UDP_PORT  = 15000     # 音频接收端口(板子在 144 段的 IP 上收)
 PA_CTRL_PORT = 15001     # 控制端口: HELLO 探活 / VOL? 查音量 / VOL n 设音量 / PLAY/LIST/TALK/RATE
 PA_UP_PORT   = 15003     # 预设文件上传端口(UPB/UPC/UPE 分块+累计确认)
 PA_RATE      = 16000     # 默认采样率 Hz(S16LE 单声道; App 可用 RATE 命令切 8k 省带宽)
+# ---- App 动作转发(P0-1/T2.2: 音频拆独立服务后的本地口) ----
+TRICK_PORT   = 15011     # go2-audio(pa_recv) -> bridge 的 TRICK 动作请求口(UDP 127.0.0.1 单播)
 # ---- 日志 ----
 LOG_CMDS = True       # 记录每条发往狗的指令(连续相同的 Move 自动去重防刷屏)
 # ---- 飞行记录仪(journal.py 黑匣子, JSONL 落盘) ----
@@ -95,6 +97,9 @@ VX_MAX, VY_MAX, VYAW_MAX = 0.5, 0.3, 1.0   # m/s, m/s, rad/s
 
 SEND_HZ  = 20       # 主循环频率(Move 指令流上限)
 WEB_PORT = 8000     # 浏览器遥控页端口
+
+# ---- /state 诊断端点(P0-2, 只读) ----
+AUDIO_STATE_PATH = "/run/go2-audio.json"  # go2-audio 服务(P0-1)每秒写的状态文件; 读不到=audio.ready:false
 
 # ---- 失控保护(仅 RC 解锁期间生效) ----
 FS_STOP_S = 0.25    # 无干净帧超过此秒数 -> 立即 StopMove 站定等待恢复

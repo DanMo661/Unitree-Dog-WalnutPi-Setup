@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""部署喊话安装页到板子 /home/pi/pa-page 并做成 systemd 常驻(go2-pa-page.service)
+"""部署喊话安装页到板子 /home/orangepi/pa-page 并做成 systemd 常驻(go2-pa-page.service)
 上传: index.html / PaSend.apk / version.json / go2-pa-page.service
 用法: BRIDGE_PW=<板子密码> [BRIDGE_HOST=<板子IP>] python deploy_page.py
 """
@@ -13,7 +13,7 @@ HOST = os.environ.get("BRIDGE_HOST", "192.168.123.50")
 USER = os.environ.get("BRIDGE_USER", "pi")
 PW = os.environ.get("BRIDGE_PW", "")
 LOCAL = pathlib.Path(__file__).parent
-APP = pathlib.Path(os.environ.get("BRIDGE_APK", str(pathlib.Path(__file__).parent / "PaSend-v35-网络遥控.apk")))  # 成品APK: 环境变量 BRIDGE_APK 可指定, 缺省找脚本同目录 v35; 来源见 assets/MANIFEST.md §7
+APP = pathlib.Path(__file__).parent / "PaSend-v35-网络遥控.apk"   # 本版本目录内成品, 防构建目录落后时静默上架旧版
 PAGE_DIR = os.environ.get("BRIDGE_PAGE_DIR", "/home/%s/pa-page" % USER)
 
 INDEX_HTML = """<!doctype html>
@@ -21,7 +21,7 @@ INDEX_HTML = """<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>喊话台安装</title></head>
 <body style="font-family:sans-serif;background:#0b1220;color:#e2e8f0;max-width:480px;margin:0 auto;padding:32px 16px">
-<h2 style="color:#60a5fa">🎮 GO2控制台 v35</h2>
+<h2 style="color:#60a5fa">🎮 GO2控制台 v34</h2>
 <p><a href="PaSend.apk" download style="display:block;text-align:center;padding:16px;background:#2563eb;color:#fff;border-radius:10px;font-size:18px;text-decoration:none">下载 PaSend.apk</a></p>
 <ol style="line-height:1.9;color:#94a3b8">
 <li>点上面按钮下载 APK, 点开安装(允许未知来源)</li>

@@ -107,9 +107,31 @@ def main():
     if rc != 0:
         sys.exit("板上语法检查失败, 已中止(服务未动):\n" + out + err)
 
-    # ---- 重启 + 验活 ----
+    # ---- 重启 + 验活 (P0-1 音频拆分后双服务) ----
+    # 新 bridge 不再在进程内启动音频: 板上必须有 go2-audio, 否则音频被静默丢掉。
+    # 板上没有而本地有 unit -> 自动补装; 两边都没有 -> 中止部署。
+    local_unit = src / "go2-audio.service"
+    have_audio = run("systemctl cat go2-audio >/dev/null 2>&1")[0] == 0
+    if not have_audio:
+        if not local_unit.exists():
+            sys.exit("板上无 go2-audio 且本地无 unit: 新 bridge 不再进程内启动音频, "
+                     "继续部署会静默丢音频, 已中止")
+        sftp = c.open_sftp()
+        sftp.put(str(local_unit), "/tmp/go2-audio.service")
+        sftp.close()
+        run("echo %s | sudo -S cp /tmp/go2-audio.service /etc/systemd/system/ && "
+            "sudo systemctl daemon-reload && sudo systemctl enable --now go2-audio" % pw)
+        have_audio = run("systemctl cat go2-audio >/dev/null 2>&1")[0] == 0
+        if not have_audio:
+            sys.exit("go2-audio.service 补装失败, 已中止(音频会丢)")
+        print("板上无 go2-audio, 已自动补装")
+    run("echo %s | sudo -S systemctl restart go2-audio" % pw)   # 先音频后桥(OPTIMIZATION P0-1)
     run("echo %s | sudo -S systemctl restart go2-bridge" % pw)
     time.sleep(6)
+    _, aout, _ = run("systemctl is-active go2-audio")
+    print("go2-audio 状态:", aout.strip())
+    if aout.strip() != "active":
+        sys.exit("!! go2-audio 未激活, 音频不可用(遥控不受影响): 看 journalctl -u go2-audio")
     rc, out, _ = run("systemctl is-active go2-bridge")
     status = out.strip()
     print("服务状态:", status)

@@ -58,10 +58,20 @@ sftp.put(str(LOCAL / "go2-bridge.service"), "/tmp/go2-bridge.service")
 sftp.close()
 print(run("echo pi | sudo -S cp /tmp/go2-bridge.service /etc/systemd/system/ && "
           "sudo systemctl daemon-reload && sudo systemctl enable go2-bridge 2>&1 | tail -1"))
+if (LOCAL / "go2-audio.service").exists():   # P0-1 音频拆分: 本地有 unit 才上板
+    sftp = c.open_sftp()
+    sftp.put(str(LOCAL / "go2-audio.service"), "/tmp/go2-audio.service")
+    sftp.close()
+    print(run("echo pi | sudo -S cp /tmp/go2-audio.service /etc/systemd/system/ && "
+              "sudo systemctl daemon-reload && sudo systemctl enable --now go2-audio 2>&1 | tail -1"))
+else:
+    print("本地无 go2-audio.service, 音频服务不装(未拆分)")
 
 print("== 5. 首启(狗没开会处于等待循环, 正常) ==")
+run("echo pi | sudo -S systemctl restart go2-audio")   # 先音频后桥(P0-1); enable --now 只保证运行, 新码要 restart
 run("echo pi | sudo -S systemctl restart go2-bridge")
 time.sleep(8)
+print("go2-audio:", run("systemctl is-active go2-audio"))
 print("状态:", run("systemctl is-active go2-bridge"))
 print(run("echo pi | sudo -S journalctl -u go2-bridge -n 10 --no-pager 2>/dev/null | tail -8"))
 c.close()

@@ -23,8 +23,7 @@ import config
 import journal
 from sbus import Sbus
 from servo import Servo, GpioOut
-from pa import Pa
-import pa_recv
+from pa import Pa          # P0-1/T2.2 后 main 不再用 Pa, 但测试经 bridge.Pa 构造, 保留导出
 import netrc
 
 try:  # v2.x 把类挪进了 webrtc_driver 子模块, 兼容两种导入路径
@@ -44,6 +43,7 @@ except ImportError:
 
 _LOG_BUF = collections.deque(maxlen=600)   # 内存日志环: /logs 端点给控制台日志面板用
 _J_EVERY_N = max(1, int(config.JOURNAL_EVERY_N))   # journal 高频采样比(帧/Move), 防误配 0
+_T0 = time.monotonic()    # 进程启动锚点: /state 的 uptime_s 用
 
 
 def log(*a):
@@ -106,6 +106,9 @@ class State:
     gear = None           # 已同步给狗的挡位 1/2/3(未同步 None)
     action = None         # 动作锁: 正在播放的动作名(Dog.trick 成功触发时记录)
     action_end = 0.0      # 动作锁截止时刻(monotonic, 推送前换算成剩余秒)
+    last_frame_t = None   # 最近任意帧(含坏帧/网络遥控源)的 monotonic 时刻, /state 的 frame_age 用
+    relay_on = False      # 继电器目标状态(rc_loop 每次 sv1.set_us 后镜像, B 键高位=True)
+    relay_us = None       # 最近一次请求的 pwm1 脉宽目标 us(1050/1950; 退化硬件 cur_us 恒 None, 记目标值)
 
     @property
     def link(self):
@@ -802,6 +805,7 @@ def rc_loop(d, pa):
             ch, fs, lost = f
             if _SHADOW is not None:
                 _SHADOW.frame(ch, fs, lost, "netrc" if nf is not None else "sbus", now)
+            state.last_frame_t = now     # /state 镜像: 最近任意帧(含坏帧/网络源)时刻, frame_age 用
             if fs or lost:                  # 坏帧: 链路活着但数据脏, 不作控制输入
                 bad = True
                 j_must = True
@@ -815,7 +819,9 @@ def rc_loop(d, pa):
                 # 载荷输出(10-17): B键->15脚pwm1两档脉宽(1650分界的RC解码继电器)+IO电平
                 lv = ch[config.CH_RELAY] > config.RELAY_ON_RAW
                 was_us, was_lv = sv1.cur_us, [s.level for s in svs]   # journal 写前快照
-                sv1.set_us(1950 if lv else 1050)   # 高位1950us吸合 / 低位1050us断开
+                us = 1950 if lv else 1050
+                sv1.set_us(us)              # 高位1950us吸合 / 低位1050us断开
+                state.relay_on, state.relay_us = lv, us   # /state 镜像: 目标值(退化硬件读不到回读)
                 for s in svs:
                     s.set_level(lv)
                 _relay_journal(sv1, svs, was_us, was_lv)
@@ -900,6 +906,7 @@ def rc_loop(d, pa):
         if gap_clean > config.FS_STOP_S:  # 脏/丢帧: 输出安全关断(脉宽1050+IO低), 防断联冻结在开
             was_us, was_lv = sv1.cur_us, [s.level for s in svs]       # journal 写前快照
             sv1.set_us(1050)
+            state.relay_on, state.relay_us = False, 1050   # /state 镜像: 安全关断目标
             for s in svs:
                 s.set_level(False)
             _relay_journal(sv1, svs, was_us, was_lv)
@@ -928,6 +935,33 @@ def rc_loop(d, pa):
         time.sleep(max(0.0, 1.0 / config.SEND_HZ - (time.monotonic() - t0)))
 
 
+def _ver():
+    """部署版本号: deploy 上传的 VERSION 文件(git short hash, P1-1 写入); 没有则 None。
+    每次请求现读, 部署后无需重启即可看到新版本。"""
+    try:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "VERSION"),
+                  encoding="utf-8") as f:
+            return f.read().strip() or None
+    except OSError:
+        return None
+
+
+def _audio_state():
+    """音频状态(P0-2): 拆分后由 go2-audio 服务(P0-1)每秒写 AUDIO_STATE_PATH;
+    文件不存在/停更>3s(服务死)/读坏/结构非法 -> ready:false。只读不写。"""
+    path = getattr(config, "AUDIO_STATE_PATH", "/run/go2-audio.json")
+    try:
+        age = time.time() - os.path.getmtime(path)   # 停更=音频服务已死, 不能沿用残留 ready:true
+        with open(path, encoding="utf-8") as f:
+            m = json.load(f)
+        if not isinstance(m, dict) or age > 3.0:
+            raise ValueError("audio state stale or malformed")
+        return {"ready": m.get("ready") is True, "volume": m.get("volume"),
+                "talk": m.get("talk") is True, "playing": m.get("playing")}
+    except (OSError, ValueError, TypeError):
+        return {"ready": False, "volume": None, "talk": False, "playing": None}
+
+
 def web_server(d):
     from fastapi import FastAPI, WebSocket
     from fastapi.responses import HTMLResponse, PlainTextResponse
@@ -953,6 +987,39 @@ def web_server(d):
                             "static", "sbus.html")
         with open(page, encoding="utf-8") as fh:
             return HTMLResponse(fh.read())
+
+    @app.get("/state")
+    async def state_json():
+        """只读 JSON 状态快照(P0-2): 部署冒烟/诊断的地基, curl 一次拿全量。
+        数据来源: state 镜像 + sbus_stats/netrc 快照 + VERSION/go2-audio.json;
+        不触发任何硬件写操作。"""
+        now = time.monotonic()
+        action = state.action       # 与 /ws 推送同口径: 读时刷新动作锁剩余秒
+        a_left = 0.0
+        if action:
+            a_left = state.action_end - now
+            if a_left <= 0:
+                action, a_left = None, 0.0
+        snap = sbus_stats.snapshot(now)      # 顺带裁剪滑窗(与 /ws 同用法)
+        net = netrc.snapshot()
+        lft = state.last_frame_t
+        return {
+            "ver": _ver(), "uptime_s": round(now - _T0, 1),
+            "link": state.link, "link_gen": state.link_gen,
+            "mode": state.mode, "rc_armed": state.rc_armed,
+            "web_armed": state.web_armed, "gear": state.gear,
+            "action": action, "action_left": round(a_left, 1),
+            "sbus": {"ok": state.sbus_ok, "clean": state.sbus_clean,
+                     "fps": snap["fps"], "last_iv": snap["last_iv"],
+                     "frame_age": round(now - lft, 3) if lft is not None else None,
+                     "total": snap["total"], "fs": snap["fs_cnt"],
+                     "lost": snap["lost_cnt"], "gap": snap["gap_cnt"],
+                     "ch": snap["ch"]},
+            "net": {"ok": net["net_ok"], "rx": net["net_rx"],
+                    "lost": net["net_lost"], "seq": net["net_seq"]},
+            "relay": {"on": state.relay_on, "us": state.relay_us},
+            "audio": _audio_state(),
+        }
 
     @app.websocket("/ws")
     async def ws(sock: WebSocket):
@@ -1024,6 +1091,38 @@ def web_server(d):
     uvicorn.run(app, host="0.0.0.0", port=config.WEB_PORT, log_level="warning")
 
 
+def trick_udp_loop(gate):
+    """本地 TRICK 请求口(P0-1/T2.2): go2-audio 服务(pa_recv 独立进程)把 App 动作请求
+    转成一行 "TRICK 名 时长" 发到 127.0.0.1:TRICK_PORT, 本线程调动作网关并把
+    OK/LINKDOWN/NOTSTAND 回给它 —— 与拆分前的进程内 trick_cb 注入完全同口径。
+    只绑回环: 外部网络碰不到; 名字过 config.TRICKS 白名单(与 pa_recv 的 App 侧检查对齐)。"""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        sock.bind(("127.0.0.1", config.TRICK_PORT))
+    except Exception as e:
+        log("TRICK 本地口 %d 起不来, App 动作将不可用: %r" % (config.TRICK_PORT, e))
+        return
+    log("TRICK 本地口就绪: UDP 127.0.0.1:%d (go2-audio -> 桥)" % config.TRICK_PORT)
+    while True:
+        try:
+            data, addr = sock.recvfrom(256)
+        except Exception:
+            continue
+        parts = data.decode("utf-8", "replace").strip().split(" ")
+        r = "NOTSTAND"
+        if (len(parts) == 3 and parts[0] == "TRICK"
+                and parts[1] in config.TRICKS):
+            try:
+                r = gate(parts[1], int(parts[2])) or "NOTSTAND"
+            except Exception as e:
+                r = "NOTSTAND"
+                log("TRICK 网关异常:", parts[1], repr(e))
+        try:
+            sock.sendto(r.encode("utf-8"), addr)
+        except Exception:
+            pass
+
+
 def main():
     global dog, _SHADOW
     # journal 黑匣子最先就位: 之后所有线程的记录才不会丢头几条; 失败只一行警告, 不挡启动
@@ -1037,8 +1136,6 @@ def main():
             _SHADOW = FsmShadow(dog)   # 先于 web/pa 线程: 启动期指令从第一条起就有影子
         except ImportError:
             log("core/fsm.py 不可用, FSM 影子模式停用(部署清单需补 core/, 旧路径不受影响)")
-    pa = Pa(config.DEFAULT_VOLUME, log)
-
     def _trick_gate(name, dur):
         # 给 App 分别人话回包: 链路断(狗收不到) vs 条件不满足(未解锁/非行走/占用中)
         if state.link != "up":
@@ -1048,14 +1145,15 @@ def main():
             _SHADOW.trick(name, dur)   # 影子: 同步动作状态(输出不比)
         return "OK" if ok else "NOTSTAND"
 
-    pa_recv.trick_cb = _trick_gate    # 15001 TRICK 指令 -> 动作网关(配乐板端联动)
-    pa_recv.state_cb = lambda: (state.rc_armed, state.mode, state.gear)
-    pa_recv.start(pa, config, log)
+    # P0-1/T2.2: 音频拆到独立服务 go2-audio(跑 pa_recv.py), 本进程不再 pa_recv.start(),
+    # 也不注入回调; App 动作改走本地 UDP(TRICK_PORT), App "RC" 轮询由音频服务 HTTP 读 /state。
+    # rc_loop 的 pa 形参仅留签名兼容(测试在用), 函数体不碰音频。
+    threading.Thread(target=trick_udp_loop, args=(_trick_gate,), daemon=True).start()
     netrc.start(getattr(config, "NETRC_PORT", 15010), log)
     threading.Thread(target=web_server, args=(dog,), daemon=True).start()
     log("go2-bridge 启动: 网页端口=%d, SBUS=%s, 连狗方式=%s"
         % (config.WEB_PORT, config.SBUS_PORT, config.METHOD))
-    rc_loop(dog, pa)
+    rc_loop(dog, None)
 
 
 if __name__ == "__main__":
