@@ -20,6 +20,7 @@ import time
 import os
 
 import config
+import journal
 from sbus import Sbus
 from servo import Servo, GpioOut
 from pa import Pa
@@ -42,6 +43,7 @@ except ImportError:
 
 
 _LOG_BUF = collections.deque(maxlen=600)   # 内存日志环: /logs 端点给控制台日志面板用
+_J_EVERY_N = max(1, int(config.JOURNAL_EVERY_N))   # journal 高频采样比(帧/Move), 防误配 0
 
 
 def log(*a):
@@ -91,7 +93,7 @@ def _path_ok(tcp=True):
 
 class State:
     """线程间共享的展示/交接状态(单属性赋值, GIL 下够用)"""
-    link = "init"        # init / connecting / up / down / lib_missing
+    _link = "init"        # init / connecting / up / down / lib_missing (真身, link 经 property 记变化)
     link_gen = 0         # WebRTC 成功连接的代数, rc_loop 感知重连用
     mode = 0             # 0趴 1站 2走
     rc_armed = False
@@ -104,6 +106,17 @@ class State:
     gear = None           # 已同步给狗的挡位 1/2/3(未同步 None)
     action = None         # 动作锁: 正在播放的动作名(Dog.trick 成功触发时记录)
     action_end = 0.0      # 动作锁截止时刻(monotonic, 推送前换算成剩余秒)
+
+    @property
+    def link(self):
+        """journal 埋点: 对外仍是普通属性读写, 仅 link 值变化时记一条 kind=link"""
+        return self._link
+
+    @link.setter
+    def link(self, v):
+        if v != self._link:
+            self._link = v
+            journal.record("link", link=v)
 
 
 state = State()
@@ -199,6 +212,7 @@ class DogLink:
         self.conn = None
         self._last_logged = None      # LOG_CMDS 去重: 连续相同的指令只记一条
         self._last_gear_read = None   # 心跳回读的挡位(变化才记日志)
+        self._mv_n = 0                # journal 采样计数: Move 指令每 N 条记 1 条
         threading.Thread(target=self._run, daemon=True).start()
 
     def _run(self):
@@ -361,6 +375,13 @@ class DogLink:
             log("发送失败:", name, repr(e))
 
     def submit(self, name, **p):
+        # journal 埋点(kind=cmd): 非 Move 全记(低频); Move 是 20Hz 流, 每 N 条采 1 条
+        if name == "Move":
+            self._mv_n += 1
+            if self._mv_n % _J_EVERY_N == 0:
+                journal.record("cmd", name=name, **p)
+        else:
+            journal.record("cmd", name=name, **p)
         if self.loop and state.link == "up":
             # Move 是 20Hz 连发流, 不进 LOG_CMDS(微抖值每条都不同, 会变刷屏+刷TF卡)
             if config.LOG_CMDS and name != "Move" and (name, p) != self._last_logged:
@@ -389,6 +410,10 @@ class Dog:
         with self.lock:
             if m == self.mode:
                 return
+            prev_mode = self.mode     # journal 用: 切换前旧模式
+            # 模式一变就作废未到点的延迟指令: 起立后 3s 内拨 C 趴下时,
+            # 迟到的 BalanceStand 会把趴着的狗瞬间弹起(10-17 实测危险)
+            self.pending = []
             if self.mode == 3 and m == 0:
                 # 坐->趴: 狗本来就在低位, 只记状态不发指令(发 StandDown 会从坐姿猛塌)
                 self.mode = 0
@@ -396,6 +421,7 @@ class Dog:
                 self.cooldown = 0.0
                 state.mode = 0
                 state.action = None
+                journal.record("event", ev="mode", prev=prev_mode, to=0)
                 log("模式 -> 趴")
                 return
             self.link.submit("StopMove")
@@ -418,12 +444,14 @@ class Dog:
             self.cooldown = 0.0
             state.mode = m
             state.action = None
+            journal.record("event", ev="mode", prev=prev_mode, to=m)
             log("模式 ->", ("趴", "站", "走", "坐")[m])
 
     def damp(self):
         """应急泄力趴窝(已弃用: 自动失控保护改走 set_mode(0) 缓降, 函数保留仅供手动)"""
         with self.lock:
             self.link.submit("Damp")
+            journal.record("event", ev="damp")
             self.mode = 0
             self.moving = False
             self.cooldown = 0.0
@@ -437,6 +465,7 @@ class Dog:
             gait = {1: "EconomicGait", 2: "FreeWalk", 3: "TrotRun"}.get(g)
             if gait:
                 self.link.submit(gait)
+                journal.record("event", ev="gear", g=g, gait=gait)
                 log("挡位 ->", g, "(%s)" % gait)
 
     def trick(self, name, dur):
@@ -451,11 +480,13 @@ class Dog:
             self.cooldown = now + dur
             state.action = name        # 镜像给网页端显示动作锁(只动 state, 不碰统计锁)
             state.action_end = now + dur
+            journal.record("event", ev="trick", name=name, dur=dur)
             log("动作 ->", name, "(%ds)" % dur)
             if name == "Sit":
                 # 坐下是持续姿态: 记成独立状态, C 拨下(静默)->拨上才会再起立
                 self.mode = 3
                 state.mode = 3
+                journal.record("event", ev="mode", prev=2, to=3)
                 log("模式 -> 坐")
             return True
 
@@ -503,8 +534,20 @@ class Dog:
             self.pending = []
             state.mode = self.mode
             state.action = None
+            journal.record("event", ev="reset", first=first)
             log("开机首连: 狗自行起立, 已锁定等待解锁" if first
                 else "断链重连: 停走保持姿态, 请重新解锁")
+
+
+def _relay_journal(sv1, svs, was_us, was_lv):
+    """journal 埋点(kind=relay): 只记实际写盘成功的 PWM 目标脉宽 / GPIO 电平翻转。
+    was_us/was_lv 为写入前快照(sv1.cur_us / [s.level]); servo/GpioOut 内部只在
+    写 sysfs 成功后才更新这两个属性, 故"现值 != 快照"即等价于"本次真实写过"。"""
+    if sv1.cur_us is not None and sv1.cur_us != was_us:
+        journal.record("relay", out="pwm1", us=round(sv1.cur_us))
+    for s, was in zip(svs, was_lv):
+        if s.level != was:
+            journal.record("relay", out="gpio", gpio=s.gpio_num, level=bool(s.level))
 
 
 def rc_loop(d, pa):
@@ -518,8 +561,9 @@ def rc_loop(d, pa):
     gear_sent = 0         # 已真正发给狗的挡位(趴下时拨档变化不发送, 防步态指令把狗弹起来)
     stand_prev = True     # C 键上一帧电平(True=首帧前视为稳态, 防把开机电平当边沿)
     key_high = {}         # B 键电平记忆: 拨到高位的边沿才触发动作
+    jf_n = 0              # journal 帧计数(每 N 帧采 1 帧; 坏帧/A键边沿帧不采样, 必记)
     svs = [GpioOut(g, log) for g in config.RELAY_GPIOS]   # 38/40/37/35脚: IO电平
-    sv3 = Servo(config.SERVO_CHIP, config.SERVO3_CH,      # 16脚(PI12): 舵机PWM
+    sv1 = Servo(config.SERVO_CHIP, config.SERVO1_CH,      # 15脚(PI11)=PWM1: 飞控继电器
                 config.SERVO_MIN_US, config.SERVO_MAX_US, log)
     while True:
         if not sbus.opened:
@@ -541,10 +585,12 @@ def rc_loop(d, pa):
             f = (nf, False, False)   # 网络遥控新鲜(300ms)则优先; 通道语义与 SBUS 一致, 下游全复用
         now = time.monotonic()
         bad = False
+        j_must = False                # journal: 本帧必记(坏帧 / A 键解锁上锁边沿帧)
         if f is not None:
             ch, fs, lost = f
             if fs or lost:                  # 坏帧: 链路活着但数据脏, 不作控制输入
                 bad = True
+                j_must = True
                 last_any = now
                 if armed:
                     d.hold()                # 立即站定等待恢复(幂等); 不上锁不趴下
@@ -552,14 +598,15 @@ def rc_loop(d, pa):
                 last_clean = now
                 last_any = now
                 d.tick()
-                # 载荷输出: D键->16脚脉宽+其余脚IO电平
-                # (10-14 删 15脚/pwm1: ch10 与拨杆通道冲突, 让给狗的挡位/动作)
-                sv3.set_us(1050 + (ch[config.CH_RELAY] - 282) * (900.0 / 1440))
+                # 载荷输出(10-17): B键->15脚pwm1两档脉宽(1650分界的RC解码继电器)+IO电平
                 lv = ch[config.CH_RELAY] > config.RELAY_ON_RAW
+                was_us, was_lv = sv1.cur_us, [s.level for s in svs]   # journal 写前快照
+                sv1.set_us(1950 if lv else 1050)   # 高位1950us吸合 / 低位1050us断开
                 for s in svs:
                     s.set_level(lv)
+                _relay_journal(sv1, svs, was_us, was_lv)
                 # 音量已改由 App 软件控制(右拨杆物理漂移会乱改, 09-09 删除)
-                # D 键已退役: 喊话开始/停止由 App 软件控制
+                # D 键已退役: 喊话开始/停止由 App 软件控制; 10-17 继电器从 D 键移到 B 键
                 a_high = ch[config.CH_ARM] > config.ARM_ON
                 if link_gen != state.link_gen:    # (重)连上狗: 回到上锁态, 防重连瞬间狗自行动作
                     link_gen = state.link_gen
@@ -567,6 +614,7 @@ def rc_loop(d, pa):
                         armed = False
                         state.rc_armed = False
                         d.hold()                  # 停走保持姿态, 不趴下(09-29 用户要求)
+                        journal.record("event", ev="disarm", src="relink")
                         log("链路重连, 已回上锁态(保持站立), 请重新解锁")
                     prev_high = a_high
                 if prev_high is None:             # 首帧只记录电平, 不判定解锁边沿
@@ -575,11 +623,15 @@ def rc_loop(d, pa):
                     armed = False
                     state.rc_armed = False
                     d.set_mode(0)
+                    journal.record("event", ev="disarm", src="rc")
+                    j_must = True
                     log("已上锁(RC)")
                 elif not armed and a_high and not prev_high:
                     armed = True                  # 只认翻拨动作, A 一直停在解锁位不算
                     state.rc_armed = True
                     state.web_armed = False       # RC 接管, 网页控制让位
+                    journal.record("event", ev="arm", src="rc")
+                    j_must = True
                     log("已解锁(RC)")
                 prev_high = a_high
                 stand = ch[config.CH_STAND] > config.STAND_ON   # C 电平每帧都算(上锁期也跟)
@@ -621,13 +673,25 @@ def rc_loop(d, pa):
         gap_clean = now - last_clean
         state.sbus_ok = (now - last_any) < 1.0     # 链路活着(坏帧也算)
         state.sbus_clean = gap_clean < 1.0          # 数据干净
+        # journal 帧采样(轻): 每帧一条, 每 N 帧落盘 1 条; 坏帧/A键边沿帧必落盘
+        if f is not None:
+            jf_n += 1
+            if j_must or jf_n % _J_EVERY_N == 0:
+                journal.record("frame",
+                               source="netrc" if nf is not None else "sbus",
+                               ch=ch, fs=fs, lost=lost,
+                               gap_clean=round(gap_clean, 3))
         if gap_clean > config.FS_STOP_S:  # 脏/丢帧: 输出安全关断(脉宽1050+IO低), 防断联冻结在开
-            sv3.set_us(1050)
+            was_us, was_lv = sv1.cur_us, [s.level for s in svs]       # journal 写前快照
+            sv1.set_us(1050)
             for s in svs:
                 s.set_level(False)
+            _relay_journal(sv1, svs, was_us, was_lv)
             if armed:
                 d.hold()
                 if gap_clean > config.FS_DAMP_S:        # 持续 30s 无干净帧: 真失联
+                    journal.record("event", ev="disarm", src="fs",
+                                   gap=round(gap_clean, 1))
                     log("RC 失联 %.0fs, 上锁停走(保持姿态, 09-29 起不再趴下)" % config.FS_DAMP_S)
                     armed = False
                     state.rc_armed = False
@@ -686,10 +750,12 @@ def web_server(d):
                             pass                      # RC 优先, 网页指令忽略
                         elif c == "arm":
                             state.web_armed = True
+                            journal.record("event", ev="arm", src="web")
                             if state.mode == 0:
                                 d.set_mode(1)
                         elif c in ("disarm", "damp"):
                             state.web_armed = False
+                            journal.record("event", ev="disarm", src="web")
                             d.set_mode(0)
                         elif c == "stand":
                             d.set_mode(1)
@@ -719,6 +785,8 @@ def web_server(d):
             pass
         finally:
             log("网页端断开, 解除网页控制并趴下")
+            if state.web_armed:
+                journal.record("event", ev="disarm", src="web")
             state.web_armed = False
             state.web_vx = state.web_vy = state.web_vyaw = 0.0
             if not state.rc_armed:
@@ -729,6 +797,10 @@ def web_server(d):
 
 def main():
     global dog
+    # journal 黑匣子最先就位: 之后所有线程的记录才不会丢头几条; 失败只一行警告, 不挡启动
+    if config.JOURNAL_ENABLED and not journal.init(config.JOURNAL_DIR or None,
+                                                   config.JOURNAL_MAX_MB):
+        log("警告: journal 黑匣子目录不可写, 本次运行不落盘")
     link = DogLink()
     dog = Dog(link)
     pa = Pa(config.DEFAULT_VOLUME, log)

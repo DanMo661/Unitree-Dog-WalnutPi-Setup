@@ -19,7 +19,7 @@ USER = "pi"
 REMOTE_DIR = "/home/pi/go2-bridge"
 # 板上运行时文件全集(netrc.py 按源码目录里有没有而增删)
 FILES = ["bridge.py", "config.py", "sbus.py", "servo.py", "pa.py", "pa_recv.py",
-         "static/index.html", "static/sbus.html"]
+         "journal.py", "static/index.html", "static/sbus.html"]
 
 
 def md5(p):
@@ -97,20 +97,28 @@ def main():
     print("上传完成, md5 全部一致")
 
     # ---- 板上语法门: 编不过不许重启 ----
-    rc, out, err = run("cd %s && .venv/bin/python -m py_compile %s"
-                       % (REMOTE_DIR, " ".join(f for f in files if f.endswith(".py"))))
+    # 纯内存 compile() 检查(不落 .pyc): py_compile 会写 __pycache__, 而 root 服务跑过
+    # 一次后 pi 用户就写不进去, 每次部署都撞 Permission denied(10-17 实测两次)
+    chk = ";".join("compile(open('%s',encoding='utf-8').read(),'%s','exec')" % (f, f)
+                   for f in files if f.endswith(".py"))
+    rc, out, err = run('cd %s && .venv/bin/python -c "%s"' % (REMOTE_DIR, chk))
     if rc != 0:
-        sys.exit("板上 py_compile 失败, 已中止(服务未动):\n" + out + err)
+        sys.exit("板上语法检查失败, 已中止(服务未动):\n" + out + err)
 
     # ---- 重启 + 验活 ----
     run("echo %s | sudo -S systemctl restart go2-bridge" % pw)
     time.sleep(6)
     rc, out, _ = run("systemctl is-active go2-bridge")
-    print("服务状态:", out.strip())
+    status = out.strip()
+    print("服务状态:", status)
+    if status != "active":
+        sys.exit("服务未启动(is-active=%r), 部署失败! 先看板上 journalctl" % status)
     rc, out, _ = run("curl -s --max-time 3 http://127.0.0.1:8000/logs | tail -12")
     print("---- /logs 尾部 ----\n" + out)
+    if not out.strip():
+        sys.exit("服务 active 但 /logs 无内容(端口未就绪/进程异常), 部署判定失败!")
     c.close()
-    if out.strip() and "Traceback" in out:
+    if "Traceback" in out:
         sys.exit("启动日志有异常, 人工确认!")
     print("烧录完成 ✓  (App 侧: 对应版本的 PaSend APK 装上 G12 即可)")
 

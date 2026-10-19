@@ -16,6 +16,8 @@ G12 遥控器 ─2.4G→ GR01 接收机 ─SBUS(反相)→ /dev/ttyS2 ─→ bri
 | `bridge.py` | 主程序（三线程：狗链路/SBUS 串口/Web 服务），含心跳闭环与失控保护 |
 | `config.py` | 全部可调参数（通道映射/限速/端口），**遥控器标定主要改这里**（另见 SOP §5） |
 | `sbus.py` / `servo.py` / `netrc.py` / `pa*.py` | SBUS 解码 / PWM-GPIO 输出 / App 网络遥控 / 喊话音频 |
+| `journal.py` | 飞行记录仪（JSONL 黑匣子：帧/事件/指令/继电器，单文件 32MB 轮转） |
+| `VERSION` | 本快照对应的代码版本号（部署时生成） |
 | `static/sbus.html` | 浏览器调试台（16 通道实时/帧率/链路状态） |
 | `android-app/` | 遥控器 App 源码（GO2控制台：喊话台/动作面板/调试台） |
 | `setup3_dog3.py` / `setup2_extras.py` / `deploy_page.py` / `deploy_pc.py` | 部署四件套（SOP 第 2 步） |

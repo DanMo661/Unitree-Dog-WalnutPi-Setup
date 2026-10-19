@@ -2,7 +2,7 @@
 """所有可调参数集中在这 —— 改完 sudo systemctl restart go2-bridge 生效"""
 
 # ---- 连接狗的方式 ----
-# "LocalSTA": 狗和板子连同一路由器/WiFi(主WiFi)。板子连上后用其静态IP可 SSH。
+# "LocalSTA": 狗和板子连同一路由器/WiFi。家里调试用这个, 板子留在 192.168.8.21 可 SSH。
 # "LocalAP":  板子连狗热点 GO2-XXXXXX(外场推荐), 此时板子离开家网, SSH/网页远程断开。
 METHOD   = "LocalSTA"
 ROBOT_IP = "192.168.123.161"  # LocalSTA 用: 实测本狗 webrtc_bridge 在 .161:9991 (con_notify 新协议; .18 是旧文档示例, 本狗不通)
@@ -31,10 +31,8 @@ CH_STAND                  = 6         # C 键: 站立/趴下 (282=趴, 1722=站,
 STAND_ON = 1000                       # C 高于此=站
 CH_GEAR                   = 9         # 三档拨档: 282=挡1 1002=挡2 1722=挡3 (步态+限速联动)
 # ---- B/D 键(自锁两档 282/1722) ----
-CH_B                      = 5         # B=握手(高位边沿触发); D(ch8) 不再触发动作(已改继电器输出)
-KEY_ACTIONS = {
-    5:  ("Hello", 4),       # B: 握手
-}
+CH_B                      = 5         # B=飞控继电器输出(10-17 让位, 握手动作改 App 触发)
+KEY_ACTIONS = {}                      # B/D 键动作全退役: D=旧继电器(已移B键), B=现继电器
 # ---- App 动作面板: TRICK 协议白名单(名字=SPORT_CMD_MCF 键, 值=占用秒数) ----
 # 09-16 用户拍板: 危险动作(翻跟头/倒立/前扑/前跳)全部移除, 只留安全项
 # TRICK_AUDIO: 触发动作时同步播放的板上预设音频(名字须与板上 pa-files 一致, 空串=不放)
@@ -54,17 +52,16 @@ TRICK_AUDIO = {
     "Dance1": "基米斗",
     "Dance2": "基米斗地主",
 }
-# ---- 狗载荷输出 (2026-10-10 定稿: 继电器=RC PWM解码型, 需50Hz舵机脉冲流, 阈值~1650us) ----
-# D键(ch8) 脉宽映射: 显示1050~1950 线性 -> 脉宽1050~1950us (raw 282~1722 换算)
-#   D=1950位 -> 1950us > 1650 -> 继电器切常开(吸合); D=1050位 -> 1050us -> 常闭(断开)
-# 16脚(PI12)=pwm2 <- D键(ch8): 1950位/1050位 -> 1950us吸合/1050us断开
-# 38/40/37/35脚: 普通IO电平跟随D键; 8脚(PI5)=SBUS串口占用不可用
-# (10-14 删 pwm1/15脚: ch10 与拨杆通道冲突, 让给狗的挡位/动作; 15脚不再输出)
-SERVO3_CH                 = 2         # PWM2 = 16脚(PI12) <- D键
-SERVO_CHIP, SERVO_MIN_US, SERVO_MAX_US = 0, 500, 2500   # sv3(pwm2继电器脉宽)用: 0.5~2.5ms
-CH_RELAY                   = 8        # D键 -> pwm2脉宽 + 38/40/37/35脚GPIO
+# ---- 狗载荷输出 (10-17 定稿: 飞控继电器=RC PWM解码型, 50Hz舵机脉冲流, 1650us 分界) ----
+# B键(ch5) 两档 -> PWM1 脉宽: B高=1950us(>1650 继电器吸合) / B低=1050us(<1650 断开)
+# 15脚(PI11)=PWM1 <- B键; 38/40/37/35脚普通IO电平并联跟随B键; 8脚(PI5)=SBUS串口占用不可用
+SERVO1_CH                 = 1         # PWM1 = 15脚(PI11) <- B键
+CH_RELAY                   = 5        # B键 -> pwm1脉宽 + 38/40/37/35脚GPIO
 RELAY_GPIOS                = [269, 270, 260, 259]   # 38/40/37/35脚 GPIO电平
 RELAY_ON_RAW               = 1350     # GPIO 判定阈值(脉宽走 1050/1950 两端)
+# ---- 舵机(PI13=PWM3): 仅左拨杆, 全程等比例 0~180°(中位=90°); 不依赖解锁 ----
+SERVO_CHIP, SERVO_CH      = 0, 3
+SERVO_MIN_US, SERVO_MAX_US = 500, 2500   # 脉宽 0.5~2.5ms = 0~180°(个别舵机行程不同可微调)
 # ---- 喊话音量: 全部由遥控器 App 滑条控制(板端不再从拨杆读) ----
 # 2026-09-09 喇叭 15W -> 3W: 上限 30%, 超了会破音甚至烧喇叭(App 端同步封顶)
 DEFAULT_VOLUME = 25      # 默认音量 %(软件增益线性映射; 功放旋钮请另固定 50% 以下)
@@ -79,6 +76,11 @@ PA_UP_PORT   = 15003     # 预设文件上传端口(UPB/UPC/UPE 分块+累计确
 PA_RATE      = 16000     # 默认采样率 Hz(S16LE 单声道; App 可用 RATE 命令切 8k 省带宽)
 # ---- 日志 ----
 LOG_CMDS = True       # 记录每条发往狗的指令(连续相同的 Move 自动去重防刷屏)
+# ---- 飞行记录仪(journal.py 黑匣子, JSONL 落盘) ----
+JOURNAL_ENABLED = True   # 总开关; False 时 main 不初始化, record 未初始化自动空转(零开销)
+JOURNAL_DIR     = ""     # 落盘目录; 空=自动选择(板端 /home/pi/go2-bridge/journals, 开发机 ./journals)
+JOURNAL_EVERY_N = 5      # 高频流采样比: 每 N 帧记 1 帧 / 每 N 条 Move 记 1 条(坏帧/边沿帧不采样, 必记)
+JOURNAL_MAX_MB  = 32     # 单个 journal 文件上限 MB, 超出自动切下一序号文件
 # ch11 恒 1722(疑似开关机键), 忽略
 # ---- 各挡位限速 (vx m/s, vy m/s, vyaw rad/s): 挡位越高越快 ----
 GEAR_SPEEDS = {
@@ -88,7 +90,7 @@ GEAR_SPEEDS = {
 }
 # B(ch5) D(ch8) 留作备用
 
-# ---- 网页端限速(RC 遥控不受此限, RC 按挡位 GEAR_SPEEDS 最高 2.5m/s) ----
+# ---- 限速(初期限死, 熟练后逐步放开) ----
 VX_MAX, VY_MAX, VYAW_MAX = 0.5, 0.3, 1.0   # m/s, m/s, rad/s
 
 SEND_HZ  = 20       # 主循环频率(Move 指令流上限)

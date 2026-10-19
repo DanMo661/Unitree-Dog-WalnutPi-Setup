@@ -22,8 +22,8 @@ SCRIPT = [
     (6.0, 'STOP'),                 # 信号中断 -> 失控保护
     (8.0, {'A': 1002}),            # 信号恢复, A 在下位
     (8.4, {'A': 1722}),            # 翻上 -> 第二次解锁
-    (11.6, {'B': 1722}),           # B 拨到高位 -> Hello(等起立保护期结束)
-    (16.0, {'D': 1722}),           # D 拨到高位 -> Dance1(Hello 冷却 4s 结束)
+    (11.6, {'B': 1722}),           # B 拨到高位 -> 10-17 起为继电器输出, 不再触发动作
+    (16.0, {'D': 1722}),           # D 拨到高位 -> 已退役, 不应触发任何动作
     (16.4, {'C': 282}),            # C 拨趴
     (16.8, {'C': 1722}),           # C 拨回 -> 再起立
 ]
@@ -131,8 +131,10 @@ def main():
     assert not find_cmds(stub, 'StandDown'), '失控保护不应再趴下(应保持姿态)'
     # 10. 恢复信号 + 再翻拨 -> 第二次解锁
     wait_until(lambda: state.rc_armed, 4, '恢复后再解锁')
-    # 11. B 拨到高位 -> Hello; D 已改喊话开关, 不应再有 Dance1
-    wait_until(lambda: find_cmds(stub, 'Hello'), 5, 'B键Hello')
+    # 11. B/D 拨到高位都不应再触发动作(B=继电器/D=退役); TRICKS 只剩 App 入口
+    time.sleep(4.5)
+    assert not find_cmds(stub, 'Hello'), 'B 键不应再触发 Hello(已让位继电器)'
+    assert not find_cmds(stub, 'Dance1'), 'D 键不应触发 Dance1(已退役)'
     # 12. C 趴->站 再起立(共2次: 1.8s首次 + 16.8s; 失联不再趴下后, 恢复解锁无需重新起立)
     wait_until(lambda: len(find_cmds(stub, 'StandUp')) >= 2, 8, 'C趴后C站再起立')
     time.sleep(1.5)

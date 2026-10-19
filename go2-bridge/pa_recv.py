@@ -86,9 +86,10 @@ def _player_thread(name, pa, log):
                         b = audioop.mul(b, 2, g)
                     except Exception:
                         pass
-                # 信号只放 L, R 填零: 板子 R 模拟输出级硬件损坏(2026-10-10 判死)
+                # 左右声道同数据: 功放输入接 L 或 R 都出声(10-17 实测本板两声道都完好,
+                # 旧的"只放L"策略撞上功放接R=全静音)
                 try:
-                    b = audioop.tostereo(b, 2, 1, 0)
+                    b = audioop.tostereo(b, 2, 1, 1)
                 except Exception:
                     pass
                 proc.stdin.write(b)
@@ -499,9 +500,9 @@ def _loop(pa, config, log):
                 log("增益 %.2f -> 幅度 %d (包%d)" % (g, audioop.max(data, 2), _diag[0]))
             except Exception:
                 pass
-        # 信号只放 L, R 填零: 板子 R 模拟输出级硬件损坏(2026-10-10 判死)
+        # 左右声道同数据(原因同播放路径: 消除功放声道依赖)
         try:
-            data = audioop.tostereo(data, 2, 1, 0)
+            data = audioop.tostereo(data, 2, 1, 1)
         except Exception:
             pass
         try:
