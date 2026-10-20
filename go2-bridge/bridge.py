@@ -358,13 +358,28 @@ class DogLink:
         raise RuntimeError("接收循环退出: %r" % worker.exception())
 
     async def _watch_link(self):
-        """每秒看载波(拔线秒级发现), 每3秒才探一次狗信令口(免得一天打狗8.6万次连接)"""
+        """每秒看载波(拔线秒级发现), 每3秒才探一次狗信令口(免得一天打狗8.6万次连接)。
+        10-20: TCP 探测连续 2 次失败才拆会话 —— 狗在起立/忙时 9991 可能瞬时限连,
+        单次失败就拆会误杀健康会话(实测起立后 1 秒被拆); 载波丢失仍立即拆。"""
         n = 0
+        tcp_miss = 0
         while True:
             await asyncio.sleep(1.0)
             n += 1
-            if not await self._probe(n % 3 == 0):
+            if not await self._probe(False):
+                log("看门狗: eth0 载波丢失, 拆会话")
                 return
+            if n % 3 == 0:
+                if await self._probe(True):
+                    if tcp_miss:
+                        log("看门狗: 狗信令口恢复")
+                    tcp_miss = 0
+                else:
+                    tcp_miss += 1
+                    log("看门狗: 狗信令口探测失败 %d/2" % tcp_miss)
+                    if tcp_miss >= 2:
+                        log("看门狗: 狗信令口连续 2 次不可达, 拆会话")
+                        return
 
     async def _heartbeat(self):
         """心跳回读: Move 是 noreply 流, 狗侧会话半死(信令活着/指令黑洞)时它毫无察觉,
