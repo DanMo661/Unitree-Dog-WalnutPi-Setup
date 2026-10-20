@@ -11,21 +11,23 @@ import bridge
 IDX = {'A': 4, 'B': 5, 'C': 6, 'D': 8, 'G': 9, 'P': 1, 'R': 3, 'Y': 0}
 
 # 脚本时间线: (起始秒, 通道覆盖字典 | 'STOP'=信号中断)
+# 10-20 安全互锁: C 站起立放 5s 起立保护期外; C 趴->站反向间隔 >= 2s(不够则被拦,
+# rc_loop 每帧重试到点自动起立); 第二次解锁距第一次 >= 1s(A 去抖)
 SCRIPT = [
     (0.0, {'A': 1722, 'G': 282}),  # 开机 A 停在解锁位 + 挡位在挡1 -> 边沿规则必须拒绝
     (0.6, {'A': 1002}),            # 拨回上锁位
     (1.0, {'A': 1722}),            # 翻上 -> 此刻才允许解锁(此时 C 在趴位)
-    (1.8, {'C': 1722}),            # C 站 -> 起立
-    (2.4, {'G': 1722}),            # 挡3 -> TrotRun
-    (3.0, {'P': 1722}),            # 前后杆推满(挡3 限速 2.5; 起立保护期过后生效)
-    (5.4, {'P': 1002}),            # 回中 -> StopMove
-    (6.0, 'STOP'),                 # 信号中断 -> 失控保护
-    (8.0, {'A': 1002}),            # 信号恢复, A 在下位
-    (8.4, {'A': 1722}),            # 翻上 -> 第二次解锁
-    (11.6, {'B': 1722}),           # B 拨到高位 -> 10-17 起为继电器输出, 不再触发动作
-    (16.0, {'D': 1722}),           # D 拨到高位 -> 已退役, 不应触发任何动作
-    (16.4, {'C': 282}),            # C 拨趴
-    (16.8, {'C': 1722}),           # C 拨回 -> 再起立
+    (5.5, {'C': 1722}),            # C 站 -> 起立(过了 5s 起立保护期)
+    (6.1, {'G': 1722}),            # 挡3 -> TrotRun
+    (6.7, {'P': 1722}),            # 前后杆推满(挡3 限速 2.5; BalanceStand(8.5s)后生效)
+    (9.1, {'P': 1002}),            # 回中 -> StopMove
+    (9.7, 'STOP'),                 # 信号中断 -> 失控保护
+    (11.7, {'A': 1002}),           # 信号恢复, A 在下位
+    (12.1, {'A': 1722}),           # 翻上 -> 第二次解锁(距第一次 11.1s, 过 A 去抖)
+    (15.3, {'B': 1722}),           # B 拨到高位 -> 10-17 起为继电器输出, 不再触发动作
+    (15.7, {'D': 1722}),           # D 拨到高位 -> 已退役, 不应触发任何动作
+    (19.7, {'C': 282}),            # C 拨趴(距起立 14.2s, 过互锁)
+    (20.1, {'C': 1722}),           # C 拨回 -> 互锁拦(距趴 0.4s), 每帧重试 ~21.7s 到点再起立
 ]
 
 
@@ -98,7 +100,7 @@ def wait_until(fn, timeout, what):
 
 def main():
     stub = StubLink()
-    dog = bridge.Dog(stub)
+    dog = bridge.Dog(stub, now=time.monotonic())   # 传锚点: 启用互锁+起立保护期(10-20)
     state = bridge.state
     state.link = 'up'
     state.link_gen = 0
@@ -113,30 +115,30 @@ def main():
     assert not state.rc_armed, 'A 停在解锁位被误解锁(边沿规则失效)'
     # 2. 翻拨后解锁
     wait_until(lambda: state.rc_armed, 2, '翻拨解锁')
-    # 3. 解锁瞬间同步挡位: 当时 G=282 -> 挡1 EconomicGait
-    wait_until(lambda: find_cmds(stub, 'EconomicGait'), 2, '挡1步态')
-    # 4. C 站 -> 走模式 + StandUp
-    wait_until(lambda: state.mode == 2, 2, 'C站进入走模式')
+    # 3. C 站(5.5s, 过起立保护期) -> 走模式 + StandUp + 挡1步态同步
+    wait_until(lambda: state.mode == 2, 5, 'C站进入走模式')
     assert find_cmds(stub, 'StandUp'), '缺 StandUp'
-    # 5. 起立 3s 后补 BalanceStand
+    wait_until(lambda: find_cmds(stub, 'EconomicGait'), 2, '挡1步态')
+    # 4. 起立 3s 后补 BalanceStand
     wait_until(lambda: find_cmds(stub, 'BalanceStand'), 6, 'BalanceStand')
-    # 6. 挡3 步态
+    # 5. 挡3 步态
     wait_until(lambda: find_cmds(stub, 'TrotRun'), 2, '挡3步态')
-    # 7. 推满杆(等起立保护期结束): vx = axis(1722) * SIGN_PITCH(-1) * 挡3上限2.5 = -2.5
+    # 6. 推满杆: 起立 pending(5.5+3=8.5s) 排空后生效: vx = axis(1722) * SIGN_PITCH(-1) * 挡3上限2.5 = -2.5
     wait_until(lambda: find_cmds(stub, 'Move', x=-2.5, y=0.0, z=0.0), 4, '挡3满杆Move(-2.5)')
-    # 8. 回中 -> StopMove
+    # 7. 回中 -> StopMove
     wait_until(lambda: find_cmds(stub, 'StopMove'), 2, '回中停走')
-    # 9. 失控: 短时丢帧 hold 站定, 超过 FS_DAMP_S(仿真1.5s) 上锁停走(09-29 起不再趴下, 保持姿态)
+    # 8. 失控: 短时丢帧 hold 站定, 超过 FS_DAMP_S(仿真1.5s) 上锁停走(09-29 起不再趴下, 保持姿态)
     wait_until(lambda: not state.rc_armed, 4, '失控上锁')
     assert not find_cmds(stub, 'StandDown'), '失控保护不应再趴下(应保持姿态)'
-    # 10. 恢复信号 + 再翻拨 -> 第二次解锁
+    # 9. 恢复信号 + 再翻拨(距第一次解锁 11.1s, 过 A 去抖) -> 第二次解锁
     wait_until(lambda: state.rc_armed, 4, '恢复后再解锁')
-    # 11. B/D 拨到高位都不应再触发动作(B=继电器/D=退役); TRICKS 只剩 App 入口
+    # 10. B/D 拨到高位都不应再触发动作(B=继电器/D=退役); TRICKS 只剩 App 入口
     time.sleep(4.5)
     assert not find_cmds(stub, 'Hello'), 'B 键不应再触发 Hello(已让位继电器)'
     assert not find_cmds(stub, 'Dance1'), 'D 键不应触发 Dance1(已退役)'
-    # 12. C 趴->站 再起立(共2次: 1.8s首次 + 16.8s; 失联不再趴下后, 恢复解锁无需重新起立)
-    wait_until(lambda: len(find_cmds(stub, 'StandUp')) >= 2, 8, 'C趴后C站再起立')
+    # 11. C 趴(19.7s) -> C 站(20.1s): 反向间隔 0.4s 被互锁拦, 每帧重试到点(约 21.7s)自动再起立
+    #     (共2次 StandUp: 5.5s 首次 + 互锁到点重放; 失联不再趴下后, 恢复解锁无需重新起立)
+    wait_until(lambda: len(find_cmds(stub, 'StandUp')) >= 2, 8, 'C趴后C站再起立(互锁到点重试)')
     time.sleep(1.5)
     assert not find_cmds(stub, 'Dance1'), 'D 键已改为喊话开关, 不应触发动作'
     assert not find_cmds(stub, 'Sit'), '拨杆不应触发动作'

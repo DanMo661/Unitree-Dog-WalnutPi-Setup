@@ -15,20 +15,21 @@ import netrc
 IDX = {'A': 4, 'C': 6, 'G': 9, 'P': 1}
 
 # 网络流剧本: (起始秒, 通道覆盖 | 'STOP'=停发)
+# 10-20 安全互锁: C 站起立放 5s 起立保护期外; 后续大动作间隔均 >= 2s
 NET = [
     (1.0, {'A': 1002, 'C': 282, 'G': 282}),  # App 打开: 初始上锁/趴/挡1
     (2.0, {'A': 1722}),                      # 点解锁 -> 边沿
-    (2.6, {'C': 1722}),                      # 点站立 -> StandUp(3s 后 BalanceStand)
-    (6.4, {'P': 282}),                       # 摇杆上推满(App 语义 1002-720)
-    (8.0, 'STOP'),                           # 切后台 -> 停发 -> 板端回退 SBUS 线
+    (5.6, {'C': 1722}),                      # 点站立 -> StandUp(3s 后 BalanceStand)
+    (9.4, {'P': 282}),                       # 摇杆上推满(App 语义 1002-720)
+    (11.0, 'STOP'),                          # 切后台 -> 停发 -> 板端回退 SBUS 线
 ]
 
 # 物理线剧本: 全程在场, 杆推满且方向与网络杆相反(验证网络优先不串台)
 PHYS = [
     (0.0,  {'A': 1002, 'C': 282, 'P': 1722}),
-    (9.6,  {'A': 1722}),                     # 网络停发回退后, 实体翻拨重新接管
-    (11.0, {'C': 1722}),                     # 实体 C 站起立
-    (12.0, 'STOP'),                          # 全断 -> 失控保护
+    (12.6, {'A': 1722}),                     # 网络停发回退后, 实体翻拨重新接管
+    (14.0, {'C': 1722}),                     # 实体 C 站起立(距回退趴下 2.7s, 过互锁)
+    (15.0, 'STOP'),                          # 全断 -> 失控保护
 ]
 
 
@@ -116,7 +117,7 @@ def wait_until(fn, timeout, what):
 
 def main():
     stub = StubLink()
-    dog = bridge.Dog(stub)
+    dog = bridge.Dog(stub, now=time.monotonic())   # 传锚点: 启用互锁+起立保护期(10-20)
     state = bridge.state
     state.link = 'up'
     state.link_gen = 0
@@ -132,28 +133,30 @@ def main():
     # 1. 网络流 A 初始停在上锁位(1002), 加上物理线也锁着 -> 不许解锁
     time.sleep(1.8)
     assert not state.rc_armed, '未翻拨就被解锁(边沿规则失效)'
-    # 2. 网络点解锁(2.0 翻拨) + 挡1同步
+    # 2. 网络点解锁(2.0 翻拨)
     wait_until(lambda: state.rc_armed, 2, '网络流边沿解锁')
-    wait_until(lambda: find_cmds(stub, 'EconomicGait'), 2, '挡1步态同步')
-    # 3. 网络点站立 -> StandUp + 走模式
-    wait_until(lambda: state.mode == 2, 2, '网络C站进入走模式')
+    # 3. 网络点站立(5.6, 过 5s 起立保护期) -> StandUp + 走模式 + 挡1步态同步
+    wait_until(lambda: state.mode == 2, 4, '网络C站进入走模式')
     assert find_cmds(stub, 'StandUp'), '缺 StandUp'
+    wait_until(lambda: find_cmds(stub, 'EconomicGait'), 2, '挡1步态同步')
+    # 4. 起立 3s 后补 BalanceStand(5.6+3=8.6s)
     wait_until(lambda: find_cmds(stub, 'BalanceStand'), 6, 'BalanceStand')
-    # 4. 网络摇杆上推满(282): 挡1限速 vx = axis(282)*SIGN_PITCH(-1)*0.9 = +0.9
+    # 5. 网络摇杆上推满(9.4, pending 已排空): 挡1限速 vx = axis(282)*SIGN_PITCH(-1)*0.9 = +0.9
     wait_until(lambda: find_cmds(stub, 'Move', x=0.9, y=0.0, z=0.0), 3, '网络满杆Move(+0.9)')
     #    物理线同期杆在反方向(1722), 若串台会出现 -0.9
     assert not find_cmds(stub, 'Move', x=-0.9), '物理线串台(网络优先失效)'
-    # 5. net_ok 链路灯数据在发
+    # 6. net_ok 链路灯数据在发
     assert netrc.snapshot()["net_ok"] and netrc.snapshot()["net_seq"] > 0, 'net_ok 快照异常'
-    # 6. App 停发(8.0) -> 300ms 后回退物理线(A=1002) -> 自动上锁+缓降
+    # 7. App 停发(11.0) -> 300ms 后回退物理线(A=1002) -> 自动上锁+缓降
+    #    (距 5.6 的 StandUp 5.7s, 过互锁)
     wait_until(lambda: not state.rc_armed, 2, '停发回退后上锁')
     wait_until(lambda: find_cmds(stub, 'StandDown'), 2, '回退缓降 StandDown')
     wait_until(lambda: not netrc.snapshot()["net_ok"], 2.5, 'net_ok 变灭')
-    # 7. 实体翻拨(9.6)重新接管 -> 第二次解锁
+    # 8. 实体翻拨(12.6)重新接管 -> 第二次解锁(距网络解锁 10.6s, 过 A 去抖)
     wait_until(lambda: state.rc_armed, 3, '实体重新接管解锁')
-    # 8. 实体 C 站(11.0) -> 再起立
+    # 9. 实体 C 站(14.0, 距回退趴下 2.7s 过互锁) -> 再起立
     wait_until(lambda: len(find_cmds(stub, 'StandUp')) >= 2, 3, '实体C站再起立')
-    # 9. 全断(12.0) -> 失控保护: 停走保持姿态 + 超时上锁(09-29 起不再趴下; StandDown 仅第6步主动上锁那一次)
+    # 10. 全断(15.0) -> 失控保护: 停走保持姿态 + 超时上锁(09-29 起不再趴下; StandDown 仅第7步主动上锁那一次)
     wait_until(lambda: not state.rc_armed, 4, '总失联失控上锁')
     assert len(find_cmds(stub, 'StandDown')) == 1, '失控保护不应再发 StandDown'
 

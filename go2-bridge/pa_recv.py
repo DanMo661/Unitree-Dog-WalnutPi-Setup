@@ -211,7 +211,8 @@ def _state_query(config):
 def _state_write_loop(pa, config, log):
     """每秒写音频状态文件(P0-1/T2.2): 桥的 /state 读它合并 audio 字段,
     音频服务死/未部署 = 文件停更 -> 桥侧 audio.ready:false。
-    临时文件+os.replace 原子替换(防桥读到半截 JSON); /run 是 tmpfs 不磨卡。"""
+    临时文件+os.replace 原子替换(防桥读到半截 JSON); /run 是 tmpfs 不磨卡。
+    pid/ts 供 /state 的 pids.audio 与 audio_age 推导(调试台"音频服务"行用)。"""
     path = getattr(config, "AUDIO_STATE_PATH", "/run/go2-audio.json")
     warn_t = 0.0
     while True:
@@ -219,7 +220,8 @@ def _state_write_loop(pa, config, log):
             tmp = path + ".tmp"
             with open(tmp, "w", encoding="utf-8") as f:
                 json.dump({"ready": _ready[0], "volume": pa.volume,
-                           "talk": bool(_talk["on"]), "playing": _player["name"]}, f)
+                           "talk": bool(_talk["on"]), "playing": _player["name"],
+                           "pid": os.getpid(), "ts": time.time()}, f)
             os.replace(tmp, path)
         except Exception as e:
             if time.monotonic() - warn_t > 60:       # 持续失败也别刷屏

@@ -17,8 +17,23 @@ max_mb 切下一序号；init 时扫描已有文件续编并续写未满的最�
 接口：
   init(log_dir=None, max_mb=32) -> bool   目录建不出来/不可写返回 False，不抛异常
   record(kind, **payload)                 追加一行；未 init 或写失败静默返回
-  close()                                 可选，关当前文件
+  close(clean=True)                       可选，关当前文件；clean=False 保留停机现场
+  last_stop()                             最近一次 init 判定的上次停机方式（见下）
+  tail(n)                                 只读返回当前文件最后 n 行（n 钳制 1..500）
 线程安全：内部 threading.Lock 串行化。
+
+落盘加固（10-20 起立断电事故：断电前约 2 秒的关键记录还在页缓存里全丢）：
+  - kind=event、以及 kind=cmd 且 name≠Move 的关键记录：flush 后额外 os.fsync
+    强制出页缓存，断电也不丢；
+  - Move 流（20Hz）与高频 frame 只 flush 不 fsync，避免每帧刷 TF 卡减寿；
+  - fsync 失败静默，绝不上抛，也不影响 _bytes 记账。
+
+停机标记（日志目录内 .running / .clean 两个小文件）：
+  - init 时判定上次停机：有 .clean → 'clean'；有 .running 无 .clean → 'unclean'；
+    都没有 → 'unknown'（首次运行）。判定值存 last_stop()；随后删 .clean、
+    写 .running（内容含 pid 与时间）；
+  - close(clean=True) 写 .clean 并删 .running；close(clean=False) 保留 .running，
+    下次 init 即判 'unclean'（掉电正是走不到 close 的这种情况）。
 """
 
 import glob
@@ -34,12 +49,13 @@ _BOARD_DEFAULT = "/home/pi/go2-bridge/journals"  # 板端部署目录下的 jour
 _FALLBACK_DIR = "./journals"
 _NAME_RE = re.compile(r"^journal-(\d{4,})\.jsonl$")
 
-_lock = threading.Lock()
+_lock = threading.RLock()  # 可重入: SIGTERM 可能在主线程持锁时进来关文件
 _fh = None          # 当前打开的日志文件对象；None = 未 init / 已关
 _dir = None         # 实际使用的目录
 _seq = 0            # 当前文件序号
 _bytes = 0          # 当前文件已写字节（含 init 续接的旧内容）
 _max_bytes = 32 * 1024 * 1024
+_last_stop = None    # 最近一次 init 判定的上次停机方式：clean/unclean/unknown
 
 
 def _candidates(explicit):
@@ -58,6 +74,48 @@ def _open(seq):
                "a", encoding="utf-8", newline="")
     _seq = seq
     _bytes = os.fstat(_fh.fileno()).st_size  # 续接旧文件时计入已有内容
+
+
+def _marker_path(name):
+    """标记文件（.running/.clean）全路径；未 init（_dir 为空）返回 None。"""
+    return os.path.join(_dir, name) if _dir else None
+
+
+def _judge_last_stop():
+    """按 .clean/.running 存在性判定上次停机方式，存入 _last_stop。调用方持锁。"""
+    global _last_stop
+    clean = _marker_path(".clean")
+    running = _marker_path(".running")
+    if clean and os.path.exists(clean):
+        _last_stop = "clean"        # .clean 优先：正常走到 close(clean=True)
+    elif running and os.path.exists(running):
+        _last_stop = "unclean"      # 运行标记还在、却没留下 clean → 掉电/被杀
+    else:
+        _last_stop = "unknown"      # 首次运行 / 标记被清
+
+
+def _write_marker(name):
+    """写 .running/.clean 标记（内容含 pid 与时间）。失败静默。调用方持锁。"""
+    p = _marker_path(name)
+    if not p:
+        return
+    try:
+        with open(p, "w", encoding="utf-8") as f:
+            f.write("pid=%d\ntime=%s\n" % (os.getpid(), datetime.now().isoformat()))
+    except Exception:
+        pass
+
+
+def _remove_marker(name):
+    """删标记文件（不存在则无操作）。失败静默。调用方持锁。"""
+    p = _marker_path(name)
+    if not p:
+        return
+    try:
+        if os.path.exists(p):
+            os.remove(p)
+    except Exception:
+        pass
 
 
 def init(log_dir=None, max_mb=32):
@@ -81,6 +139,8 @@ def init(log_dir=None, max_mb=32):
                 continue  # 建不了 / 不可写 → 换下一个候选
             _dir = cand
             _max_bytes = max(int(max_mb), 1) * 1024 * 1024
+            _judge_last_stop()        # 先判定上次停机方式（结果进 last_stop()）
+            _remove_marker(".clean")  # 判定完成即清，防下次误判
             last = 0
             for p in glob.glob(os.path.join(_dir, "journal-*.jsonl")):
                 m = _NAME_RE.match(os.path.basename(p))
@@ -91,6 +151,7 @@ def init(log_dir=None, max_mb=32):
             except Exception:
                 _fh = None
                 return False
+            _write_marker(".running")  # 本轮运行中标记（pid+时间）
             return True
         return False
 
@@ -124,13 +185,20 @@ def record(kind, **payload):
                     return
             _fh.write(text)
             _fh.flush()
+            if kind == "event" or (kind == "cmd" and payload.get("name") != "Move"):
+                try:
+                    os.fsync(_fh.fileno())  # 关键记录强制出页缓存（防断电丢最后几秒）
+                except Exception:
+                    pass  # fsync 失败静默、绝不上抛；也别让它跳过下面的 _bytes 记账
             _bytes += nbytes
         except Exception:
             pass
 
 
-def close():
-    """关闭当前文件。可再次 init 重开。"""
+def close(clean=True):
+    """关闭当前文件。可再次 init 重开。
+    clean=True（缺省，正常停机）：写 .clean 并删 .running，下次 init 判 'clean'；
+    clean=False（异常退出路径）：保留 .running，下次 init 判 'unclean'。"""
     global _fh
     with _lock:
         if _fh is not None:
@@ -139,3 +207,31 @@ def close():
             except Exception:
                 pass
             _fh = None
+        if clean:
+            _write_marker(".clean")
+            _remove_marker(".running")
+        # clean=False：.running 原样保留 → 下次 init 判 'unclean'
+
+
+def last_stop():
+    """最近一次 init 判定的上次停机方式：'clean'/'unclean'/'unknown'；未 init 过为 None。"""
+    return _last_stop
+
+
+def tail(n):
+    """只读返回当前文件最后 n 行（不含换行符）；n 钳制 1..500。
+    未 init / 当前文件读失败返回 []。持锁读，避免撞上并发写出的半行。"""
+    try:
+        n = int(n)
+    except Exception:
+        n = 1
+    n = max(1, min(n, 500))
+    with _lock:
+        if _fh is None or _dir is None:
+            return []
+        try:
+            with open(os.path.join(_dir, "journal-%04d.jsonl" % _seq),
+                      "r", encoding="utf-8", errors="replace") as f:
+                return f.read().splitlines()[-n:]
+        except Exception:
+            return []

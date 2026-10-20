@@ -127,13 +127,20 @@ def main():
         print("板上无 go2-audio, 已自动补装")
     run("echo %s | sudo -S systemctl restart go2-audio" % pw)   # 先音频后桥(OPTIMIZATION P0-1)
     run("echo %s | sudo -S systemctl restart go2-bridge" % pw)
-    time.sleep(6)
+    # 验活: uvicorn 要等首连 WebRTC 后才起(约 10~20s), 固定 6s 会误判"端口未就绪"
+    out = ""
+    status = ""
+    for _ in range(12):
+        time.sleep(2)
+        _, status, _ = run("systemctl is-active go2-bridge")
+        status = status.strip()
+        _, out, _ = run("curl -s --max-time 2 http://127.0.0.1:8000/logs | tail -12")
+        if status == "active" and out.strip():
+            break
     _, aout, _ = run("systemctl is-active go2-audio")
     print("go2-audio 状态:", aout.strip())
     if aout.strip() != "active":
         sys.exit("!! go2-audio 未激活, 音频不可用(遥控不受影响): 看 journalctl -u go2-audio")
-    rc, out, _ = run("systemctl is-active go2-bridge")
-    status = out.strip()
     print("服务状态:", status)
     if status != "active":
         sys.exit("服务未启动(is-active=%r), 部署失败! 先看板上 journalctl" % status)

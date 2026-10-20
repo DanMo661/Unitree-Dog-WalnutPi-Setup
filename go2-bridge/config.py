@@ -106,6 +106,27 @@ FS_STOP_S = 0.25    # 无干净帧超过此秒数 -> 立即 StopMove 站定等�
 FS_DAMP_S = 30.0    # 无干净帧超过此秒数 -> 真失联: 上锁+停走保持姿态(09-29 用户要求断链不趴下; 仅 A 键主动上锁才趴)并要求重新解锁(09-16: 10s太短, 30s)
                     # (下楼震动只丢帧不短链: 坏帧先站定等恢复, 10s 收不到干净帧才判失联)
 
+# ---- 安全互锁(10-20 供电口事故止血) ----
+# 事故背景: 狗对上装板供电, 起立(StandUp)瞬间狗对外供电口保护性断电, 板子掉电重启。
+# 已确认两个大动作(StandDown -> StandUp)间隔太近是触发条件之一, 用户手动加延时可避开,
+# 现做软件止血。三个常数配套 rc_loop 的"请求标志+每帧重试": 被拦下的请求到点自动执行。
+MODE_DWELL_S   = 2.0  # 大动作互锁: 趴下<->起立(会发 StandDown/StandUp 的模式切换)两次
+                      # 执行至少间隔此秒数, 不够则拒绝发指令(set_mode 返回 False)
+ARM_DEBOUNCE_S = 1.0  # A 键解锁去抖: 解锁上升沿距上一次解锁边沿小于此秒数则忽略
+                      # (上锁下降沿永不去抖, 保证任何时候都能上锁趴下收权)
+STAND_GUARD_S  = 5.0  # 起立保护期: 进程启动后此秒数内拒绝任何会发 StandUp 的请求
+                      # (板子刚上电/重启时供电口尚未稳定, 起立电流冲击易再次触发保护断电)
+
+# ---- 狗真实姿态闭环(10-20: 不再用本地假想状态, 起立完成以狗上报的 body_height 为准) ----
+# sportmodestate(rt/sportmodestate) 实时上报 mode/body_height/gait_type/velocity。
+# 首连先读真实姿态再决定本地 mode; StandUp 后等 body_height 连续稳定才补 BalanceStand,
+# 替代原来写死的 3 秒(第一次起立比后续慢, 固定 3 秒会插进起立过程把狗弹起来)。
+DOG_STAND_HEIGHT = 0.22   # body_height 高于此值视为站起(趴约 0.08~0.15, 站约 0.28~0.33)
+DOG_HEIGHT_STABLE = 0.004 # 0.6s 窗口内高度波动小于此值 = 已稳定, 可以 BalanceStand
+DOG_STATE_STALE_S = 1.0   # sportmodestate 超过此秒数没更新 = 不采信, 回落到超时兜底
+STAND_TIMEOUT_S  = 6.0    # 起立后最长等多久补 BalanceStand(无姿态数据/一直不稳时的兜底)
+DOG_STATE_WAIT_S = 2.0    # 首连等待第一条 sportmodestate 的上限(超时按旧逻辑假定站立)
+
 # ---- FSM 状态机接线(P0-3 / T1.3 影子模式) ----
 FSM_SHADOW = True     # 影子总开关: True = 旧逻辑照跑, DogFsm(core/fsm.py) 并行吃同样事件逐帧对照,
                       # 影子输出只比不发(不 submit / 不写 sysfs / 不打日志), 差异记 "FSM 差异" + journal;

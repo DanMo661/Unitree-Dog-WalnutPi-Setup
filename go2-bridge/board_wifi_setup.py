@@ -108,6 +108,12 @@ def main():
         sys.exit(1)
     print("    干净")
 
+    print("== 1.5 停用抢占 wlan0 的独立 wpa_supplicant ==")
+    # 10-20 实测: 板子上 ifupdown/老 netplan 留下的 wpa_supplicant@wlan0 会一直占着网卡,
+    # NetworkManager 因此把 wlan0 判成 unavailable(关联着但拿不到 IP, 家里 WiFi 整路不通)。
+    P("sudo -S systemctl disable --now wpa_supplicant@wlan0 2>/dev/null; true")
+    print("    已停用(不存在则忽略)")
+
     print("== 2. 备份并撤下 netplan 的 wifi 配置 ==")
     P("if [ -f /etc/netplan/40-wifi.yaml ]; then "
       "sudo -S cp -n /etc/netplan/40-wifi.yaml /etc/netplan/40-wifi.yaml.bak_1015 && "

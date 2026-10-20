@@ -79,6 +79,24 @@ canvas{display:block;width:100%;height:110px}
 .seg span.on.hot{background:#2b2416;color:var(--warn)}
 .bigval{font-size:26px;font-weight:600;padding:2px 0 4px}
 
+/* 系统与事件 */
+.pwbad{display:none;text-align:center;font-size:13px;font-weight:600;padding:9px 12px;
+  border-radius:10px;margin-bottom:10px;background:#3a1f1c;color:#ff8f85;
+  border:1px solid #6b3129}
+.kv{display:grid;grid-template-columns:92px 1fr;gap:7px 10px;font-size:13px}
+.kv .k{font-size:12px;color:var(--dim);padding-top:1px;white-space:nowrap}
+.kv .v{color:var(--txt);word-break:break-all;min-width:0}
+.evs{display:flex;flex-direction:column;gap:3px}
+.evrow{display:flex;gap:8px;font-size:12px;line-height:1.5;align-items:baseline;min-width:0}
+.evrow .t{color:var(--dim);flex:none}
+.evrow .tag{flex:none;font-size:11px;line-height:1.4;padding:0 6px;border-radius:4px;
+  border:1px solid var(--line);background:#101312;color:var(--dim)}
+.evrow.err .tag{color:var(--bad);border-color:#5c2f28;background:#241514}
+.evrow.warn .tag{color:var(--warn);border-color:#54452a;background:#241f12}
+.evrow.act .tag{color:var(--ok);border-color:#2f5b45;background:#14201a}
+.evrow .txt{color:#c8d2cc;word-break:break-all;min-width:0}
+.evrow .txt b{color:var(--txt);font-weight:500}
+
 .tip{font-size:12px;color:var(--dim);text-align:center;line-height:1.7;margin:0}
 a{color:var(--accent)}
 .logbtn{cursor:pointer;user-select:none}
@@ -144,6 +162,29 @@ a{color:var(--accent)}
     <div class="seg" id="cGear"><span>1 经济</span><span>2 自由</span><span>3 奔跑</span></div></div>
   <div class="card"><div class="t">左拨杆 → 舵机</div>
     <div class="bigval num" id="cServo">—<small style="font-size:13px;color:var(--dim)">°</small></div></div>
+</div>
+
+<div class="panel">
+  <div class="pt" style="display:flex;justify-content:space-between;align-items:center">
+    <span>系统与事件</span><span id="sysLive" style="color:var(--ok)"></span>
+  </div>
+  <div class="pwbad" id="pwBanner">⚠ 上次异常断电</div>
+  <div class="kv">
+    <div class="k">上次关机</div><div class="v num" id="kvStop">—</div>
+    <div class="k">桥进程</div><div class="v num" id="kvBridge">—</div>
+    <div class="k">音频服务</div><div class="v num" id="kvAudio">—</div>
+    <div class="k">狗链路代数</div><div class="v num" id="kvLink">—</div>
+    <div class="k">控制源</div><div class="v num" id="kvSrc">—</div>
+    <div class="k">最后命令</div><div class="v num" id="kvCmd">—</div>
+    <div class="k">狗真实姿态</div><div class="v num" id="kvDog">—</div>
+  </div>
+  <div class="stats" style="margin-top:12px">
+    <div class="stat" id="stLoad"><div class="v num">—</div><div class="k">系统负载 load1</div></div>
+    <div class="stat" id="stMem"><div class="v num">—<small>%</small></div><div class="k">内存占用</div></div>
+    <div class="stat" id="stTemp"><div class="v num">—<small>°C</small></div><div class="k">CPU 温度</div></div>
+  </div>
+  <div class="pt" style="margin-top:12px">最近事件 · 最近 10 条（错误红 / 警告黄 / 信息灰 / 动作绿）</div>
+  <div class="evs" id="evList"><div class="evrow info"><span class="txt" style="color:var(--dim)">—</span></div></div>
 </div>
 
 <p class="tip">遥控页 <a href="/">/</a> · 黄灯=丢帧狗已站定等待恢复 · 10s 无干净帧才缓降趴下<br>
@@ -291,7 +332,124 @@ function render(s){
     $("kArm").textContent = ""; $("kGear").textContent = "";
     $("cServo").innerHTML = `—<small style="font-size:13px;color:var(--dim)">°</small>`;
   }
+
+  /* 系统与事件: ws 推送带这些字段就直接用(future), 未带时落到 /state 轮询快照, 都缺显占位 */
+  renderSys(sysSnap ? Object.assign({}, sysSnap, s) : s);
 }
+
+/* ===== 系统与事件(数据源 /state 慢轮询, 字段全可选缺啥显占位; 不动桥不改 ws 协议) ===== */
+let sysSnap = null, evHtml = "";
+const esc = t => String(t).replace(/[&<>"']/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+const numv = v => typeof v === "number" && isFinite(v) ? v
+  : (typeof v === "string" && v.trim() !== "" && !isNaN(v) ? Number(v) : null);
+function fmtUp(sec){                      /* 秒 -> "2d3h" / "1h05m" / "12m03s" / "45s" */
+  const s = numv(sec); if (s == null || s < 0) return null;
+  const t = Math.floor(s), d = Math.floor(t / 86400), h = Math.floor(t % 86400 / 3600),
+        m = Math.floor(t % 3600 / 60), ss = t % 60;
+  return d ? d + "d" + h + "h" : h ? h + "h" + String(m).padStart(2, "0") + "m"
+       : m ? m + "m" + String(ss).padStart(2, "0") + "s" : ss + "s";
+}
+function fmtTs(ts){                       /* epoch 秒/毫秒 -> HH:MM:SS, 认不出给 null */
+  let v = numv(ts); if (v == null || v < 1e9) return null;
+  if (v > 1e12) v /= 1000;
+  const d = new Date(v * 1000);
+  return isNaN(d.getTime()) ? null : d.toLocaleTimeString("zh-CN", {hour12: false});
+}
+function evLevel(kind, ev){               /* 级别分色: 错误红 / 警告黄 / 信息灰 / 动作绿 */
+  const k = (String(kind || "") + " " + String(ev || "")).toLowerCase();
+  if (/err|fail|bad|down|offline|diverg|abort|unclean/.test(k)) return "err";
+  if (/warn|stale|retry|timeout|slow/.test(k)) return "warn";
+  if (/act|cmd|trick|arm|gear|mode|play|talk|stand|reset/.test(k)) return "act";
+  return "info";
+}
+function renderSys(m){
+  try{
+    if (!m || typeof m !== "object") m = {};
+    const P = (m.pids && typeof m.pids === "object") ? m.pids : {};
+    const AU = (m.audio && typeof m.audio === "object") ? m.audio : {};
+    /* 上次关机: unclean 才出红横幅(独立于顶部控制状态横幅, 互不覆盖) */
+    $("pwBanner").style.display = m.last_stop === "unclean" ? "block" : "none";
+    $("kvStop").innerHTML = m.last_stop === "clean" ? '<span style="color:var(--ok)">正常关机</span>'
+      : m.last_stop === "unclean" ? '<span style="color:var(--bad);font-weight:600">异常断电</span>'
+      : m.last_stop === "unknown" ? "未知" : "—";
+    /* 桥进程: pids.bridge + uptime_s(现有 /state 字段) */
+    const up = fmtUp(m.uptime_s);
+    $("kvBridge").innerHTML = P.bridge != null
+      ? `pid ${esc(P.bridge)}` + (up ? ` · 已运行 ${up}` : "") : (up ? `已运行 ${up}` : "—");
+    /* 音频服务: pids.audio/audio_age + 现有 audio.ready/volume */
+    const aAge = numv(P.audio_age), aBits = [];
+    if (P.audio != null) aBits.push("pid " + esc(P.audio));
+    aBits.push(AU.ready === true ? '<span style="color:var(--ok)">就绪</span>'
+              : AU.ready === false ? '<span style="color:var(--bad)">未就绪</span>' : "");
+    if (AU.volume != null) aBits.push("音量 " + esc(AU.volume));
+    if (aAge != null && aAge >= 0) aBits.push("状态 " + (fmtUp(aAge) || "0s") + " 前");
+    $("kvAudio").innerHTML = aBits.filter(Boolean).join(" · ") || "—";
+    /* 狗链路代数 / 控制源 */
+    $("kvLink").textContent = m.link_gen != null ? String(m.link_gen) : "—";
+    $("kvSrc").textContent = m.src === "sbus" ? "SBUS 遥控器"
+      : m.src === "netrc" ? "网络遥控 (App)" : "—";
+    /* 最后一条命令: name · 时间 · 结果(OK 绿 / ERR 红) */
+    const C = (m.last_cmd && typeof m.last_cmd === "object") ? m.last_cmd : {};
+    if (C.name != null || C.result != null){
+      const t = fmtTs(C.ts), r = C.result == null ? "?" : String(C.result);
+      const rc = /^OK/i.test(r) ? "var(--ok)" : /^ERR/i.test(r) ? "var(--bad)" : "var(--txt)";
+      $("kvCmd").innerHTML = `${esc(C.name || "?")}`
+        + (t ? ` · <span style="color:var(--dim)">${t}</span>` : "")
+        + ` · <span style="color:${rc}">${esc(r)}</span>`;
+    } else $("kvCmd").textContent = "—";
+    /* 狗真实姿态(rt/sportmodestate): 高度/mode/步态/速度全用狗自报值, 不用本地推测 */
+    const D = (m.dog && typeof m.dog === "object") ? m.dog : {};
+    const dh = numv(D.height), da = numv(D.age), dBits = [];
+    dBits.push(D.fresh === true ? '<span style="color:var(--ok)">● 实时</span>'
+                                : '<span style="color:var(--dim)">○ 无数据</span>');
+    if (D.mode != null) dBits.push("mode " + esc(D.mode));
+    if (dh != null) dBits.push(dh.toFixed(3) + " m");
+    if (D.gait != null) dBits.push("步态 " + esc(D.gait));
+    if (Array.isArray(D.vel) && D.vel.length >= 3)
+      dBits.push("v " + D.vel.slice(0, 3).map(x => Number(x).toFixed(2)).join("/"));
+    if (da != null) dBits.push(da.toFixed(1) + "s 前");
+    if (m.rising === true) dBits.push('<span style="color:var(--warn)">起立中</span>');
+    $("kvDog").innerHTML = dBits.join(" · ");
+    /* 系统负载 */
+    const Y = (m.sys && typeof m.sys === "object") ? m.sys : {};
+    const ld = numv(Y.load1), mp = numv(Y.mem_pct), ct = numv(Y.cpu_temp);
+    setStat("stLoad", ld == null ? "—" : ld.toFixed(2));
+    setStat("stMem", mp == null ? "—" : `${mp.toFixed(0)}<small>%</small>`,
+            mp > 90 ? "bad" : mp > 75 ? "warn" : "");
+    setStat("stTemp", ct == null ? "—" : `${ct.toFixed(1)}<small>°C</small>`,
+            ct > 80 ? "bad" : ct > 70 ? "warn" : "");
+    /* 最近 10 条事件: 时间 + 级别标签 + 摘要, 内容全 esc 防注入 */
+    const list = Array.isArray(m.last_events) ? m.last_events.slice(0, 10) : [];
+    let h;
+    if (!list.length)
+      h = `<div class="evrow info"><span class="txt" style="color:var(--dim)">— 无事件记录 —</span></div>`;
+    else h = list.map(e => {
+      e = (e && typeof e === "object") ? e : {};
+      const lvl = evLevel(e.kind, e.ev), t = fmtTs(e.ts) || "--:--:--";
+      let d = e.detail; d = (d != null && typeof d === "object") ? JSON.stringify(d) : d;
+      return `<div class="evrow ${lvl}"><span class="t num">${t}</span>`
+        + `<span class="tag">${esc(e.kind || lvl)}</span>`
+        + `<span class="txt"><b>${esc(e.ev || "?")}</b>`
+        + (d ? ` <span style="color:var(--dim)">· ${esc(d)}</span>` : "") + "</span></div>";
+    }).join("");
+    if (h !== evHtml){ evHtml = h; $("evList").innerHTML = h; }   /* 内容没变不重绘 */
+  }catch(err){ /* 字段结构再离谱也只当占位, 绝不炸整个 render */ }
+}
+
+/* /state 慢轮询: ws 推送不带系统/事件字段(不改桥), 3s 拉一次全量快照 */
+function fetchSys(){
+  if (document.hidden || !location.host) return;
+  fetch("/state").then(r => r.json()).then(m => {
+    if (!m || typeof m !== "object") return;
+    sysSnap = m;
+    $("sysLive").textContent = "● " + new Date().toLocaleTimeString();
+    renderSys(m);
+  }).catch(() => { $("sysLive").textContent = ""; });
+}
+fetchSys();
+setInterval(fetchSys, 3000);
+addEventListener("visibilitychange", () => { if (!document.hidden) fetchSys(); });
 
 /* WS 自动重连 */
 let ws = null, retry = 0;

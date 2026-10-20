@@ -12,6 +12,7 @@ import bridge
 IDX = {'A': 4, 'B': 5, 'C': 6, 'D': 8, 'G': 9, 'P': 1, 'R': 3, 'Y': 0}
 
 # 脚本时间线: (起始秒, 通道覆盖字典)。C/G 基态=上位/挡3(见 FakeSbus BASE)
+# 10-20 安全互锁: 起立放保护期(STAND_GUARD_S=5s)外, C 上沿距上次 StandDown >= 2s
 SCRIPT = [
     (0.0, {'A': 1002}),   # 上锁
     (0.5, {'A': 1722}),   # 解锁#1: 狗站着(模拟开机首连 mode=1) -> 只补 BalanceStand, 不 StandUp
@@ -19,7 +20,7 @@ SCRIPT = [
     (3.5, {'A': 1722}),   # 解锁#2: C 还在上, 狗趴着 -> 不许弹起!(本次修复的核心断言)
     (3.8, {'G': 282}),    # 趴着切挡1 -> 只记账, 不发 EconomicGait
     (4.5, {'C': 282}),    # C 拨下(趴着, 无指令)
-    (5.0, {'C': 1722}),   # C 下->上边沿 -> 这才起立(StandUp)
+    (6.0, {'C': 1722}),   # C 下->上边沿 -> 这才起立(StandUp; 6s 过起立保护期, 距趴下 3s 过互锁)
 ]
 
 
@@ -75,7 +76,7 @@ def wait_until(fn, timeout, what):
 
 def main():
     stub = StubLink()
-    dog = bridge.Dog(stub)
+    dog = bridge.Dog(stub, now=time.monotonic())   # 传锚点: 启用互锁+起立保护期(10-20)
     dog.mode = 1                 # 模拟开机首连: 狗自己站着, 锁定等解锁(bridge reset() 行为)
     state = bridge.state
     state.link = 'up'
