@@ -20,6 +20,7 @@ import hashlib
 import json
 import os
 import pathlib
+import re as _re
 import shlex
 import subprocess
 import sys
@@ -72,6 +73,80 @@ def git_dirty(src):
         return r.returncode == 1
     except (OSError, subprocess.SubprocessError):
         return False
+
+
+def dog_eee_guard(c, robot_ip, dog_pw):
+    """部署尾部顺带保障: 狗侧 EEE 必须关(2026-10-21 dog2 定案: RTL8168 与百兆对端协商
+    EEE 会链路瞬断; 10-24 dog3 漏网教训: 只装一台, 换狗/重置就回enabled)。
+    经板子 invoke_shell 二级跳 SSH 到狗(板上零安装), 开着就关+补 if-up.d 持久化。
+    best-effort: 狗不可达/无凭据/任何异常只提示不失败, 不影响部署门禁。"""
+    import base64 as _b64
+    import re as _re
+    # 持久化钩子内容(ASCII 注释, 避免交互回显乱码): 开机自动关 EEE, 删文件即回退
+    hook = ("#!/bin/sh\n"
+            "# EEE off: RTL8168 EEE with 100M partner causes link flaps (2026-10-21)\n"
+            "ethtool --set-eee eth0 eee off 2>/dev/null || true\n")
+    hook_b64 = _b64.b64encode(hook.encode()).decode()
+    probe = ("if ethtool --show-eee eth0 2>/dev/null | grep -q 'EEE status: enabled'; "
+             "then ethtool --set-eee eth0 eee off; echo EEE_FIX_APPLIED; fi; "
+             "[ -x /etc/network/if-up.d/eee-off ] || { echo %s | base64 -d "
+             "> /etc/network/if-up.d/eee-off && chmod +x /etc/network/if-up.d/eee-off "
+             "&& echo EEE_PERSIST_INSTALLED; }; "
+             "ethtool --show-eee eth0 2>/dev/null | grep -q 'EEE status: enabled' "
+             "&& echo EEE_STILL_ENABLED || echo EEE_DISABLED_OK" % hook_b64)
+    try:
+        sh = c.invoke_shell(width=200)
+        time.sleep(1.0)
+        if sh.recv_ready():
+            sh.recv(65536)                      # 丢登录 banner
+        sh.send("stty -echo\n")                 # 关回显: 标记词判断不被命令文本污染
+        time.sleep(0.5)
+        if sh.recv_ready():
+            sh.recv(65536)
+        sh.send("ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=5 root@%s\n" % robot_ip)
+        buf, dl = "", time.time() + 12
+        while time.time() < dl:                 # 等密码提示(狗可达)或超时(没开机)
+            time.sleep(0.4)
+            if sh.recv_ready():
+                buf += sh.recv(65536).decode("utf-8", "replace")
+            if _re.search(r"[Pp]assword", buf):
+                break
+        if not _re.search(r"[Pp]assword", buf):
+            print("EEE 自检: 狗 %s SSH 不可达(没开机/不在网), 跳过 —— 换狗/重置后记得确认 EEE 已关"
+                  % robot_ip)
+            sh.close()
+            return
+        sh.send(dog_pw + "\n")
+        time.sleep(2.5)
+        if sh.recv_ready():
+            sh.recv(65536)
+        sh.send("stty -echo\n")                 # 狗端 pty 同样关回显
+        time.sleep(0.5)
+        if sh.recv_ready():
+            sh.recv(65536)
+        sh.send(probe + " ; echo EEE_PROBE_END\n")
+        out, dl = "", time.time() + 25
+        while time.time() < dl:
+            time.sleep(0.4)
+            if sh.recv_ready():
+                out += sh.recv(65536).decode("utf-8", "replace")
+            if "EEE_PROBE_END" in out:
+                break
+        sh.send("exit\nexit\n")
+        time.sleep(0.3)
+        sh.close()
+        if "EEE_FIX_APPLIED" in out:
+            print("EEE 自检: 狗侧 EEE 原来开着, 已关闭")
+        if "EEE_PERSIST_INSTALLED" in out:
+            print("EEE 自检: 已补装 /etc/network/if-up.d/eee-off 持久化(删文件即回退)")
+        if "EEE_STILL_ENABLED" in out:
+            print("!! WARN EEE 自检: 关闭后仍是 enabled, 人工检查狗侧 ethtool")
+        elif "EEE_DISABLED_OK" in out:
+            print("EEE 自检: 狗侧 EEE=disabled, 持久化在位 ✓")
+        else:
+            print("EEE 自检: 输出异常(狗上缺 ethtool?), 人工确认. 输出片段: %r" % out[-200:])
+    except Exception as e:
+        print("EEE 自检异常(不影响部署): %r" % e)
 
 
 def main():
@@ -277,6 +352,29 @@ def main():
         warns.append("sbus.ok=%r (接收机没开/线没接?)" % sb.get("ok"))
     if au.get("ready") is not True:
         warns.append("audio.ready=%r (看 journalctl -u go2-audio)" % au.get("ready"))
+
+    # ---- 狗 EEE 自检(2026-10-24): 部署时顺带确保狗侧 EEE 关闭(经板子二级跳, best-effort) ----
+    # 狗密码: 环境变量 DOG_PW 优先, 否则读本机 credentials.md 的"狗 SSH"条目(需要时读取, 不外传)
+    robot_ip = "192.168.123.161"
+    try:
+        mcf = _re.search(r'^ROBOT_IP\s*=\s*"([^"]+)"',
+                         (src / "config.py").read_text(encoding="utf-8"), _re.M)
+        if mcf:
+            robot_ip = mcf.group(1)
+    except Exception:
+        pass
+    dog_pw = os.environ.get("DOG_PW")
+    if not dog_pw:
+        try:
+            cred = open(os.path.expanduser(r"~/.zcode/credentials.md"), encoding="utf-8").read()
+            dog_pw = _re.search(r"狗 SSH：`root` / `([^`]+)`", cred).group(1)
+        except Exception:
+            dog_pw = None
+    if dog_pw:
+        dog_eee_guard(c, robot_ip, dog_pw)
+    else:
+        print("EEE 自检: 无狗密码(DOG_PW 未设且读不到 credentials.md), 跳过")
+
     c.close()
     if "Traceback" in out:
         sys.exit("启动日志有异常, 人工确认!")
