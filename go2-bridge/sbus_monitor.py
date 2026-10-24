@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 """第一步: SBUS 通道监视器(不连狗), 用来实测各通道再填 config.py
-用法: .venv/bin/python sbus_monitor.py [串口, 默认 config.SBUS_PORT(核桃派=/dev/ttyS2)]
+用法: .venv/bin/python sbus_monitor.py [串口, 默认 /dev/ttyUSB0]
 正常: 搬动摇杆/拨开关, 实时打印通道原始值(行程 172~1811, 中值 992); 关遥控器 -> 失控:1
 """
 import sys
 import time
 
-import config
 from sbus import Sbus
 
-port = sys.argv[1] if len(sys.argv) > 1 else config.SBUS_PORT
+port = sys.argv[1] if len(sys.argv) > 1 else "/dev/ttyUSB0"
 s = Sbus(port)
 print(f"打开 {port} ... (遥控器开机、接收机通电)")
 last, last_print = None, 0.0
@@ -18,7 +17,7 @@ while True:
         s.open()
         if not s.opened:
             if time.time() - last_print > 3:
-                print(f"打不开 {port}: 检查接线/串口号 (ls /dev/ttyS* 看可用串口, config.SBUS_PORT 可改)")
+                print(f"打不开 {port}: 插好 USB-TTL 后自动重试 (ls /dev/ttyUSB* 看串口号)")
                 last_print = time.time()
             time.sleep(3)
             continue

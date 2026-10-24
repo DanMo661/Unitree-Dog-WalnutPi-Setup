@@ -19,7 +19,7 @@ SCRIPT = [
     (1.0, {'A': 1722}),            # 翻上 -> 此刻才允许解锁(此时 C 在趴位)
     (5.5, {'C': 1722}),            # C 站 -> 起立(过了 5s 起立保护期)
     (6.1, {'G': 1722}),            # 挡3 -> TrotRun
-    (6.7, {'P': 1722}),            # 前后杆推满(挡3 限速 2.5; BalanceStand(8.5s)后生效)
+    (6.7, {'P': 1722}),            # 前后杆推满(挡3 限速 2.5; BalanceStand 后生效)
     (9.1, {'P': 1002}),            # 回中 -> StopMove
     (9.7, 'STOP'),                 # 信号中断 -> 失控保护
     (11.7, {'A': 1002}),           # 信号恢复, A 在下位
@@ -36,9 +36,11 @@ class StubLink:
 
     def __init__(self):
         self.cmds = []
+        self.loop = True   # 探针判据同 DogLink(loop+state.link): 缺了影子恒判链路断
 
     def submit(self, name, **p):
         self.cmds.append((name, dict(p)))
+        return True          # P0-3 起 submit 返回是否入队成功
 
 
 class FakeSbus:
@@ -105,6 +107,7 @@ def main():
     state.link = 'up'
     state.link_gen = 0
     bridge.config.FS_DAMP_S = 1.5              # 仿真缩短真失联判定(真机30s), 代码路径相同
+    bridge.config.STAND_TIMEOUT_S = 1.0        # 仿真缩短无遥测兜底(真机6s), 代码路径相同
     bridge.Sbus = FakeSbus                     # 注入仿真串口
     pa = bridge.Pa(30, print)
 
@@ -115,18 +118,24 @@ def main():
     assert not state.rc_armed, 'A 停在解锁位被误解锁(边沿规则失效)'
     # 2. 翻拨后解锁
     wait_until(lambda: state.rc_armed, 2, '翻拨解锁')
-    # 3. C 站(5.5s, 过起立保护期) -> 走模式 + StandUp + 挡1步态同步
+    # 3. C 站(5.5s, 过起立保护期) -> 走模式 + StandUp；10-21 起立期间不得发步态
     wait_until(lambda: state.mode == 2, 5, 'C站进入走模式')
     assert find_cmds(stub, 'StandUp'), '缺 StandUp'
-    wait_until(lambda: find_cmds(stub, 'EconomicGait'), 2, '挡1步态')
-    # 4. 起立 3s 后补 BalanceStand
+    # 4. 起立兜底到点补 BalanceStand(仿真 STAND_TIMEOUT_S=1s, 真机 6s)；
+    #    步态必须在 BalanceStand 之后才同步(黑匣子: 起立瞬间并发 EconomicGait 触发上装断电)
     wait_until(lambda: find_cmds(stub, 'BalanceStand'), 6, 'BalanceStand')
-    # 5. 挡3 步态
+    names = [n for n, _p in stub.cmds]
+    gait_idx = [names.index(n) for n in
+                ('EconomicGait', 'FreeWalk', 'TrotRun') if n in names]
+    assert gait_idx and min(gait_idx) > names.index('BalanceStand'), \
+        '起立期间发了步态指令 / 起立后未补步态: %s' % names
+    # 5. 挡3 步态(起立后按当前挡位补同步)
     wait_until(lambda: find_cmds(stub, 'TrotRun'), 2, '挡3步态')
-    # 6. 推满杆: 起立 pending(5.5+3=8.5s) 排空后生效: vx = axis(1722) * SIGN_PITCH(-1) * 挡3上限2.5 = -2.5
-    wait_until(lambda: find_cmds(stub, 'Move', x=-2.5, y=0.0, z=0.0), 4, '挡3满杆Move(-2.5)')
-    # 7. 回中 -> StopMove
-    wait_until(lambda: find_cmds(stub, 'StopMove'), 2, '回中停走')
+    # 6. 推满杆: 起立 rising 解除后生效: vx = axis(1722) * SIGN_PITCH(-1) * 挡3上限3.0 = -3.0(10-21 提速)
+    wait_until(lambda: find_cmds(stub, 'Move', x=-3.0, y=0.0, z=0.0), 4, '挡3满杆Move(-3.0)')
+    # 7. 回中 -> 新的 StopMove(不能匹配起立前那条, 否则后面的失联窗口整体错位)
+    n_stop = len(find_cmds(stub, 'StopMove'))
+    wait_until(lambda: len(find_cmds(stub, 'StopMove')) > n_stop, 4, '回中停走')
     # 8. 失控: 短时丢帧 hold 站定, 超过 FS_DAMP_S(仿真1.5s) 上锁停走(09-29 起不再趴下, 保持姿态)
     wait_until(lambda: not state.rc_armed, 4, '失控上锁')
     assert not find_cmds(stub, 'StandDown'), '失控保护不应再趴下(应保持姿态)'

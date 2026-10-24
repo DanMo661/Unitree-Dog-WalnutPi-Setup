@@ -18,7 +18,7 @@ SCRIPT = [
     (0.5, {'A': 1722}),   # 解锁#1: 狗站着(模拟开机首连 mode=1) -> 只补 BalanceStand, 不 StandUp
     (3.0, {'A': 1002}),   # 上锁: 狗趴下(StandDown)
     (3.5, {'A': 1722}),   # 解锁#2: C 还在上, 狗趴着 -> 不许弹起!(本次修复的核心断言)
-    (3.8, {'G': 282}),    # 趴着切挡1 -> 只记账, 不发 EconomicGait
+    (3.8, {'G': 282}),    # 趴着切挡1 -> 只记账, 不发 FreeWalk
     (4.5, {'C': 282}),    # C 拨下(趴着, 无指令)
     (6.0, {'C': 1722}),   # C 下->上边沿 -> 这才起立(StandUp; 6s 过起立保护期, 距趴下 3s 过互锁)
 ]
@@ -29,9 +29,11 @@ class StubLink:
 
     def __init__(self):
         self.cmds = []
+        self.loop = True   # 探针判据同 DogLink(loop+state.link): 缺了影子恒判链路断
 
     def submit(self, name, **p):
         self.cmds.append((name, dict(p)))
+        return True          # P0-3 起 submit 返回是否入队成功
 
 
 class FakeSbus:
@@ -81,6 +83,7 @@ def main():
     state = bridge.state
     state.link = 'up'
     state.link_gen = 0
+    bridge.config.STAND_TIMEOUT_S = 1.0   # 仿真缩短无遥测兜底(真机6s), 代码路径相同
     bridge.Sbus = FakeSbus        # 注入仿真串口
     pa = bridge.Pa(30, print)
 
@@ -105,12 +108,12 @@ def main():
     assert state.mode == 0, '趴着解锁不该改模式'
 
     # 4. 趴着切挡1(3.8s 起): 只记账(此刻 ~4.5s, 已走过十余个周期)
-    assert not find_cmds(stub, 'EconomicGait'), '趴着切挡发了步态指令(会把狗弹起来)'
+    assert not find_cmds(stub, 'FreeWalk'), '趴着切挡发了步态指令(会把狗弹起来)'
 
-    # 5. C 拨下再拨上: 边沿起立; 起立后挡1 补发; 3s 后补 BalanceStand(pending 路径)
+    # 5. C 拨下再拨上: 边沿起立; 起立后挡1 补发; 兜底到点补 BalanceStand
     wait_until(lambda: find_cmds(stub, 'StandUp'), 4, 'C 翻拨边沿起立')
     wait_until(lambda: state.mode == 2, 2, '起立进走模式')
-    wait_until(lambda: find_cmds(stub, 'EconomicGait'), 3, '起立后补发挡1步态')
+    wait_until(lambda: find_cmds(stub, 'FreeWalk'), 3, '起立后补发挡1步态')
     wait_until(lambda: find_cmds(stub, 'BalanceStand'), 5, '起立3s后补BalanceStand')
     time.sleep(1.0)
     assert len(find_cmds(stub, 'StandUp')) == 1, '全程只允许一次 StandUp(C 边沿那次)'

@@ -20,7 +20,15 @@ max_mb 切下一序号；init 时扫描已有文件续编并续写未满的最�
   close(clean=True)                       可选，关当前文件；clean=False 保留停机现场
   last_stop()                             最近一次 init 判定的上次停机方式（见下）
   tail(n)                                 只读返回当前文件最后 n 行（n 钳制 1..500）
-线程安全：内部 threading.Lock 串行化。
+  sync(timeout=5) -> bool                 等队列落盘完毕（测试用；超时 False）
+线程安全：队列操作 Condition 串行化；文件操作内部 threading.Lock 串行化。
+
+异步落盘（10-21 板上实测事故：TF 卡 D 状态停摆把同步 fsync 卡死 8 分钟，
+持锁拖住桥事件循环 → 遥控全部失灵， 用户只能断电）：
+  - record() 只入内存队列即返回（毫秒级），独立写线程负责 write/flush/fsync/轮转；
+  - 卡盘停摆只阻塞写线程自己，控制路径（rc_loop/事件循环）照常运行；
+  - 队列上限 _Q_MAX：深停摆时丢最旧并计数，恢复后写一行 kind=journal 报线
+    （丢最旧保住的是贴着事故的最新记录）。
 
 落盘加固（10-20 起立断电事故：断电前约 2 秒的关键记录还在页缓存里全丢）：
   - kind=event、以及 kind=cmd 且 name≠Move 的关键记录：flush 后额外 os.fsync
@@ -36,6 +44,7 @@ max_mb 切下一序号；init 时扫描已有文件续编并续写未满的最�
     下次 init 即判 'unclean'（掉电正是走不到 close 的这种情况）。
 """
 
+import collections
 import glob
 import json
 import os
@@ -56,6 +65,14 @@ _seq = 0            # 当前文件序号
 _bytes = 0          # 当前文件已写字节（含 init 续接的旧内容）
 _max_bytes = 32 * 1024 * 1024
 _last_stop = None    # 最近一次 init 判定的上次停机方式：clean/unclean/unknown
+
+# ---- 异步落盘（见模块头注释）----
+_Q_MAX = 4096        # 待写队列上限：超出丢最旧（深停摆时保住最新记录）
+_q = collections.deque()             # 待写: (text, critical)
+_q_cond = threading.Condition()      # 队列通知；_pending = 已入队未落盘条数
+_pending = 0
+_dropped = 0         # 停摆期间丢弃条数（恢复后写 kind=journal 报线并清零）
+_writer_on = False   # 写线程只起一次（daemon，跨多次 init/close 复用）
 
 
 def _candidates(explicit):
@@ -119,8 +136,10 @@ def _remove_marker(name):
 
 
 def init(log_dir=None, max_mb=32):
-    """初始化记录仪。成功 True；目录不可用 False。可重复调用（隐式 close 旧文件）。"""
+    """初始化记录仪。成功 True；目录不可用 False。可重复调用（隐式 close 旧文件，
+    隐式 close 前先排空待写队列）。"""
     global _dir, _fh, _max_bytes
+    sync(2.0)
     with _lock:
         if _fh is not None:
             try:
@@ -152,6 +171,7 @@ def init(log_dir=None, max_mb=32):
                 _fh = None
                 return False
             _write_marker(".running")  # 本轮运行中标记（pid+时间）
+            _start_writer()            # 异步写线程（daemon, 只起一次, 跨 init 复用）
             return True
         return False
 
@@ -167,17 +187,36 @@ def _rotate():
 
 
 def record(kind, **payload):
-    """追加一条事件。未 init、序列化失败、写失败均静默，绝不上抛。"""
+    """追加一条事件（入队即返回，绝不阻塞调用方）。未 init、序列化失败静默。"""
+    global _pending, _dropped
+    if _fh is None:
+        return          # 未 init / 已 close: 直接丢(不能泄进下一次 init 的新文件)
+    try:
+        entry = {"t": time.monotonic(),
+                 "wall": datetime.now().isoformat(),
+                 "kind": kind}
+        entry.update(payload)
+        text = json.dumps(entry, ensure_ascii=False, default=str) + "\n"
+        critical = kind == "event" or (kind == "cmd" and payload.get("name") != "Move")
+        with _q_cond:
+            if len(_q) >= _Q_MAX:      # 深停摆兜底：丢最旧，保住贴着事故的最新记录
+                _q.popleft()
+                _pending -= 1
+                _dropped += 1
+            _q.append((text, critical))
+            _pending += 1
+            _q_cond.notify()
+    except Exception:
+        pass
+
+
+def _write_one(text, critical):
+    """写一条（写线程调用）。rotate/写/flush/fsync 全静默，失败不杀线程。"""
     global _bytes
     with _lock:
         if _fh is None:
             return
         try:
-            entry = {"t": time.monotonic(),
-                     "wall": datetime.now().isoformat(),
-                     "kind": kind}
-            entry.update(payload)
-            text = json.dumps(entry, ensure_ascii=False, default=str) + "\n"
             nbytes = len(text.encode("utf-8"))
             if _bytes + nbytes > _max_bytes:
                 _rotate()
@@ -185,21 +224,67 @@ def record(kind, **payload):
                     return
             _fh.write(text)
             _fh.flush()
-            if kind == "event" or (kind == "cmd" and payload.get("name") != "Move"):
+            if critical:
                 try:
                     os.fsync(_fh.fileno())  # 关键记录强制出页缓存（防断电丢最后几秒）
                 except Exception:
-                    pass  # fsync 失败静默、绝不上抛；也别让它跳过下面的 _bytes 记账
+                    pass
             _bytes += nbytes
         except Exception:
             pass
 
 
+def _writer_loop():
+    """后台写线程：卡盘 D 状态停摆只阻塞自己，控制路径照常。"""
+    global _pending, _dropped
+    while True:
+        with _q_cond:
+            while not _q:
+                _q_cond.wait(0.5)
+            text, critical = _q.popleft()
+        _write_one(text, critical)
+        with _q_cond:
+            _pending -= 1
+            if _dropped and not _q:
+                n, _dropped = _dropped, 0
+                note = json.dumps({"t": time.monotonic(),
+                                   "wall": datetime.now().isoformat(),
+                                   "kind": "journal", "note": "stall_recovered",
+                                   "dropped": n}, ensure_ascii=False) + "\n"
+            else:
+                note = None
+            _q_cond.notify_all()      # 唤醒 sync() 等待者
+        if note:
+            _write_one(note, True)    # 恢复报线也按关键记录落盘
+
+
+def _start_writer():
+    global _writer_on
+    if _writer_on:
+        return
+    _writer_on = True
+    threading.Thread(target=_writer_loop, name="journal-writer",
+                     daemon=True).start()
+
+
+def sync(timeout=5.0):
+    """等队列全部落盘（测试用）。超时返回 False。"""
+    deadline = time.monotonic() + timeout
+    with _q_cond:
+        while _pending > 0:
+            if time.monotonic() >= deadline:
+                return False
+            _q_cond.wait(0.05)
+        return True
+
+
 def close(clean=True):
     """关闭当前文件。可再次 init 重开。
     clean=True（缺省，正常停机）：写 .clean 并删 .running，下次 init 判 'clean'；
-    clean=False（异常退出路径）：保留 .running，下次 init 判 'unclean'。"""
+    clean=False（异常退出路径）：保留 .running，下次 init 判 'unclean'。
+    先等队列落盘（最多 3s：卡盘停摆时不悬住停机流程），再关文件。"""
     global _fh
+    sync(3.0)
     with _lock:
         if _fh is not None:
             try:

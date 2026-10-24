@@ -123,12 +123,13 @@ body.offline .estop{opacity:.35;pointer-events:none}
     <button class="toggle" id="armBtn">解锁</button>
   </section>
   <button class="estop" id="estop">急停 · 趴下</button>
+  <p class="tip" id="hint" style="color:var(--warn);min-height:1.4em"></p>
   <p class="tip">流程：解锁 → 站立 → 行走，再拖摇杆。遥控器解锁时本页不生效；关闭本页自动上锁趴下。</p>
 </main>
 <script>
 const $ = id => document.getElementById(id);
 const fmt = v => (v >= 0 ? '+' : '') + v.toFixed(2);
-let ws = null, retry = 0;
+let ws = null, retry = 0, hintTimer = null;
 const send = o => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
 const buzz = p => { try { navigator.vibrate(p); } catch (e) {} };
 
@@ -154,6 +155,13 @@ setInterval(() => send({ping:1}), 800);
 
 function dot(el, cls){ el.className = 'dot' + (cls ? ' ' + cls : ''); }
 function render(s){
+  /* 指令被明确拒绝(如起立中请求站立/行走): 显示原因, 3s 后淡出, 不清本地状态 */
+  if (s && s.err){
+    $('hint').textContent = s.msg || ('指令被拒绝: ' + s.err);
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(() => { $('hint').textContent = ''; }, 3000);
+    return;
+  }
   if (s.link === 'up'){ dot($('dLink'),'ok'); $('tLink').textContent = '狗在线'; }
   else if (s.link === 'connecting'){ dot($('dLink'),'warn'); $('tLink').textContent = '狗连接中'; }
   else if (s.link === 'lib_missing'){ dot($('dLink'),'bad'); $('tLink').textContent = '驱动未装'; }

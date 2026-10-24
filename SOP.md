@@ -182,8 +182,8 @@ curl http://192.168.123.50:8000/sbus        # SBUS/网络遥控调试台（浏�
    - `CH_ARM / CH_STAND / CH_GEAR / CH_B`：A/C/拨杆/B 各自的真实通道号
    - `ARM_ON / STAND_ON / RELAY_ON_RAW`：判定阈值放在该通道两档值的**正中间**
    - `CH_ROLL, CH_PITCH, CH_YAW`：三个摇杆轴的通道号；`SIGN_*`：方向反了就乘 -1
-   - `axis()` 函数（在 `bridge.py` 顶部）里的中值 `1002` 与半行程 `720`——中位值/行程不同要改这里
-   - B/D 键触发阈值 `ch[cid] > 1002` 也在 `bridge.py`（KEY_ACTIONS 循环里），新遥控器中值不是 1002 就要跟着改
+   - `config.AXIS_MID / AXIS_SPAN`：摇杆中位值与半行程（`axis()` 从 config 读，不用动 bridge.py）
+   - `config.KEY_THRESHOLD / POS_MIN / POS_MAX`：按键高位阈值与两档/拨杆行程端点（同在 `config.py`，标定只改这一个文件）
 4. 重推生效：`BRIDGE_HOST=192.168.123.50 BRIDGE_PW=<板子密码> python deploy_pc.py`（上传+校验+重启+验活全自动）
 5. 验收：A 键完整翻拨一个来回 → `/logs` 出现 `已解锁(RC)`；C 拨上 → `模式 -> 走`，狗起立
 

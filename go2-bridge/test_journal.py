@@ -12,6 +12,8 @@ import os
 import shutil
 import sys
 import tempfile
+import threading
+import time
 
 import journal
 
@@ -82,8 +84,10 @@ def run():
     journal.os.fsync = counting_fsync
     try:
         journal.record("event", ev="arm", src="rc")
+        journal.sync()
         ok(calls["n"] == 1, "event 记录触发 fsync (n=%d)" % calls["n"])
         journal.record("cmd", name="BalanceCtrl", p=1)
+        journal.sync()
         ok(calls["n"] == 2, "非 Move cmd 触发 fsync (n=%d)" % calls["n"])
         journal.record("cmd", name="Move", x=1.0, y=0.0)
         ok(calls["n"] == 2, "Move cmd 只 flush 不 fsync (n=%d)" % calls["n"])
@@ -95,6 +99,7 @@ def run():
         journal.os.fsync = real_fsync
 
     # 不 close, 直接开新句柄读盘上文件(模拟 fsync 后断电前内容已在盘上)
+    journal.sync()
     lines = read_lines(d, 1)
     ok(lines is not None and len(lines) == 5,
        "5 条全部在盘上, 无半行丢失 (%s)" % (len(lines) if lines else "文件不存在"))
@@ -119,6 +124,7 @@ def run():
 
     print("== c. 异常停机 → unclean ==")
     journal.record("event", ev="crash_sim")
+    journal.sync()
     ok(journal.init(d), "不 close 直接再 init")
     ok(journal.last_stop() == "unclean", "判 unclean (%r)" % journal.last_stop())
     journal.close(clean=False)
@@ -131,6 +137,7 @@ def run():
     journal.record("event", ev="t1")
     journal.record("event", ev="t2")
     journal.record("event", ev="t3")
+    journal.sync()
     full = read_lines(d, 1)
     ok(full and len(full) >= 3, "文件持续追加 (%d 行)" % len(full))
     t3 = journal.tail(3)
@@ -153,6 +160,7 @@ def run():
     ok(journal.init(d2, max_mb=1), "init max_mb=1")
     for i in range(700):  # 每条约 2KB → 总量约 1.4MB, 必然跨过 1MB 触发轮转
         journal.record("frame", pad="x" * 2000, i=i)
+    journal.sync(20)
     l1, l2, l3 = read_lines(d2, 1), read_lines(d2, 2), read_lines(d2, 3)
     ok(l1 and l2 and l3 is None, "已轮转: 0001/0002 存在, 无 0003")
     ok(l1 and json.loads(l1[0])["i"] == 0 and l2 and json.loads(l2[-1])["i"] == 699,
@@ -163,6 +171,30 @@ def run():
     ok(journal.init(d2), "轮转后 init")
     ok(journal.last_stop() == "clean", "轮转目录判 clean")
     ok(journal.tail(1) == [l2[-1]], "init 续接最后一个文件(0002) 而非新开")
+
+    print("== f. 写线程卡死不阻塞 record(10-21 TF卡 D 状态事故回归) ==")
+    d3 = tmpdir("journal_stall_")
+    ok(journal.init(d3), "init")
+    real_write = journal._write_one
+    released = threading.Event()
+
+    def stalling_write(text, critical):
+        released.wait(5.0)          # 模拟 fsync 卡在 D 状态
+        real_write(text, critical)
+
+    journal._write_one = stalling_write
+    try:
+        t0 = time.monotonic()
+        for i in range(50):
+            journal.record("event", ev="stall", i=i)
+        dur = time.monotonic() - t0
+        ok(dur < 0.5, "写线程卡死期间 record 入队即回(50 条 %.3fs)" % dur)
+    finally:
+        released.set()
+    ok(journal.sync(5), "解除卡死后排空落盘")
+    journal._write_one = real_write
+    ln = read_lines(d3, 1)
+    ok(ln and len(ln) >= 50, "卡死期间的记录一条不少(%d 行)" % (len(ln) if ln else 0))
 
 
 if __name__ == "__main__":

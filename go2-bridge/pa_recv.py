@@ -23,6 +23,8 @@ import time
 import urllib.request
 import zlib
 
+import config
+
 FILES_DIR = os.path.join(os.path.expanduser("~"), "pa-files")
 NAME_OK = re.compile(u"^[0-9A-Za-z_\\-\u4e00-\u9fff]{1,40}$")
 CHUNK = 1024
@@ -93,10 +95,11 @@ def _player_thread(name, pa, log):
                         b = audioop.mul(b, 2, g)
                     except Exception:
                         pass
-                # 左右声道同数据: 功放输入接 L 或 R 都出声(10-17 实测本板两声道都完好,
-                # 旧的"只放L"策略撞上功放接R=全静音)
+                # 声道策略看板级 PA_STEREO: True=左右同数据(功放接 L 或 R 都出声;
+                # 10-17 实测本板两声道完好, 旧的"只放L"撞上功放接R=全静音);
+                # False=L-only(dog2 右声道输出级损坏, 右声道置零)
                 try:
-                    b = audioop.tostereo(b, 2, 1, 1)
+                    b = audioop.tostereo(b, 2, 1, 1 if getattr(config, "PA_STEREO", True) else 0)
                 except Exception:
                     pass
                 proc.stdin.write(b)
@@ -565,9 +568,9 @@ def _loop(pa, config, log):
                 log("增益 %.2f -> 幅度 %d (包%d)" % (g, audioop.max(data, 2), _diag[0]))
             except Exception:
                 pass
-        # 左右声道同数据(原因同播放路径: 消除功放声道依赖)
+        # 声道策略同播放路径: 板级 PA_STEREO(True=左右同数据 / False=L-only)
         try:
-            data = audioop.tostereo(data, 2, 1, 1)
+            data = audioop.tostereo(data, 2, 1, 1 if getattr(config, "PA_STEREO", True) else 0)
         except Exception:
             pass
         try:

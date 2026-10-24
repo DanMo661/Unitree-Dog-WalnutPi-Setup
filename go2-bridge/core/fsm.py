@@ -26,6 +26,19 @@ rc_loop/web 行号仍按基准版标注(规则语义一致, 审计时按符号�
     ("gpio", level)            四路继电器 IO 电平, 落地 = [s.set_level(level) for s in svs]
     ("log", msg)               桥日志, 落地 = log(msg)
 
+submit 的三种接线(构造参数 send, 阶段3 HIGH 修复):
+    send=None  表驱动测试/纯记账: 命令进 out, 恒成功(不看链路);
+    send=探针  影子模式(FsmShadow 注入): 只回答"此刻 DogLink.submit 会不会
+               入队成功", 不真发; 记账口径与 _RecLink 一致(请求即记) ——
+               FSM 与旧 Dog 在"链路断时不提交本地状态"上同构;
+    send=落地  active 模式(FsmActive 注入 link.submit): 事件内同步真发
+               (指令日志/journal 由 DogLink.submit 自带), 不再进 out,
+               接线层不会二次发送。
+checked 语义(与旧 Dog 逐行对齐): set_mode 的 StandDown/StandUp/BalanceStand、
+    _finish_rise 的 BalanceStand、trick/move/hold 的指令, 入队失败时**不提交**
+    本地状态(mode/rising/moving/冷却), 请求标志留给下一帧重试 —— 绝不出现
+    "StandUp 没发出去却进了 rising, 之后补 BalanceStand"的假起立。
+
 与原实现的两个刻意差异(其余逐行等价):
   1. relay/gpio 只在目标值变化时输出 —— 与执行层去重语义对齐(servo.py:67 <25us
      不写盘 / servo.py:81 电平不变不写盘), 影子对比时输出序列即真实硬件变化。
@@ -38,20 +51,7 @@ import time
 import config
 
 
-# ---- 纯函数: 与 bridge.py 同名函数逐行一致(P1-3 才配置化, 此处保留字面) ----
-
-def axis(raw, dz=0.06):
-    """bridge.py:55-58 通道原始值 282~1722 -> -1..1, 中值 1002 (G12 实测), 带死区"""
-    v = max(-1.0, min(1.0, (raw - 1002) / 720.0))
-    if abs(v) < dz:
-        return 0.0
-    return (v - math.copysign(dz, v)) / (1 - dz)
-
-
-def pos(raw, n=3):
-    """bridge.py:63-65 n 段开关原始值 -> 0..n-1"""
-    return min(n - 1, max(0, round((raw - 172) / (1811 - 172) * (n - 1))))
-
+# ---- 纯函数: 与 bridge.py 同名函数一致(标定值读 cfg, 换遥控器重标只改 config) ----
 
 def clamp01(v):
     """bridge.py:68-70 网页摇杆值钳到 -1..1"""
@@ -64,8 +64,9 @@ class DogFsm:
     趴 -> 站/走: StandUp 后等 3s 补 BalanceStand(官方提示: StandUp 后关节可能锁死)
     坐 -> 走: C 拨下(静默, 狗已在低位不发指令) -> C 拨上(StandUp 起立)"""
 
-    def __init__(self, cfg=None, now=None):
+    def __init__(self, cfg=None, now=None, send=None):
         self.cfg = cfg if cfg is not None else config
+        self._send = send         # submit 接线: None=记账恒成功 / 探针 / 落地(见头注释)
         t0 = time.monotonic() if now is None else now
         # ---- rc_loop 局部变量(bridge.py:556-564) ----
         self.armed = False            # A 键解锁态(rc_loop:555)
@@ -90,7 +91,9 @@ class DogFsm:
         self.rising = False           # 起立流程中(已发 StandUp, 等高度稳定)
         self.rise_t = 0.0             # 本次 StandUp 发出时刻
         self.rise_deadline = 0.0      # 超时兜底时刻
-        self._h_hist = []             # [(now, body_height)] 最近 0.6s 高度样本
+        self._h_hist = []             # [(包时间戳, body_height)] 最近 0.6s 高度样本
+        self._h_ts = None             # 最近采样包的 height_t: 同一遥测包只记一次(P0-1)
+        self._sync_pending = False    # (重)连后对账未决(P0-4): 等有效高度再定 mode
         # ---- State 镜像(bridge.py:94-108), FSM 属性即真身, /state 从这读 ----
         self.link_gen = 0             # 已处理的 WebRTC 连接代数(rc_loop:558)
         self.link_gen_cur = 0         # link 事件带来的最新代数(对应 state.link_gen)
@@ -107,6 +110,31 @@ class DogFsm:
         # ---- relay/gpio 去重记忆(对齐 servo.py:67/81 执行层去重) ----
         self._relay_us = None         # servo 上电 duty=中点 1500us(servo.py:26), 首次必写
         self._gpio_lv = False         # GpioOut 上电=低(servo.py:109-110)
+        self._drop_warn_t = None      # set_mode 入队失败告警限流锚点(5s 一条, 镜像旧 Dog)
+
+    # ---- 内部: 指令发射与标定 ----
+
+    def _emit(self, out, name, p):
+        """发一条狗指令, 返回 True=已入队(或记账模式恒成功)。
+        send=None: 命令进 out(接线层/测试消费); send 已注入: 委托之 —— 探针只探
+        路不发送(记账归探针), 落地函数真发(out 不含 submit, 不会二次发送)。"""
+        if self._send is None:
+            out.append(("submit", name, p))
+            return True
+        return bool(self._send(name, **p))
+
+    def _axis(self, raw, dz=0.06):
+        """bridge.axis 同式: 通道原始值 -> -1..1, 中值/半行程 = cfg.AXIS_MID/AXIS_SPAN"""
+        v = max(-1.0, min(1.0, (raw - self.cfg.AXIS_MID) / float(self.cfg.AXIS_SPAN)))
+        if abs(v) < dz:
+            return 0.0
+        return (v - math.copysign(dz, v)) / (1 - dz)
+
+    def _pos(self, raw, n=3):
+        """bridge.pos 同式: n 段开关原始值 -> 0..n-1, 行程 = cfg.POS_MIN/POS_MAX"""
+        return min(n - 1, max(0, round((raw - self.cfg.POS_MIN)
+                                       / float(self.cfg.POS_MAX - self.cfg.POS_MIN)
+                                       * (n - 1))))
 
     # ---- 内部: 延迟指令到点发送 ----
 
@@ -117,43 +145,98 @@ class DogFsm:
         if due:
             self.pending = [t for t in self.pending if now < t[0]]
             for _, name in due:
-                out.append(("submit", name, {}))
+                self._emit(out, name, {})   # 旧路径 fire-and-forget(bridge.py:1143)
         return out
 
     def _begin_rise(self, now, out):
-        """Dog._begin_rise(bridge.py 同名): 发 StandUp, 进入等高度稳定状态。"""
-        out.append(("submit", "StandUp", {}))
+        """Dog._begin_rise(bridge.py 同名): 发 StandUp, 进入等高度稳定状态。
+        返回 False = StandUp 没入队 —— 不得进入 rising(否则会有假起立,
+        之后 _maybe_balance 补的 BalanceStand 会打到趴着的狗上)。"""
+        if not self._emit(out, "StandUp", {}):
+            return False
         self.rising = True
         self.rise_t = now
         self.rise_deadline = now + self.cfg.STAND_TIMEOUT_S
         self._h_hist = []
+        self._h_ts = None
+        return True
+
+    def _finish_rise(self, now, why, height=None):
+        """Dog._finish_rise(bridge.py 同名): 补 BalanceStand 并解除 rising。
+        BalanceStand 没入队 -> 保持 rising 下一 tick 重试(旧 Dog 镜像)。
+        日志由接线层(bridge 旧路径)记, 影子输出只保留可落地命令(与旧实现一致)。"""
+        out = []
+        if not self._emit(out, "BalanceStand", {}):
+            return out
+        self.rising = False
+        self._h_hist = []
+        self._h_ts = None
+        return out                                       # why=stable/no_telemetry/timeout
+
+    def _stand_failed(self, now, height):
+        """Dog._stand_failed(bridge.py 同名): 到点仍低位, 不补 BalanceStand,
+        本地模式同步回趴, 等用户重新拨 C(P0-2)。"""
+        self.rising = False
+        self._h_hist = []
+        self._h_ts = None
+        self.mode = 0
+        self.moving = False
+        return []                                        # 零输出: 绝不发 BalanceStand
 
     def _maybe_balance(self, now, height=None, height_t=None):
-        """Dog._maybe_balance(bridge.py 同名): 狗自报 body_height 0.6s 窗口稳定且
-        高于站姿阈值 -> BalanceStand; 无数据/不稳 -> STAND_TIMEOUT_S 兜底。"""
+        """Dog._maybe_balance(bridge.py 同名, P0-1/P0-2 同步):
+        不同遥测包 >=3 个、首样本年龄 >=0.5s、高度稳定且高于阈值 -> BalanceStand;
+        无遥测 -> STAND_TIMEOUT_S 才兜底; 到点仍低位 -> 起立失败(不发 BalanceStand)。"""
         if not self.rising:
+            return []
+        if self.mode == 3:
+            # P1: 坐姿没有"起立中"; 迟到的 BalanceStand 会把坐姿拉起来
+            self.rising = False
+            self._h_hist = []
+            self._h_ts = None
             return []
         fresh = (height is not None and height_t is not None
                  and now - height_t < self.cfg.DOG_STATE_STALE_S)
-        if not fresh and now - self.rise_t >= 3.0:
-            # 无姿态数据: 回落旧行为(固定 3 秒), 与拆分前完全一致
-            self.rising = False
-            self._h_hist = []
-            return [("submit", "BalanceStand", {})]          # why=no_telemetry
-        if fresh:
-            self._h_hist.append((now, height))
-            self._h_hist = [(t, v) for t, v in self._h_hist if now - t <= 0.6]
-            if (len(self._h_hist) >= 3 and height > self.cfg.DOG_STAND_HEIGHT
-                    and max(v for _, v in self._h_hist)
-                    - min(v for _, v in self._h_hist) < self.cfg.DOG_HEIGHT_STABLE):
-                self.rising = False
-                self._h_hist = []
-                return [("submit", "BalanceStand", {})]     # why=stable
+        if not fresh:
+            if now >= self.rise_deadline:
+                return self._finish_rise(now, "no_telemetry")   # why=no_telemetry
+            return []
+        if height_t != self._h_ts:
+            # 只在"新遥测包"到达时记样本; 同一包被 20Hz tick 重复读到不算(P0-1 根因)
+            self._h_ts = height_t
+            self._h_hist.append((height_t, height))
+        self._h_hist = [(t, v) for t, v in self._h_hist if now - t <= 0.6]
+        if (len(self._h_hist) >= 3 and now - self._h_hist[0][0] >= 0.5
+                and height > self.cfg.DOG_STAND_HEIGHT
+                and max(v for _, v in self._h_hist)
+                - min(v for _, v in self._h_hist) < self.cfg.DOG_HEIGHT_STABLE):
+            return self._finish_rise(now, "stable", height)     # why=stable
         if now >= self.rise_deadline:
-            self.rising = False
-            self._h_hist = []
-            return [("submit", "BalanceStand", {})]          # why=timeout
+            if height < self.cfg.DOG_STAND_HEIGHT:
+                return self._stand_failed(now, height)          # P0-2: 不发 BalanceStand
+            return self._finish_rise(now, "timeout", height)    # why=timeout
         return []
+
+    def _apply_reconcile(self, now, first, height=None, height_t=None):
+        """Dog._apply_reconcile(bridge.py 同名, P0-4): 新鲜高度 + 滞回对账本地 mode,
+        中间区不臆测; 首连无有效数据才回落"假定站立"。"""
+        if not self._sync_pending or self.rising or now < self.cooldown_until:
+            return []
+        fresh = (height is not None and height_t is not None
+                 and now - height_t < self.cfg.DOG_STATE_STALE_S
+                 and self.cfg.DOG_HEIGHT_MIN <= height <= self.cfg.DOG_HEIGHT_MAX)
+        if not fresh:
+            if first:
+                self.mode = 1     # 首连无有效数据: 回落旧行为(日志由接线层记, 不比)
+            return []
+        if height > self.cfg.DOG_STAND_LATCH_H:
+            self.mode = 1
+        elif height < self.cfg.DOG_LIE_LATCH_H:
+            self.mode = 0
+        else:
+            return []                    # 滞回中间区: 不猜, 等下一包
+        self._sync_pending = False
+        return [("log", "遥测对账: 高度 %.3fm -> mode=%d" % (height, self.mode))]
 
     def _set_relay(self, lv):
         """B 键 -> 继电器(bridge.py:602-607): 高位 1950us 吸合 / 低位 1050us 断开,
@@ -177,8 +260,15 @@ class DogFsm:
         bridge.Dog.set_mode 返回值同义(10-20 供电口事故止血)"""
         now = time.monotonic() if now is None else now
         out = []
+        if m not in (0, 1, 2, 3):
+            # 调用方全是字面量, 此门纯防御: -1 会静默穿过元组负索引污染 mode
+            raise ValueError("set_mode: 非法模式 %r(只收 0趴/1站/2走/3坐)" % (m,))
         if m == self.mode:
             return True, out
+        # 坐姿规则(P1, bridge.Dog 同步): 坐着时 C 在上位不算数, 提前返回且不发任何
+        # 指令 —— 否则 C 停在上位时每帧一条 StopMove(20Hz 刷指令队列)
+        if self.mode == 3 and m == 2:
+            return False, out
         # 大动作 = 趴0 <-> 站/走1|2 之间切换(会发 StandUp 或 StandDown);
         # 坐3 本在低位: 3->0 静默 / 3->1 走 BalanceStand, 都不算大动作
         big = (m == 0) != (self.mode == 0)
@@ -198,6 +288,7 @@ class DogFsm:
         self.pending = []
         self.rising = False
         self._h_hist = []
+        self._h_ts = None
         if self.mode == 3 and m == 0:
             # 坐->趴(bridge.py:417-426 原注释): 狗本来就在低位, 只记状态不发指令
             # (发 StandDown 会从坐姿猛塌)
@@ -205,27 +296,32 @@ class DogFsm:
             self.moving = False
             self.cooldown_until = 0.0
             self.action = None
+            self._sync_pending = False
             out.append(("log", "模式 -> 趴"))
             return True, out
-        out.append(("submit", "StopMove", {}))          # bridge.py:427
+        self._emit(out, "StopMove", {})                  # bridge.py:427(旧路径不查返回)
+        ok = True
         if m == 0:
-            out.append(("submit", "StandDown", {}))     # bridge.py:428-429
+            ok = self._emit(out, "StandDown", {})        # bridge.py:428-429(checked)
         elif m == 1:
-            if self.mode == 0:
-                self._begin_rise(now, out)
-            else:
-                out.append(("submit", "BalanceStand", {}))  # bridge.py:434-435
+            ok = self._begin_rise(now, out) if self.mode == 0 \
+                else self._emit(out, "BalanceStand", {})  # bridge.py:434-435(checked)
         elif m == 2:
-            if self.mode == 3:
-                # 坐着时 C 在上位不算数(bridge.py:436-438 原注释): 拨趴->拨站才起立,
-                # 防一坐下就被拉起。注意此刻 StopMove(:427) 已发出, 模式保持 3
-                return False, out
             if self.mode == 0:
-                self._begin_rise(now, out)
+                ok = self._begin_rise(now, out)          # checked: StandUp 没入队不进 rising
+        if not ok:
+            # 入队失败(链路断/事件循环收摊, bridge.py:931-939 镜像): 不提交本地
+            # 状态, 请求标志下一帧重试; 告警限流 5s(旧路径同款, journal 归接线层)
+            if self._drop_warn_t is None or now - self._drop_warn_t >= 5.0:
+                self._drop_warn_t = now
+                out.append(("log", "指令未入队(链路/循环不可用), 模式保持 %d, 等重试"
+                            % self.mode))
+            return False, out
         self.mode = m
         self.moving = False
         self.cooldown_until = 0.0
         self.action = None
+        self._sync_pending = False      # 用户已明确指定模式, 不再用遥测覆盖(P0-4)
         out.append(("log", "模式 -> " + ("趴", "站", "走", "坐")[m]))   # bridge.py:448
         if big and self._t0 is not None:
             self._last_big = now
@@ -233,8 +329,9 @@ class DogFsm:
 
     def damp(self):
         """Dog.damp(bridge.py:450-459 原注释): 应急泄力趴窝(已弃用: 自动失控保护改走
-        set_mode(0) 缓降, 函数保留仅供手动)"""
-        out = [("submit", "Damp", {})]
+        set_mode(0) 缓降, 函数保留仅供手动)。旧路径 submit 不查返回, 镜像之。"""
+        out = []
+        self._emit(out, "Damp", {})
         self.mode = 0
         self.moving = False
         self.cooldown_until = 0.0
@@ -243,10 +340,16 @@ class DogFsm:
 
     def set_gear(self, g):
         """Dog.set_gear(bridge.py:461-469 原注释): 三档拨档 = 步态切换(实测本固件
-        SpeedLevel 只收 -1/1, 三档速度实为步态): 1=EconomicGait 2=FreeWalk 3=TrotRun"""
-        gait = {1: "EconomicGait", 2: "FreeWalk", 3: "TrotRun"}.get(g)
+        SpeedLevel 只收 -1/1, 三档速度实为步态): 1=FreeWalk(慢) 2=FreeWalk 3=TrotRun
+        (10-21 用户定档: 挡1 弃经济步态, 1/2 同步态只差限速)。
+        fire-and-forget(旧路径 bridge.py:1085 同构): gear_sent 在 frame() 里先记后发,
+        发送失败不重试 —— 断链窗口丢一次挡位, 恢复后同挡不补发, 换挡才同步
+        (继承行为, 两路径一致, 要改需一起改并重走影子验证)。"""
+        gait = {1: "FreeWalk", 2: "FreeWalk", 3: "TrotRun"}.get(g)
         if gait:
-            return [("submit", gait, {}), ("log", "挡位 -> %d (%s)" % (g, gait))]
+            out = []
+            self._emit(out, gait, {})   # 旧路径 fire-and-forget(bridge.py:1085)
+            return out + [("log", "挡位 -> %d (%s)" % (g, gait))]
         return []
 
     def trick(self, name, dur, now=None):
@@ -258,9 +361,14 @@ class DogFsm:
         out = []
         if not self.link_up:                      # bridge.py:810-811
             return out, "LINKDOWN"
-        if self.mode != 2 or self.pending or now < self.cooldown_until:   # bridge.py:477
+        # P1: 起立流程未完成不得插动作(与 bridge.Dog.trick 的 rising 门同步)
+        if (self.mode != 2 or self.rising or self.pending
+                or now < self.cooldown_until):                        # bridge.py:477
             return out, "NOTSTAND"
-        out.append(("submit", name, {}))
+        if not self._emit(out, name, {}):
+            # submit 没入队: 不收冷却不认账(旧 Dog.trick bridge.py:1099-1100 镜像,
+            # 否则谎报成功, 整段冷却期动作面板全被锁死)
+            return out, "LINKDOWN"
         self.cooldown_until = now + dur
         self.action = name                        # 镜像给网页端显示动作锁(bridge.py:481)
         self.action_end = now + dur
@@ -273,25 +381,24 @@ class DogFsm:
         return out, "OK"
 
     def move(self, vx, vy, vyaw, now=None):
-        """Dog.move(bridge.py 同名): 仅走模式、起立流程已完成且无 pending/冷却时响应"""
+        """Dog.move(bridge.py 同名): 仅走模式、起立流程已完成且无 pending/冷却时响应。
+        入队成功才认账 moving(bridge.py:1120-1125 镜像), 失败下一帧重试。"""
         now = time.monotonic() if now is None else now
         out = []
         if self.mode != 2 or self.rising or self.pending or now < self.cooldown_until:
             return out
         if (vx, vy, vyaw) != (0.0, 0.0, 0.0):
-            out.append(("submit", "Move",
-                        {"x": round(vx, 3), "y": round(vy, 3), "z": round(vyaw, 3)}))
-            self.moving = True
-        elif self.moving:
-            out.append(("submit", "StopMove", {}))
+            if self._emit(out, "Move",
+                          {"x": round(vx, 3), "y": round(vy, 3), "z": round(vyaw, 3)}):
+                self.moving = True
+        elif self.moving and self._emit(out, "StopMove", {}):
             self.moving = False
         return out
 
     def hold(self):
         """Dog.hold(bridge.py:504-509 原注释): 失控保护第一步, 幂等停走"""
         out = []
-        if self.moving:
-            out.append(("submit", "StopMove", {}))
+        if self.moving and self._emit(out, "StopMove", {}):
             self.moving = False
         return out
 
@@ -299,26 +406,27 @@ class DogFsm:
 
     def link(self, gen, height=None, height_t=None):
         """DogLink 连上狗 -> dog.reset()。
-          开机首连: 一条指令都不发; 本地 mode 按狗上报 body_height 定(10-20),
+          开机首连: 一条指令都不发; 本地 mode 用新鲜高度对账(10-20/P0-4),
             无数据才回落假定站立; 锁定等解锁
-          断链重连: 只发 StopMove 停走保持姿态, mode 保持"""
+          断链重连: 只发 StopMove 停走保持姿态, 本地 mode 同样用新鲜高度对账
+            (高->1/低->0/中间不猜), 不对已站立的狗发 StandUp"""
         out = []
         if gen != self.link_gen_cur:
             self.link_gen_cur = gen
             self.link_up = True
             first = gen <= 1                      # bridge.py:527 state.link_gen <= 1
+            now = time.monotonic()
             if not first:
-                out.append(("submit", "StopMove", {}))
-            else:
-                fresh = (height is not None and height_t is not None
-                         and time.monotonic() - height_t < self.cfg.DOG_STATE_STALE_S)
-                self.mode = (1 if height > self.cfg.DOG_STAND_HEIGHT else 0) if fresh else 1
+                self._emit(out, "StopMove", {})   # 断链重连停走(旧路径不查返回, bridge.py:1157)
             self.moving = False
             self.cooldown_until = 0.0
             self.pending = []
             self.rising = False
             self._h_hist = []
+            self._h_ts = None
             self.action = None
+            self._sync_pending = True
+            out += self._apply_reconcile(now, first, height, height_t)
             out.append(("log", "开机首连: 已锁定等待解锁(不发任何指令)" if first
                         else "断链重连: 停走保持姿态, 请重新解锁"))
         return out
@@ -437,24 +545,26 @@ class DogFsm:
                         self.lie_req = False
             if not handled and stand and self.mode != 0:
                 out += self.set_mode(2, now=now)[1]   # C 稳在上且狗本是站/走: 补同步模式
-            g = pos(ch[self.cfg.CH_GEAR], 3) + 1  # :648 三档拨档 -> 挡1/2/3
+            g = self._pos(ch[self.cfg.CH_GEAR], 3) + 1  # :648 三档拨档 -> 挡1/2/3
             if g != self.last_gear:
                 self.last_gear = g                # :649-650
                 self.gear = g                     # :651 展示镜像
             # 步态只在站立时同步(:652-656 原注释): 趴着切挡(含趴着解锁, 无论 C 在上
-            # 在下)只记账, 否则 TrotRun 等步态指令会把趴下的狗直接弹起来(10-10 实测 bug)
-            if stand and self.mode != 0 and self.gear_sent != g:
+            # 在下)只记账, 否则 TrotRun 等步态指令会把趴下的狗直接弹起来(10-10 实测 bug)。
+            # 10-21: 起立流程(rising)期间也不发 —— StandUp 与 EconomicGait 并发实测触发
+            # 上装断电, 等 BalanceStand 完成后的下一帧再同步
+            if stand and self.mode != 0 and not self.rising and self.gear_sent != g:
                 self.gear_sent = g                # :655
                 out += self.set_gear(g)           # :656
             vx_max, vy_max, vyaw_max = self.cfg.GEAR_SPEEDS.get(
                 g, (self.cfg.VX_MAX, self.cfg.VY_MAX, self.cfg.VYAW_MAX))  # :657-658
-            ax = axis(ch[self.cfg.CH_PITCH]) * self.cfg.SIGN_PITCH   # :659
-            ay = axis(ch[self.cfg.CH_ROLL]) * self.cfg.SIGN_ROLL     # :660
-            az = axis(ch[self.cfg.CH_YAW]) * self.cfg.SIGN_YAW       # :661
+            ax = self._axis(ch[self.cfg.CH_PITCH]) * self.cfg.SIGN_PITCH   # :659
+            ay = self._axis(ch[self.cfg.CH_ROLL]) * self.cfg.SIGN_ROLL     # :660
+            az = self._axis(ch[self.cfg.CH_YAW]) * self.cfg.SIGN_YAW       # :661
             # B/D 键动作(:662-667 原注释): 拨到高位的边沿触发一次, 摇杆回中时才响应
             # (当前 config.KEY_ACTIONS={} 已退役, 逻辑保留)
             for cid, (name, dur) in self.cfg.KEY_ACTIONS.items():
-                high = ch[cid] > 1002             # :664
+                high = ch[cid] > self.cfg.KEY_THRESHOLD  # :664(标定值不再写死)
                 if high and not self.key_high.get(cid) and not (ax or ay or az):
                     cmds, _r = self.trick(name, dur, now=now)        # :666
                     out += cmds
@@ -467,7 +577,8 @@ class DogFsm:
         """rc_loop 每循环一次(bridge.py 无帧/坏帧时 d.tick() 的兜底,
         干净帧时 frame() 内已做过, 此处幂等) + 网页摇杆驱动"""
         now = time.monotonic() if now is None else now
-        out = self._maybe_balance(now, height, height_t)
+        out = self._apply_reconcile(now, False, height, height_t)  # 重连对账未决时续判
+        out += self._maybe_balance(now, height, height_t)
         out += self._drain_pending(now)
         # 网页端(:700-704 原注释): 仅 RC 上锁时接管
         if not self.armed and self.web_armed:
@@ -517,10 +628,11 @@ class DogFsm:
         elif cmd in ("disarm", "damp"):
             self.web_armed = False            # :756-758
             out += self.set_mode(0, now=now)[1]      # :759
-        elif cmd == "stand":
-            out += self.set_mode(1, now=now)[1]      # :760-761
-        elif cmd == "walk":
-            out += self.set_mode(2, now=now)[1]      # :762-763
+        elif cmd in ("stand", "walk"):
+            # P1: 起立流程未完成时网页 stand/walk 明确拒绝(接线层回 error),
+            # 不清 rising 也不放行 Move; 趴下(disarm/damp)永远允许
+            if not self.rising:
+                out += self.set_mode(1 if cmd == "stand" else 2, now=now)[1]
         elif cmd == "closed":
             # :786-793 网页端断开, 解除网页控制并趴下(仅 RC 也未解锁时)
             self.web_armed = False

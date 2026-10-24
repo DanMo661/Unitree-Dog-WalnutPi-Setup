@@ -89,6 +89,7 @@ curl http://192.168.123.50:8000/sbus    # 浏览器调试台(16通道实时/帧�
 |---|---|
 | `SOP.md` | 主文档：每阶段的详细步骤与技术坑（venv 缺件/SDK 库差异/root 服务/热点上限/驱动僵死/日志分锅…） |
 | `go2-bridge/` | 板端全套源码（bridge.py 转发层 + 部署脚本 + systemd 服务 + 测试） |
+| `go2-bridge/core/` | 遥控状态机纯逻辑（fsm.py，表驱动可测；经 `config.FSM_MODE` 与旧路径双轨） |
 | `go2-bridge/android-app/` | 遥控器 App 源码（GO2控制台：喊话台/动作面板/调试台/网络遥控） |
 | `go2-bridge/research/` | Go2 低层控制调研（SDK2 关节级/固件解锁/MCF 指令表） |
 | `assets/MANIFEST.md` | TF 卡镜像、离线依赖等大文件素材的获取方式 |
@@ -97,4 +98,5 @@ curl http://192.168.123.50:8000/sbus    # 浏览器调试台(16通道实时/帧�
 
 - 狗固件锁 1.1.x（1.1.1~1.1.14 免密钥）；≥1.1.15 的狗需逐机取 AES key（`config.AES_KEY`）
 - 核桃派 WiFi 芯片（unisoc UWE5622）偶发驱动级僵死，只能断电重启（SOP 坑 3.3）
+- 控制状态机双轨：默认 `FSM_MODE="shadow"`（旧路径执行，core/fsm.py 影子只比对不下发）；勿直接改板端配置切 `active`，需先完成影子零差异验证
 - 每条狗内网独立可复制部署；**WiFi 侧 IP 必须每板不同**（SOP §3）

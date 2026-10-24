@@ -6,14 +6,16 @@
 用例相互独立: 各自新建 DogFsm(now=0), 时钟由每个事件的 now 参数显式推进,
 不 sleep、不依赖真实时间、不碰硬件。
 
-覆盖(任务点名场景全覆盖, 共 35 例):
+覆盖(任务点名场景全覆盖, 共 41 例):
   解锁抖动 / C 抖动 / 趴下切挡 / 起立3s内拨C / 坏帧夹在边沿中间 / 重连陈旧电平 /
   坐姿+挡位 / 冷却中摇杆 / 断链30s上锁 / 首连零指令 / 坐->趴静默 / 坐->走忽略,
   另补: 首帧电平只记录、短丢帧恢复不解锁、网页指令 RC 优先/抢占/退出趴下/damp、
   B键继电器两档去重、摇杆死区、动作前置条件(LINKDOWN/NOTSTAND)、串口重开、
   坏帧保活(sbus_ok);
   10-20 供电口事故止血: 解锁不自动趴 / C 上沿起立 / C 下沿趴下 / 2s 互锁精确边界
-  (含到点重试) / A 去抖 / 起立保护期+帧重试 / 上锁下降沿不去抖。
+  (含到点重试) / A 去抖 / 起立保护期+帧重试 / 上锁下降沿不去抖;
+  阶段3 checked-submit(send 探针, 用例标 "send"): 入队失败不提交 mode/rising/
+  moving/冷却、请求标志重试、BalanceStand 失败保持 rising 重试、绝不假起立。
 
 用法: python run_test_shim.py test_fsm_table.py
 (本测试只 import core.fsm + config, 不 import bridge; 垫片仅为统一入口)
@@ -134,14 +136,16 @@ CASES = [
          ("tick", 6.50),                          # 起立流程中(rising), 3s 兜底未到点
      ],
      "expect": [REL1050, UNLOCK,
-                STOP, S("StandUp"), M2, S("FreeWalk"), GEAR(2, "FreeWalk"),
+                STOP, S("StandUp"), M2,
                 # 5.75 C 下: 上锁/趴下永不拦 -> 立即 StopMove+StandDown
                 STOP, S("StandDown"), ("log", "模式 -> 趴")],
      "post": [("attr", "mode", 0), ("attr", "rising", False), ("attr", "pending", []),
-              ("attr", "stand_req", False), ("attr", "lie_req", False)]},
+              ("attr", "stand_req", False), ("attr", "lie_req", False),
+              ("attr", "gear_sent", 0)]},
 
     # 5. 趴下切挡: 只记账不发步态(fsm.py:335-339, 10-10 弹起 bug);
-    #    C 拨上起立那一刻挡位补发(起立在进程 5s 保护期外, 10-20)
+    #    C 拨上起立那刻也不发 —— 10-21 黑匣子: StandUp 后 14ms 并发 EconomicGait
+    #    导致上装断电; 必须等起立完成(BalanceStand)后的下一帧才同步挡位
     {"name": "gear_while_prone_bookkeep_only",
      "events": [
          ("frame", {"A": A_OFF, "C": C_DOWN, "G": 282}, 0, 0, 5.00),
@@ -149,11 +153,17 @@ CASES = [
          ("frame", {"A": A_ON, "C": C_DOWN, "G": 1722}, 0, 0, 5.50),
          ("frame", {"A": A_ON, "C": C_DOWN, "G": 1002}, 0, 0, 5.75),
          ("frame", {"A": A_ON, "C": C_UP, "G": 1002}, 0, 0, 6.00),
+         ("tickh", 6.10, 0.33, 6.10),      # 不同遥测包, 高度稳定
+         ("tickh", 6.30, 0.33, 6.30),
+         ("tickh", 6.60, 0.33, 6.60),      # 首样本>=0.5s -> BalanceStand, rising 解除
+         ("frame", {"A": A_ON, "C": C_UP, "G": 1002}, 0, 0, 6.70),   # 起立完成后才补步态
      ],
      "expect": [REL1050, UNLOCK,
-                STOP, S("StandUp"), M2, S("FreeWalk"), GEAR(2, "FreeWalk")],
+                STOP, S("StandUp"), M2,
+                S("BalanceStand"), S("FreeWalk"), GEAR(2, "FreeWalk")],
      "post": [("attr", "mode", 2), ("attr", "gear", 2),
-              ("attr", "last_gear", 2), ("attr", "gear_sent", 2)]},
+              ("attr", "last_gear", 2), ("attr", "gear_sent", 2),
+              ("attr", "rising", False)]},
 
     # 6. 起立 3 秒内拨 C 趴下(10-20 互锁): 2s 内反向请求被拦(lie_req 保留),
     #    每帧重试到点(距 StandUp >= 2s)自动趴下, 趴下作废 pending,
@@ -168,24 +178,27 @@ CASES = [
          ("tick", 10.00),
      ],
      "expect": [REL1050, UNLOCK,
-                STOP, S("StandUp"), M2, S("EconomicGait"), GEAR(1, "EconomicGait"),
+                STOP, S("StandUp"), M2,
                 STOP, S("StandDown"), M0],
      "post": [("attr", "mode", 0), ("attr", "pending", []),
-              ("attr", "lie_req", False)]},
+              ("attr", "lie_req", False), ("attr", "gear_sent", 0)]},
 
-    # 7. 起立不被打断: 3s 后 BalanceStand 照发(帧内 drain 在最前, fsm.py:291)
+    # 7. 起立不被打断: 无遥测时 STAND_TIMEOUT_S(6s)兜底 BalanceStand 照发
+    #    (P0-2: 从旧 3s 延长到 6s; 帧内 drain 在最前, fsm.py:291)。
+    #    10-21: 步态在 BalanceStand 之后同一帧才补发(起立期间不发)
     {"name": "standup_uninterrupted_balance_follows",
      "events": [
          ("frame", {"A": A_OFF, "C": C_DOWN, "G": 282}, 0, 0, 5.00),
          ("frame", {"A": A_ON, "C": C_DOWN, "G": 282}, 0, 0, 5.25),
          ("frame", {"A": A_ON, "C": C_UP, "G": 282}, 0, 0, 5.50),
          ("frame", {"A": A_ON, "C": C_UP, "G": 282}, 0, 0, 6.00),
-         ("frame", {"A": A_ON, "C": C_UP, "G": 282}, 0, 0, 8.75),
+         ("frame", {"A": A_ON, "C": C_UP, "G": 282}, 0, 0, 11.75),
      ],
      "expect": [REL1050, UNLOCK,
-                STOP, S("StandUp"), M2, S("EconomicGait"), GEAR(1, "EconomicGait"),
-                S("BalanceStand")],
-     "post": [("attr", "mode", 2), ("attr", "pending", [])]},
+                STOP, S("StandUp"), M2,
+                S("BalanceStand"), S("FreeWalk"), GEAR(1, "FreeWalk")],
+     "post": [("attr", "mode", 2), ("attr", "pending", []),
+              ("attr", "gear_sent", 1)]},
 
     # 8. 坏帧夹在 A 边沿中间: 坏帧不作控制输入, prev_high 不被污染,
     #    之后干净帧的翻拨边沿照常解锁; 坏帧本身只刷 last_any(链路活着)
@@ -211,14 +224,16 @@ CASES = [
          ("frame", {"A": A_ON, "C": C_UP}, 0, 0, 5.50),
          ("frame", {"A": A_ON, "C": C_UP, "P": 1722}, 0, 0, 5.75),
          ("bad", 6.00),
-         ("tick", 8.75),
-         ("frame", {"A": A_ON, "C": C_UP, "P": 1722}, 0, 0, 9.00),
+         ("tick", 11.75),                       # 无遥测 6s 兜底(5.5+6)
+         ("frame", {"A": A_ON, "C": C_UP, "P": 1722}, 0, 0, 12.00),
      ],
      "expect": [REL1050, UNLOCK,
-                STOP, S("StandUp"), M2, S("FreeWalk"), GEAR(2, "FreeWalk"),
+                STOP, S("StandUp"), M2,
                 S("BalanceStand"),
+                S("FreeWalk"), GEAR(2, "FreeWalk"),
                 S("Move", x=-2.0, y=0.0, z=0.0)],
-     "post": [("attr", "moving", True), ("attr", "armed", True)]},
+     "post": [("attr", "moving", True), ("attr", "armed", True),
+              ("attr", "gear_sent", 2)]},
 
     # 9b. 运动中坏帧急停: 坏帧 hold 幂等(只发一次 StopMove), 干净帧回中不补停
     #     (走 link 首连 1->2 同步路径起立, 无 pending 干扰)
@@ -251,7 +266,7 @@ CASES = [
      ],
      "expect": [FIRST, REL1950, GON,
                 UNLOCK, STOP, M2, S("TrotRun"), GEAR(3, "TrotRun"),
-                S("Move", x=-2.5, y=0.0, z=0.0),
+                S("Move", x=-3.0, y=0.0, z=0.0),   # 挡3 满杆(10-21 提速 3.0)
                 STOP, RELINK,
                 RELOCK,
                 UNLOCK],
@@ -259,8 +274,8 @@ CASES = [
               ("attr", "link_gen_cur", 2)]},
 
     # 11. 坐姿+挡位: 坐下(mode3)后切挡 -> 挡位照发(现行语义: 判据是 mode!=0,
-    #     mode3 不是趴, fsm.py:337 逐行等价 bridge.py:654); C 在上的帧每帧先出
-    #     StopMove(3->2 被忽略但 StopMove 已入列, fsm.py:147+158-160)
+    #     mode3 不是趴, fsm.py:337 逐行等价 bridge.py:654); C 在上的 3->2 请求被
+    #     P1 去重提前返回, 不再每帧先塞一条 StopMove
     {"name": "sit_then_gear_change_passthrough",
      "events": WALK2_PRELUDE + [
          ("trick", "Sit", 3, 0.15, "OK"),
@@ -268,7 +283,7 @@ CASES = [
      ],
      "expect": WALK2_EXPECT_HEAD + [
          S("Sit"), TRICK("Sit", 3), M3,
-         STOP, S("TrotRun"), GEAR(3, "TrotRun")],
+         S("TrotRun"), GEAR(3, "TrotRun")],
      "post": [("attr", "mode", 3), ("attr", "gear", 3), ("attr", "gear_sent", 3)]},
 
     # 12. 坐->趴静默: 狗已在低位, 3->0 只记状态不发任何指令(fsm.py:138-146)
@@ -290,9 +305,9 @@ CASES = [
          ("frame", {"A": A_ON, "C": C_UP}, 0, 0, 0.20),
          ("frame", {"A": A_ON, "C": C_UP}, 0, 0, 0.25),
      ],
+     # P1: 坐姿每帧请求 2 提前返回, 不再每帧刷 StopMove
      "expect": WALK2_EXPECT_HEAD + [
-         S("Sit"), TRICK("Sit", 3), M3,
-         STOP, STOP],
+         S("Sit"), TRICK("Sit", 3), M3],
      "post": [("attr", "mode", 3)]},
 
     # 14. 坐后完整回环: C 拨下(静默趴) -> C 下->上边沿才真正起立(过程 5s 保护期外,
@@ -302,7 +317,7 @@ CASES = [
          ("trick", "Sit", 3, 0.15, "OK"),
          ("frame", {"A": A_ON, "C": C_DOWN}, 0, 0, 5.25),
          ("frame", {"A": A_ON, "C": C_UP}, 0, 0, 5.50),
-         ("tick", 8.75),
+         ("tick", 11.75),                       # 无遥测 6s 兜底(5.5+6)
      ],
      "expect": WALK2_EXPECT_HEAD + [
          S("Sit"), TRICK("Sit", 3), M3,
@@ -344,7 +359,7 @@ CASES = [
      ],
      "expect": [FIRST, REL1950, GON,
                 UNLOCK, STOP, M2, S("TrotRun"), GEAR(3, "TrotRun"),
-                S("Move", x=-2.5, y=0.0, z=0.0),
+                S("Move", x=-3.0, y=0.0, z=0.0),   # 挡3 满杆(10-21 提速 3.0)
                 REL1050, GOFF, STOP,
                 FS30],
      "post": [("attr", "armed", False), ("attr", "mode", 2),
@@ -413,19 +428,23 @@ CASES = [
      "post": [("attr", "armed", True), ("attr", "web_armed", False),
               ("attr", "mode", 2)]},
 
-    # 21. 网页会话闭环: arm(趴->站: StandUp+挂3s) -> walk(清 pending, 1->2 无 StandUp)
-    #     -> axes+tick 驱动 Move -> ws closed 自动趴下(距 StandUp >= 2s 过互锁, 10-20),
+    # 21. 网页会话闭环: arm(趴->站: StandUp+rising) -> 起立中 walk 被明确拒绝(P1)
+    #     -> 无遥测 6s 兜底 BalanceStand 解除 rising -> walk(1->2 无 StandUp)
+    #     -> axes+tick 驱动 Move -> ws closed 自动趴下(距 StandUp >= 2s 过互锁),
     #     网页控制解除
     {"name": "web_session_drive_then_close_lies_down",
      "events": [
          ("web", "arm", 5.25),
-         ("web", "walk", 5.50),
-         ("webaxes", 0.5, 0.0, 0.0, 5.75),
-         ("tick", 6.00),
-         ("web", "closed", 7.75),
-         ("tick", 8.00),
+         ("web", "walk", 5.50),        # 起立中: 拒绝, 不得清 rising 放行 Move
+         ("tick", 11.25),              # 无遥测兜底(5.25+6s): BalanceStand
+         ("web", "walk", 11.50),
+         ("webaxes", 0.5, 0.0, 0.0, 11.75),
+         ("tick", 12.00),
+         ("web", "closed", 13.75),
+         ("tick", 14.00),
      ],
      "expect": [STOP, S("StandUp"), M1,
+                S("BalanceStand"),
                 STOP, M2,
                 S("Move", x=0.25, y=0.0, z=0.0),
                 STOP, S("StandDown"), M0],
@@ -464,19 +483,20 @@ CASES = [
          ("frame", {"A": A_OFF, "C": C_DOWN}, 0, 0, 5.00),
          ("frame", {"A": A_ON, "C": C_UP}, 0, 0, 5.25),
          ("frame", {"A": A_ON, "C": C_UP, "P": 1040}, 0, 0, 5.50),
-         ("tick", 8.50),
-         ("frame", {"A": A_ON, "C": C_UP, "P": 1040}, 0, 0, 8.75),
-         ("frame", {"A": A_ON, "C": C_UP, "P": 282}, 0, 0, 9.00),
-         ("frame", {"A": A_ON, "C": C_UP, "P": 282}, 0, 0, 9.25),
-         ("frame", {"A": A_ON, "C": C_UP, "P": 1002}, 0, 0, 9.50),
+         ("tick", 11.50),                       # 无遥测 6s 兜底(5.25+6)
+         ("frame", {"A": A_ON, "C": C_UP, "P": 1040}, 0, 0, 11.75),
+         ("frame", {"A": A_ON, "C": C_UP, "P": 282}, 0, 0, 12.00),
+         ("frame", {"A": A_ON, "C": C_UP, "P": 282}, 0, 0, 12.25),
+         ("frame", {"A": A_ON, "C": C_UP, "P": 1002}, 0, 0, 12.50),
      ],
      "expect": [REL1050, UNLOCK,
-                STOP, S("StandUp"), M2, S("FreeWalk"), GEAR(2, "FreeWalk"),
+                STOP, S("StandUp"), M2,
                 S("BalanceStand"),
+                S("FreeWalk"), GEAR(2, "FreeWalk"),
                 S("Move", x=2.0, y=0.0, z=0.0),
                 S("Move", x=2.0, y=0.0, z=0.0),
                 STOP],
-     "post": [("attr", "moving", False)]},
+     "post": [("attr", "moving", False), ("attr", "gear_sent", 2)]},
 
     # 25. 动作前置条件: 链路断 LINKDOWN(不收冷却不认账); 非走模式 NOTSTAND;
     #     走模式 OK; Sit 后(mode3)再触发 NOTSTAND
@@ -546,8 +566,9 @@ CASES = [
          ("frame", {"A": A_ON, "C": C_UP}, 0, 0, 5.75),
      ],
      "expect": [REL1050, UNLOCK,
-                STOP, S("StandUp"), M2, S("FreeWalk"), GEAR(2, "FreeWalk")],
-     "post": [("attr", "mode", 2), ("attr", "stand_req", False)]},
+                STOP, S("StandUp"), M2],
+     "post": [("attr", "mode", 2), ("attr", "stand_req", False),
+              ("attr", "gear_sent", 0)]},
 
     # 30. C 下沿趴下: 走模式下 C 上->下边沿才趴下(首例大动作无锚点放行),
     #     趴下作废起立挂的 pending
@@ -571,9 +592,9 @@ CASES = [
          ("frame", {"A": A_ON, "C": C_DOWN}, 0, 0, 7.50),   # 整 2.0s: 放行
      ],
      "expect": [REL1050, UNLOCK,
-                STOP, S("StandUp"), M2, S("FreeWalk"), GEAR(2, "FreeWalk"),
+                STOP, S("StandUp"), M2,
                 STOP, S("StandDown"), M0],
-     "post": [("attr", "mode", 0)]},
+     "post": [("attr", "mode", 0), ("attr", "gear_sent", 0)]},
 
     # 32. A 去抖: 解锁上升沿距上次解锁边沿 < ARM_DEBOUNCE_S(1s) 忽略
     #     (边沿仍刷新锚点, 稳定 1s 后的翻拨才解锁)
@@ -600,8 +621,22 @@ CASES = [
          ("frame", {"A": A_ON, "C": C_UP}, 0, 0, 5.25),   # 重试: 5s 过, 放行
      ],
      "expect": [REL1050, UNLOCK,
-                STOP, S("StandUp"), M2, S("FreeWalk"), GEAR(2, "FreeWalk")],
-     "post": [("attr", "mode", 2), ("attr", "stand_req", False)]},
+                STOP, S("StandUp"), M2],
+     "post": [("attr", "mode", 2), ("attr", "stand_req", False),
+              ("attr", "gear_sent", 0)]},
+
+    # 34b. P1: 起立中网页 stand/walk 被明确拒绝(零输出, 不清 rising);
+    #     趴下永远允许(距 StandUp 2.25s 过互锁)
+    {"name": "web_stand_walk_blocked_while_rising",
+     "events": [
+         ("web", "arm", 5.25),          # 0->1: StandUp, 进入 rising
+         ("web", "walk", 5.30),         # 起立中: 拒绝
+         ("web", "stand", 5.35),        # 起立中: 拒绝
+         ("web", "disarm", 7.50),       # 趴下永远允许
+     ],
+     "expect": [STOP, S("StandUp"), M1,
+                STOP, S("StandDown"), M0],
+     "post": [("attr", "rising", False), ("attr", "mode", 0)]},
 
     # 34. 上锁下降沿不被去抖: 解锁 0.5s 后即上锁(远小于 A 去抖窗),
     #     照常执行趴下收权(2->0 首例大动作无锚点放行)
@@ -616,6 +651,101 @@ CASES = [
                 STOP, M2, S("FreeWalk"), GEAR(2, "FreeWalk"),
                 STOP, S("StandDown"), M0, LOCK],
      "post": [("attr", "armed", False), ("attr", "mode", 0)]},
+
+    # ---- 阶段3 HIGH 修复: checked-submit(send 探针模式, 见文件头注释) ----
+    # 注意 send 模式下每个事件的记账次序: 该事件内成功的 submit(发生序)在前,
+    # 该事件的 relay/gpio/log(fsm 返回值)在后 —— submit 在事件处理中同步发出。
+
+    # 35. StandUp 入队失败 -> 不进 rising 不提交 mode(绝不假起立),
+    #     stand_req 保留每帧重试(告警 5s 限流一条), 链路恢复后重试成功照常起立
+    {"name": "standup_submit_fail_no_fake_rising", "send": True,
+     "events": [
+         ("frame", {"A": A_OFF, "C": C_DOWN}, 0, 0, 5.00),
+         ("frame", {"A": A_ON, "C": C_DOWN}, 0, 0, 5.25),
+         ("sendfail", True),
+         ("frame", {"A": A_ON, "C": C_UP}, 0, 0, 5.50),   # C 上沿: 入队全败
+         ("frame", {"A": A_ON, "C": C_UP}, 0, 0, 5.75),   # 重试: 告警限流内零输出
+         ("sendfail", False),
+         ("frame", {"A": A_ON, "C": C_UP}, 0, 0, 6.00),   # 恢复: 重试成功(rising 中不发步态)
+         ("tick", 12.00),                          # 无遥测兜底(6.0+6s): BalanceStand
+         ("frame", {"A": A_ON, "C": C_UP}, 0, 0, 12.25),  # 起立完成后才补步态
+     ],
+     "expect": [REL1050, UNLOCK,
+                ("log", "指令未入队(链路/循环不可用), 模式保持 0, 等重试"),
+                STOP, S("StandUp"), M2,
+                S("BalanceStand"), S("FreeWalk"), GEAR(2, "FreeWalk")],
+     "post": [("attr", "mode", 2), ("attr", "rising", False),
+              ("attr", "gear_sent", 2)]},
+
+    # 36. StandDown 入队失败 -> 模式保持走(不假趴), 上锁照常收权(LOCK 无条件),
+    #     告警限流内第二次失败不再刷日志
+    {"name": "standdown_submit_fail_mode_kept", "send": True,
+     "events": [
+         ("link", 1),
+         ("frame", {"A": A_OFF, "C": C_UP}, 0, 0, 0.05),
+         ("frame", {"A": A_ON, "C": C_UP}, 0, 0, 0.10),
+         ("sendfail", True),
+         ("frame", {"A": A_ON, "C": C_DOWN}, 0, 0, 5.25),  # C 下沿: 趴下入队失败
+         ("frame", {"A": A_OFF, "C": C_DOWN}, 0, 0, 5.75),  # 上锁: 又失败(限流)+LOCK
+     ],
+     "expect": [FIRST, REL1050, STOP, S("FreeWalk"), UNLOCK, M2, GEAR(2, "FreeWalk"),
+                ("log", "指令未入队(链路/循环不可用), 模式保持 2, 等重试"),
+                LOCK],
+     "post": [("attr", "mode", 2), ("attr", "armed", False),
+              ("attr", "lie_req", False)]},
+
+    # 37. BalanceStand 入队失败 -> rising 保持, 稳定窗样本不丢, 下一包重试成功
+    #     (绝无"rising 已清但 BalanceStand 没发出"的中间态)
+    {"name": "balance_fail_keeps_rising_retry", "send": True,
+     "events": [
+         ("frame", {"A": A_OFF, "C": C_DOWN}, 0, 0, 5.00),
+         ("frame", {"A": A_ON, "C": C_DOWN}, 0, 0, 5.25),
+         ("frame", {"A": A_ON, "C": C_UP}, 0, 0, 5.50),
+         ("sendfail", True),
+         ("tickh", 6.10, 0.33, 6.10),      # 稳定三包到齐 -> BalanceStand 入队失败
+         ("tickh", 6.30, 0.33, 6.30),
+         ("tickh", 6.60, 0.33, 6.60),
+         ("sendfail", False),
+         ("tickh", 6.80, 0.33, 6.80),      # 窗口滑过仍稳定 -> 重试成功, rising 解除
+     ],
+     "expect": [REL1050, UNLOCK,
+                STOP, S("StandUp"), M2,
+                S("BalanceStand")],
+     "post": [("attr", "rising", False), ("attr", "mode", 2)]},
+
+    # 38. trick 入队失败 -> LINKDOWN 不收冷却(否则谎报成功, 动作面板整段锁死)
+    {"name": "trick_submit_fail_no_cooldown", "send": True,
+     "events": [
+         ("link", 1),
+         ("frame", {"A": A_OFF, "C": C_UP}, 0, 0, 0.05),
+         ("frame", {"A": A_ON, "C": C_UP}, 0, 0, 0.10),
+         ("sendfail", True),
+         ("trick", "Hello", 4, 0.15, "LINKDOWN"),
+         ("sendfail", False),
+         ("trick", "Hello", 4, 0.20, "OK"),        # 无冷却障碍, 立即可重试
+     ],
+     "expect": [FIRST, REL1050, STOP, S("FreeWalk"), UNLOCK, M2, GEAR(2, "FreeWalk"),
+                S("Hello"), TRICK("Hello", 4)],
+     "post": [("attr", "action", "Hello"), ("attr", "cooldown_until", 4.20)]},
+
+    # 39. Move 入队失败 -> moving 不认账(下一帧重试), 回中不补发多余 StopMove;
+    #     恢复后满杆生效, 再回中正常停走
+    {"name": "move_submit_fail_not_moving", "send": True,
+     "events": [
+         ("link", 1),
+         ("frame", {"A": A_OFF, "C": C_UP}, 0, 0, 0.05),
+         ("frame", {"A": A_ON, "C": C_UP}, 0, 0, 0.10),
+         ("sendfail", True),
+         ("frame", {"A": A_ON, "C": C_UP, "P": 1722}, 0, 0, 0.15),   # Move 失败
+         ("frame", {"A": A_ON, "C": C_UP, "P": 1002}, 0, 0, 0.20),   # 回中: 无 StopMove
+         ("sendfail", False),
+         ("frame", {"A": A_ON, "C": C_UP, "P": 1722}, 0, 0, 0.25),   # 满杆生效
+         ("frame", {"A": A_ON, "C": C_UP, "P": 1002}, 0, 0, 0.30),   # 停走
+     ],
+     "expect": [FIRST, REL1050, STOP, S("FreeWalk"), UNLOCK, M2, GEAR(2, "FreeWalk"),
+                S("Move", x=-2.0, y=0.0, z=0.0),
+                STOP],
+     "post": [("attr", "moving", False)]},
 ]
 
 
@@ -629,16 +759,30 @@ def _first_diff(expect, got):
 
 
 def run_case(c):
-    f = DogFsm(now=0.0)
     got = []
+    st = {"fail": False}
+
+    def send(name, **p):
+        """探针(影子口径): 链路坏时返回 False 且不记账 —— 模拟 DogLink.submit
+        入队失败; 成功则记账(发生序), FSM 的 relay/gpio/log 在事件返回后追加。"""
+        if st["fail"]:
+            return False
+        got.append(("submit", name, dict(p)))
+        return True
+
+    f = DogFsm(now=0.0, send=send if c.get("send") else None)
     for ev in c["events"]:
         k = ev[0]
         if k == "frame":
             got += f.frame(ch(**ev[1]), ev[2], ev[3], now=ev[4])
         elif k == "bad":                      # 坏帧: 通道值不作控制输入, 给基线即可
             got += f.frame([1002] * 16, 1, 0, now=ev[1])
+        elif k == "sendfail":                 # 探针开关: True=链路坏(submit 全败)
+            st["fail"] = ev[1]
         elif k == "tick":
             got += f.tick(now=ev[1])
+        elif k == "tickh":                    # 带遥测的 tick: (tickh, now, height, height_t)
+            got += f.tick(now=ev[1], height=ev[2], height_t=ev[3])
         elif k == "safety":
             got += f.safety(ev[1], now=ev[2])
         elif k == "link":

@@ -18,6 +18,7 @@ class StubLink:
 
     def submit(self, name, **p):
         self.cmds.append((name, dict(p)))
+        return True          # P0-3 起 submit 返回是否入队成功
 
 
 def names(stub):
@@ -82,12 +83,13 @@ def main():
     assert d.set_mode(0, now=2.0) is True, "3->0 坐->趴静默不应被拦"
     assert not names(stub), "坐->趴静默不得发指令"
 
-    # 6. 坐姿规则: mode3 时请求 2 返回 False(每帧重试同旧行为: StopMove 照发, 模式保持)
+    # 6. 坐姿规则(P1 去重): mode3 时请求 2 返回 False 且不发任何指令,
+    #    不再每帧塞一条 StopMove(20Hz 刷指令队列)
     stub = StubLink()
     d = bridge.Dog(stub, now=0.0)
     d.mode = 3
     assert d.set_mode(2, now=6.0) is False, "坐着时 C 在上位不算数"
-    assert names(stub) == ["StopMove"], names(stub)
+    assert names(stub) == [], names(stub)
     assert d.mode == 3, "坐姿拦截不得改模式"
 
     # 7. 同模式幂等: 返回 True 且无指令
@@ -126,7 +128,47 @@ def main():
     assert d.set_mode(2, now=6.0) is False, "紧接着的起立仍受互锁拦"
     assert d.set_mode(2, now=7.5) is True, "距趴下 2s 后起立放行"
 
-    print("test_safety: 10 组断言全部通过")
+    # 11. 拦截日志限流(P1): 同一 episode 内 20Hz 重试只记首次拦截, 到点放行记一次
+    stub = StubLink()
+    d = bridge.Dog(stub, now=0.0)
+    bridge._EVENTS.clear()
+    for i in range(20):
+        assert d.set_mode(2, now=2.0 + i * 0.05) is False
+    guard_evs = [e for e in bridge._EVENTS if e["ev"] == "stand_guard"]
+    assert len(guard_evs) == 1, "同一拦截 episode 应只记一次, 实际 %r" % guard_evs
+    assert d._blk_reason == "stand_guard" and d._blk_until == bridge.config.STAND_GUARD_S
+    assert d.set_mode(2, now=bridge.config.STAND_GUARD_S) is True
+    assert d._blk_reason is None, "放行后拦截 episode 必须清空"
+    assert any(e["ev"] == "unblock" for e in bridge._EVENTS), "缺放行记录"
+
+    # 12. 撤销(P1): 拦截中请求被外部撤销(C 回对面电平) -> 记一次撤销并清 episode
+    stub = StubLink()
+    d = bridge.Dog(stub, now=0.0)
+    bridge._EVENTS.clear()
+    assert d.set_mode(2, now=2.0) is False
+    d.note_cancel(2, now=2.1)
+    assert d._blk_reason is None
+    assert any(e["ev"] == "req_cancel" for e in bridge._EVENTS)
+    d.note_cancel(2, now=2.2)          # 幂等: 无 episode 时不重复记
+
+    # 13. P0-3: submit 入队失败 -> set_mode 返回 False, 模式/互锁锚点都不动
+    class DeadLink:
+        def __init__(self):
+            self.cmds = []
+
+        def submit(self, name, **p):
+            self.cmds.append(name)
+            return False
+
+    dead = DeadLink()
+    d = bridge.Dog(dead, now=0.0)
+    state_before = bridge.state.mode
+    assert d.set_mode(2, now=5.0) is False, "入队失败必须返回 False(请求标志留给下一帧)"
+    assert d.mode == 0 and d.rising is False
+    assert d._last_big is None, "未真正发出的大动作不得刷新互锁锚点"
+    assert bridge.state.mode == state_before, "入队失败不得改本地状态镜像"
+
+    print("test_safety: 13 组断言全部通过")
 
 
 if __name__ == "__main__":

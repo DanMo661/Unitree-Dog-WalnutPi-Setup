@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """所有可调参数集中在这 —— 改完 sudo systemctl restart go2-bridge 生效"""
+import sys
 
 # ---- 连接狗的方式 ----
 # "LocalSTA": 狗和板子连同一路由器/WiFi。家里调试用这个, 板子留在 192.168.8.21 可 SSH。
@@ -16,6 +17,7 @@ HEARTBEAT_S       = 5.0   # 心跳周期 s: 发有回包的 GetSpeedLevel 探狗
 HEARTBEAT_TIMEOUT = 4.0   # 单次心跳等回包超时 s
 HEARTBEAT_MISS    = 2     # 连续 miss 此次数 → 判会话半死 → 自动拆会话重连(09-29 两次实测: 重连即愈)
 REQ_TIMEOUT_S     = 10.0  # 普通指令等回包上限 s(防狗不回包时把指令管线冻死)
+CARRIER_GRACE_S = 5.0       # 载波短暂丢失容忍秒(WiFi 抖动/漫游); 持续丢失超过此值才拆会话
 
 # ---- SBUS 串口 ----
 SBUS_PORT = "/dev/ttyS2"      # 核桃派1B 40pin 串口(丝印RX2=pin10) 直入, 09-19 实测 100Hz SBUS 流
@@ -30,6 +32,12 @@ ARM_ON = 1350                         # A 两档是 1002/1722, 阈值必须夹�
 CH_STAND                  = 6         # C 键: 站立/趴下 (282=趴, 1722=站, 仅解锁后有效)
 STAND_ON = 1000                       # C 高于此=站
 CH_GEAR                   = 9         # 三档拨档: 282=挡1 1002=挡2 1722=挡3 (步态+限速联动)
+# ---- SBUS 原始值标定(2026-09-05 实测; 换遥控器/接收机须重跑 sbus_monitor.py 重标, 只改这里) ----
+AXIS_MID      = 1002    # 摇杆中位原始值: axis() 的零点(显示值 1500 <-> 1002)
+AXIS_SPAN     = 720     # 摇杆半行程: 中位到满杆的原始值差(满杆 1722/282 = 1002±720)
+POS_MIN       = 172     # 两档/拨档低位原始值: pos() 映射行程下端(实测 172)
+POS_MAX       = 1811    # 两档/拨档高位原始值: pos() 映射行程上端(实测 1811)
+KEY_THRESHOLD = 1002    # B/D 键"高位"判定阈值: 两档 282/1722 的中间值
 # ---- B/D 键(自锁两档 282/1722) ----
 CH_B                      = 5         # B=飞控继电器输出(10-17 让位, 握手动作改 App 触发)
 KEY_ACTIONS = {}                      # B/D 键动作全退役: D=旧继电器(已移B键), B=现继电器
@@ -74,6 +82,10 @@ PA_UDP_PORT  = 15000     # 音频接收端口(板子在 144 段的 IP 上收)
 PA_CTRL_PORT = 15001     # 控制端口: HELLO 探活 / VOL? 查音量 / VOL n 设音量 / PLAY/LIST/TALK/RATE
 PA_UP_PORT   = 15003     # 预设文件上传端口(UPB/UPC/UPE 分块+累计确认)
 PA_RATE      = 16000     # 默认采样率 Hz(S16LE 单声道; App 可用 RATE 命令切 8k 省带宽)
+# ---- 板级差异: 音频声道策略(dog2 R 声道输出级损坏 / dog3 两声道完好且功放接 R) ----
+# True = 左右声道同数据(接线未知或双声道完好都安全); False = L-only(右声道置零, 仅有左声道)
+# dog2 板上 config_local.py 写 OVERRIDES = {"PA_STEREO": False}, 本文件保持默认
+PA_STEREO    = True
 # ---- App 动作转发(P0-1/T2.2: 音频拆独立服务后的本地口) ----
 TRICK_PORT   = 15011     # go2-audio(pa_recv) -> bridge 的 TRICK 动作请求口(UDP 127.0.0.1 单播)
 # ---- 日志 ----
@@ -86,9 +98,9 @@ JOURNAL_MAX_MB  = 32     # 单个 journal 文件上限 MB, 超出自动切下一
 # ch11 恒 1722(疑似开关机键), 忽略
 # ---- 各挡位限速 (vx m/s, vy m/s, vyaw rad/s): 挡位越高越快 ----
 GEAR_SPEEDS = {
-    1: (0.9, 0.5, 1.5),     # 经济: 原中档速度下放
-    2: (2.0, 1.1, 1.8),     # 自由: 快
-    3: (2.5, 1.4, 2.5),     # 奔跑: 全杆 2.5m/s, 室内注意
+    1: (1.0, 0.8, 1.5),     # 自由(慢): FreeWalk 步态(10-21 晚定档: 前后 1.3->1.0, 侧移 1.0->0.8, 转向 1.3->1.5)
+    2: (2.0, 1.2, 2.0),     # 自由: FreeWalk(10-21 晚侧移 1.5->1.2)
+    3: (3.0, 1.6, 2.6),     # 奔跑: TrotRun(10-21 提速, 原 2.5/1.4/2.5)
 }
 # B(ch5) D(ch8) 留作备用
 
@@ -125,11 +137,43 @@ DOG_STAND_HEIGHT = 0.22   # body_height 高于此值视为站起(趴约 0.08~0.1
 DOG_HEIGHT_STABLE = 0.004 # 0.6s 窗口内高度波动小于此值 = 已稳定, 可以 BalanceStand
 DOG_STATE_STALE_S = 1.0   # sportmodestate 超过此秒数没更新 = 不采信, 回落到超时兜底
 STAND_TIMEOUT_S  = 6.0    # 起立后最长等多久补 BalanceStand(无姿态数据/一直不稳时的兜底)
-DOG_STATE_WAIT_S = 2.0    # 首连等待第一条 sportmodestate 的上限(超时按旧逻辑假定站立)
+DOG_STATE_WAIT_S = 2.0    # (重)连等待第一条有效 sportmodestate 的上限(超时按未知处理)
+# ---- 重连对账(P0-4): 每次 reset 都用新鲜高度对账本地 mode, 带滞回不臆测 ----
+DOG_HEIGHT_MIN   = 0.05   # body_height 有效下限(米): 超出范围视为遥测不可信
+DOG_HEIGHT_MAX   = 0.50   # body_height 有效上限(米)
+DOG_STAND_LATCH_H = 0.28  # 高于此值判"站立" -> 本地 mode=1(等 C 上位补同步到 2, 不发 StandUp)
+DOG_LIE_LATCH_H   = 0.16  # 低于此值判"趴下" -> 本地 mode=0; 两阈值之间保持未知, 等下一包再判
+# ---- 指令队列(P0-3): Move 高频流与慢指令解耦 ----
+MOVE_TTL_S    = 1.0       # Move 入队后超过此秒数未发出即丢弃(摇杆只认最新)
+NONMOVE_TTL_S = 3.0       # 非 Move 入队后超过此秒数未发出即丢弃(防迟到大动作)
 
-# ---- FSM 状态机接线(P0-3 / T1.3 影子模式) ----
-FSM_SHADOW = True     # 影子总开关: True = 旧逻辑照跑, DogFsm(core/fsm.py) 并行吃同样事件逐帧对照,
-                      # 影子输出只比不发(不 submit / 不写 sysfs / 不打日志), 差异记 "FSM 差异" + journal;
-                      # False = 完全不建影子(零行为零开销)。真机零差异验证后再进入切换任务
-FSM_MODE   = "shadow" # 接线模式标记: "shadow" = 影子对照期(旧路径仍是真身);
-                      # "live" = FSM 接管执行(预留给后续切换任务, 当前未实现)
+# ---- FSM 状态机接线(P0-3 / T1.3 影子模式 / T3.4 执行开关) ----
+# FSM_MODE 是执行开关, 两条路径互斥, 同一时刻只有一条会向狗下发指令:
+#   "shadow" = 现行为: 旧 rc_loop/Dog 执行, DogFsm(core/fsm.py) 影子比对(只比不发);
+#   "active" = 新状态机: DogFsm 产生实际指令, 旧 Dog/rc_loop 控制路径停用。
+# 真机验证由主代理按用户节奏执行; 本仓库默认始终 shadow。
+FSM_MODE   = "shadow"
+FSM_SHADOW = True     # 仅 shadow 模式生效: True = 建影子逐帧对照(输出只比不发, 差异记
+                      # "FSM 差异" + journal); False = 完全不建影子(零行为零开销)。
+                      # active 模式忽略本开关(active 自身就是执行路径, 不会另建影子)
+
+# ---- 板级差异覆盖(config_local.py 不进 git) ----
+# 板上按需放 config_local.py: OVERRIDES = {"PA_STEREO": False, ...}
+# 只允许覆盖本文件已定义的白名单键(全部大写常量), 未定义键忽略, 防手滑拼错静默生效。
+_BASE_KEYS = frozenset(k for k in globals() if k.isupper())
+_DENY_KEYS = frozenset({"FSM_MODE"})   # 执行开关不进板级差异: 切 active 必须走
+                                       # 主仓 config + 影子零差异 -> 真机验证流程(CLAUDE.md)
+try:
+    import config_local
+except ImportError as _e:
+    # 只容忍"没有 config_local.py"(ModuleNotFoundError 且是它自己); 文件在但
+    # 自身 import 失败(缺依赖等)必须当场炸出来 —— 静默吞掉会让板上标定悄悄失效
+    if not (isinstance(_e, ModuleNotFoundError) and _e.name == "config_local"):
+        raise
+else:
+    for _k, _v in getattr(config_local, "OVERRIDES", {}).items():
+        if _k in _DENY_KEYS:
+            print("[config] 拒绝 config_local 覆盖 %s: 执行开关不进板级差异(见 CLAUDE.md)"
+                  % _k, file=sys.stderr)
+        elif _k in _BASE_KEYS:
+            globals()[_k] = _v

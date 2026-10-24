@@ -175,6 +175,7 @@ a{color:var(--accent)}
     <div class="k">音频服务</div><div class="v num" id="kvAudio">—</div>
     <div class="k">狗链路代数</div><div class="v num" id="kvLink">—</div>
     <div class="k">控制源</div><div class="v num" id="kvSrc">—</div>
+    <div class="k">控制抑制</div><div class="v num" id="kvCtl">—</div>
     <div class="k">最后命令</div><div class="v num" id="kvCmd">—</div>
     <div class="k">狗真实姿态</div><div class="v num" id="kvDog">—</div>
   </div>
@@ -385,10 +386,29 @@ function renderSys(m){
     if (AU.volume != null) aBits.push("音量 " + esc(AU.volume));
     if (aAge != null && aAge >= 0) aBits.push("状态 " + (fmtUp(aAge) || "0s") + " 前");
     $("kvAudio").innerHTML = aBits.filter(Boolean).join(" · ") || "—";
-    /* 狗链路代数 / 控制源 */
+    /* 狗链路代数 / 控制源(实际生效通道来源见 /state.ch_source) */
     $("kvLink").textContent = m.link_gen != null ? String(m.link_gen) : "—";
-    $("kvSrc").textContent = m.src === "sbus" ? "SBUS 遥控器"
-      : m.src === "netrc" ? "网络遥控 (App)" : "—";
+    const SRC = m.ch_source || m.src;
+    $("kvSrc").textContent = SRC === "sbus" ? "SBUS 遥控器"
+      : SRC === "netrc" ? "网络遥控 (App)" : "—";
+    /* 控制抑制(P1): 请求被互锁/保护期拦下时显示"原因 + 剩余秒"; 起立中显示年龄 */
+    const CT = (m.ctl && typeof m.ctl === "object") ? m.ctl : {};
+    if (CT.blocked){
+      const tg = CT.target == null ? "" : " → " + CT.target;
+      $("kvCtl").innerHTML = '<span style="color:var(--warn)">'
+        + esc(CT.blocked) + tg + "</span> · 剩 "
+        + (numv(CT.remain) == null ? "?" : numv(CT.remain).toFixed(1)) + "s";
+    } else if (m.rising === true || CT.rising_age != null){
+      $("kvCtl").innerHTML = '<span style="color:var(--warn)">起立中</span> '
+        + (numv(CT.rising_age) == null ? "" : numv(CT.rising_age).toFixed(1) + "s")
+        + (numv(CT.rise_deadline) == null ? "" : " · 兜底剩 "
+           + numv(CT.rise_deadline).toFixed(1) + "s");
+    } else if (numv(CT.q_depth) > 0){
+      $("kvCtl").innerHTML = "队列 " + numv(CT.q_depth) + " 条"
+        + (numv(CT.drop_ttl) ? " · ttl丢 " + numv(CT.drop_ttl) : "");
+    } else {
+      $("kvCtl").textContent = "—";
+    }
     /* 最后一条命令: name · 时间 · 结果(OK 绿 / ERR 红) */
     const C = (m.last_cmd && typeof m.last_cmd === "object") ? m.last_cmd : {};
     if (C.name != null || C.result != null){

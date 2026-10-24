@@ -58,11 +58,13 @@ def _loop(sock, log):
 
 
 def snapshot():
-    """供 /ws 推送: 网络遥控链路灯(调试页显示)"""
+    """供 /ws//state 推送: 网络遥控链路灯(调试页显示) + 最近通道数组。
+    ch 供 /state 的 ch_effective 用(netrc 生效时控制输入就是这份通道值)。"""
     with _lock:
         alive = _state["ch"] is not None and time.monotonic() - _state["t"] < LOSS_TIMEOUT_S
         return {"net_ok": alive, "net_rx": _state["rx"], "net_lost": _state["lost"],
-                "net_seq": _state["seq"]}
+                "net_seq": _state["seq"],
+                "ch": list(_state["ch"]) if _state["ch"] is not None else None}
 
 
 def get():
