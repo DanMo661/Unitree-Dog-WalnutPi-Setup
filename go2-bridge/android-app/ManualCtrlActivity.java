@@ -106,7 +106,7 @@ public class ManualCtrlActivity extends Activity {
                 try {
                     byte[] ob = js.toString().getBytes("UTF-8");
                     if (sock != null) sock.send(new DatagramPacket(ob, ob.length,
-                            InetAddress.getByName(PaService.DST_IP), NETRC_PORT));
+                            InetAddress.getByName(PaService.boardIp(ManualCtrlActivity.this)), NETRC_PORT));
                 } catch (Exception e) {}
                 try { Thread.sleep(50); } catch (InterruptedException e) { break; }
             }
@@ -127,7 +127,7 @@ public class ManualCtrlActivity extends Activity {
                     s.setSoTimeout(1500);
                     byte[] ob = "HELLO".getBytes();
                     s.send(new DatagramPacket(ob, ob.length,
-                            InetAddress.getByName(PaService.DST_IP), PaService.CTRL_PORT));
+                            InetAddress.getByName(PaService.boardIp(ManualCtrlActivity.this)), PaService.CTRL_PORT));
                     byte[] rb = new byte[96];
                     DatagramPacket rp = new DatagramPacket(rb, rb.length);
                     s.receive(rp);
@@ -135,7 +135,7 @@ public class ManualCtrlActivity extends Activity {
                     // 第二问: 桥的真实 RC 状态
                     byte[] ob2 = "RC".getBytes();
                     s.send(new DatagramPacket(ob2, ob2.length,
-                            InetAddress.getByName(PaService.DST_IP), PaService.CTRL_PORT));
+                            InetAddress.getByName(PaService.boardIp(ManualCtrlActivity.this)), PaService.CTRL_PORT));
                     DatagramPacket rp2 = new DatagramPacket(rb, rb.length);
                     try { s.receive(rp2); rc = new String(rb, 0, rp2.getLength(), "UTF-8"); } catch (Exception ig) {}
                 } catch (Exception e) {

@@ -165,6 +165,19 @@ def main():
     if (src / "config_local.py").exists():
         files.append("config_local.py")   # 板级差异(不进 git): 有就一起烧; 本地没有则不动板上原文件
 
+    # ---- 变体代码落后硬门(2026-10-24 dog2 教训): --src 指向变体目录时, 代码文件必须与
+    # 本脚本所在目录(真身)一致。否则 md5 门只比"板上 vs 变体"(两边同旧, 全一致),
+    # 旧代码会顶着新 VERSION 上板, /state 报新版本号但跑的是旧逻辑 ----
+    home = pathlib.Path(__file__).parent.resolve()
+    if src.resolve() != home:
+        stale = [f for f in files
+                 if f.endswith(".py") and f not in ("config.py", "config_local.py")
+                 and (home / f).exists() and (src / f).exists()
+                 and md5(home / f) != md5(src / f)]
+        if stale:
+            sys.exit("变体目录代码落后于真身: %s\n先从真身刷新变体再部署"
+                     "(旧代码顶着新 VERSION 上板的事故 10-24 实际发生过)" % stale)
+
     # P1-1 版本化: VERSION=git short HEAD, 和运行文件一起上传, bridge /state 的 ver 读它。
     # 写临时文件而非源码目录(不脏工作区), 后面走同一套 md5 对比/上传/校验。
     version = git_version(src)

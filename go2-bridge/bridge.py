@@ -24,7 +24,7 @@ import os
 import config
 import journal
 from sbus import Sbus
-from servo import Servo, GpioOut
+from servo import Servo, GpioOut, RelayPwm
 from pa import Pa          # P0-1/T2.2 后 main 不再用 Pa, 但测试经 bridge.Pa 构造, 保留导出
 import netrc
 
@@ -1677,8 +1677,9 @@ def _rc_loop_active(d):
     与旧路径执行互斥(同一进程内不会有第二处 submit/set_us/set_level)。"""
     sbus = Sbus(config.SBUS_PORT, on_frames=sbus_stats.feed)
     svs = [GpioOut(g, log) for g in config.RELAY_GPIOS]   # 38/40/37/35脚: IO电平
-    sv1 = Servo(config.SERVO_CHIP, config.SERVO1_CH,      # 15脚(PI11)=PWM1: 飞控继电器
-                config.SERVO_MIN_US, config.SERVO_MAX_US, log)
+    sv1 = RelayPwm([Servo(config.SERVO_CHIP, ch,          # B键继电器: PWM1+PWM2 双路同值并出
+                          config.SERVO_MIN_US, config.SERVO_MAX_US, log)
+                    for ch in (config.SERVO1_CH, config.SERVO2_CH)])
     d.bind_io(sv1, svs)
     jf_n = 0
     while True:
@@ -1739,8 +1740,9 @@ def rc_loop(d, pa):
     key_high = {}         # B 键电平记忆: 拨到高位的边沿才触发动作
     jf_n = 0              # journal 帧计数(每 N 帧采 1 帧; 坏帧/A键边沿帧不采样, 必记)
     svs = [GpioOut(g, log) for g in config.RELAY_GPIOS]   # 38/40/37/35脚: IO电平
-    sv1 = Servo(config.SERVO_CHIP, config.SERVO1_CH,      # 15脚(PI11)=PWM1: 飞控继电器
-                config.SERVO_MIN_US, config.SERVO_MAX_US, log)
+    sv1 = RelayPwm([Servo(config.SERVO_CHIP, ch,          # B键继电器: PWM1+PWM2 双路同值并出
+                          config.SERVO_MIN_US, config.SERVO_MAX_US, log)
+                    for ch in (config.SERVO1_CH, config.SERVO2_CH)])
     if _SHADOW is not None:              # 影子: 旧路径硬件/指令出口套只读透传记录器(语义不变)
         sv1, svs = _SHADOW.wrap_relay(sv1, svs)
         d.link = _SHADOW.wrap_link(d.link)

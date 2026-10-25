@@ -5,3 +5,5 @@ __pycache__/
 *.tar.gz
 *.deb
 sbus_diag_tmp/
+# deploy 成品例外: 用户直装/deploy_page 上架
+!go2-bridge/*.apk

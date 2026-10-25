@@ -70,8 +70,8 @@ import org.json.JSONObject;
  */
 public class PaService extends Service {
 
-    static final int APP_VERSION = 35;
-    static final String DST_IP = "192.168.144.10";
+    static final int APP_VERSION = 36;
+    static final String DEFAULT_IP = "192.168.144.10";   // 板子默认地址(全工程唯一字面量); 实际地址由主界面 ⚙ 设置(prefs 键 board_ip)
     static final int AUDIO_PORT = 15000;
     static final int CTRL_PORT = 15001;
     static final int UP_PORT = 15003;            // 预设文件上传(分块+累计确认)
@@ -125,6 +125,23 @@ public class PaService extends Service {
     static final Pattern VER_PAT = Pattern.compile("\"version\"\\s*:\\s*(\\d+)");
     volatile boolean dlBusy = false;
     int latestVer = 0;
+
+    // ================= 板子地址(运行时读) =================
+
+    /** 运行时读板子地址: prefs 键 board_ip(主界面 ⚙ 设置), 空串回退默认;
+     *  所有 UDP/HTTP 目标(15000/15001/15003/15010 与控制台页面)每次发包前都从这里取 */
+    static String boardIp(Context ctx) {
+        try {
+            String ip = ctx.getSharedPreferences("pa_prefs", Context.MODE_PRIVATE)
+                    .getString("board_ip", DEFAULT_IP).trim();
+            return ip.isEmpty() ? DEFAULT_IP : ip;
+        } catch (Exception e) {
+            return DEFAULT_IP;
+        }
+    }
+
+    /** PaService 内部用(this 即 Context) */
+    String dstIp() { return boardIp(this); }
 
     // ================= 生命周期 =================
 
@@ -353,7 +370,7 @@ public class PaService extends Service {
                     DatagramSocket s = null;
                     try {
                         s = new DatagramSocket();
-                        s.connect(InetAddress.getByName(DST_IP), CTRL_PORT);
+                        s.connect(InetAddress.getByName(dstIp()), CTRL_PORT);
                         byte[] ob = ("BIRD " + c[0] + " " + c[1]).getBytes();
                         s.send(new DatagramPacket(ob, ob.length));
                         resp = waitAck(s, 1500);
@@ -875,7 +892,7 @@ public class PaService extends Service {
                 throw new IllegalStateException("AudioRecord init failed");
             rec.startRecording();
             sock = new DatagramSocket();
-            InetAddress dst = InetAddress.getByName(DST_IP);
+            InetAddress dst = InetAddress.getByName(dstIp());
             ctrl("RATE " + talkRate);              // 话质(采样率)在开播前切换
             String tr = null;                      // 15% 链路丢包下单发指令也可能丢, 重试3次
             for (int t = 0; t < 3; t++) {
@@ -1814,7 +1831,7 @@ public class PaService extends Service {
         try {
             s = new DatagramSocket();
             s.setSoTimeout(1200);
-            s.connect(InetAddress.getByName(DST_IP), CTRL_PORT);
+            s.connect(InetAddress.getByName(dstIp()), CTRL_PORT);
             byte[] ob = "LIST".getBytes();
             s.send(new DatagramPacket(ob, ob.length));
             java.util.HashMap<Integer, String> parts = new java.util.HashMap<Integer, String>();
@@ -2011,7 +2028,7 @@ public class PaService extends Service {
         DatagramSocket s = null;
         try {
             s = new DatagramSocket();
-            InetAddress dst = InetAddress.getByName(DST_IP);
+            InetAddress dst = InetAddress.getByName(dstIp());
             final String sid = Integer.toHexString(
                     (int) (System.currentTimeMillis() & 0xFFFFL));
             java.util.zip.CRC32 cz = new java.util.zip.CRC32();
@@ -2130,7 +2147,7 @@ public class PaService extends Service {
         try {
             s = new DatagramSocket();
             s.setSoTimeout(1500);
-            s.connect(InetAddress.getByName(DST_IP), CTRL_PORT);
+            s.connect(InetAddress.getByName(dstIp()), CTRL_PORT);
             byte[] ob = cmd.getBytes();
             s.send(new DatagramPacket(ob, ob.length));
             byte[] rb = new byte[256];
@@ -2239,7 +2256,7 @@ public class PaService extends Service {
             int latest = -1;
             try {
                 HttpURLConnection c = (HttpURLConnection) new URL(
-                        "http://" + DST_IP + ":" + PAGE_PORT + "/version.json").openConnection();
+                        "http://" + dstIp() + ":" + PAGE_PORT + "/version.json").openConnection();
                 c.setConnectTimeout(2500);
                 c.setReadTimeout(2500);
                 InputStream in = c.getInputStream();
@@ -2274,7 +2291,7 @@ public class PaService extends Service {
         new Thread() { public void run() {
             try {
                 HttpURLConnection c = (HttpURLConnection) new URL(
-                        "http://" + DST_IP + ":" + PAGE_PORT + "/PaSend.apk").openConnection();
+                        "http://" + dstIp() + ":" + PAGE_PORT + "/PaSend.apk").openConnection();
                 c.setConnectTimeout(3000);
                 c.setReadTimeout(8000);
                 int total = c.getContentLength();
@@ -2323,7 +2340,7 @@ public class PaService extends Service {
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(i);
         } catch (Exception e) {
-            toast("弹安装失败, 用浏览器开 http://" + DST_IP + ":" + PAGE_PORT + " 手动装");
+            toast("弹安装失败, 用浏览器开 http://" + dstIp() + ":" + PAGE_PORT + " 手动装");
         }
     }
 }

@@ -30,13 +30,16 @@ import java.net.DatagramSocket;
  */
 public class PaSend extends Activity {
 
-    // 板端 SBUS 调试台地址(实测连通的板子 IP)
-    static final String CONSOLE_URL = "http://192.168.144.10:8000/sbus";
+    // 板端 SBUS 调试台地址: 跟随 ⚙ 设置的板子地址(prefs 键 board_ip), 每次加载运行时读
+    String consoleUrl() {
+        return "http://" + PaService.boardIp(this) + ":8000/sbus";
+    }
 
     LinearLayout root;
     FrameLayout holder;
     WebView web;
     View errPage;
+    TextView errUrlText;               // 错误页里显示当前控制台地址, 改板子地址后刷新
     TextView goBtn;
     TextView actionBar;
     android.os.Handler pollHandler;
@@ -222,6 +225,16 @@ public class PaSend extends Activity {
 
         goBtn = mkBottomBtn(0xFF3B82F6, 0xFF1D4ED8);
         bottom.addView(goBtn, new LinearLayout.LayoutParams(0, dp(46), 1));
+
+        // ⚙ 板子地址: UDP/HTTP 目标都从这读, 换板子不用改代码
+        TextView ipBtn = mkBottomBtn(0xFF334155, 0xFF1E293B);
+        ipBtn.setText("⚙");
+        LinearLayout.LayoutParams ipp = new LinearLayout.LayoutParams(dp(44), dp(46));
+        ipp.leftMargin = dp(8);
+        bottom.addView(ipBtn, ipp);
+        ipBtn.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { showIpDialog(); }
+        });
 
         TextView birdBtn = mkBottomBtn(0xFFF59E0B, 0xFFD97706);
         birdBtn.setText("🐦  驱鸟悬浮窗");
@@ -465,7 +478,7 @@ public class PaSend extends Activity {
                 try {
                     s = new DatagramSocket();
                     s.setSoTimeout(2000);
-                    s.connect(java.net.InetAddress.getByName(PaService.DST_IP), PaService.CTRL_PORT);
+                    s.connect(java.net.InetAddress.getByName(PaService.boardIp(PaSend.this)), PaService.CTRL_PORT);
                     byte[] ob = ("TRICK " + name).getBytes();
                     s.send(new java.net.DatagramPacket(ob, ob.length));
                     // 按前缀匹配收包
@@ -523,7 +536,8 @@ public class PaSend extends Activity {
         box.addView(et);
 
         TextView es = new TextView(this);
-        es.setText(CONSOLE_URL + "\n\n检查板子是否开机、遥控器 WiFi 是否连上");
+        errUrlText = es;
+        es.setText(consoleUrl() + "\n\n检查板子是否开机、遥控器 WiFi 是否连上");
         es.setTextColor(0xFF64748B);
         es.setTextSize(13);
         es.setLineSpacing(dp(3), 1);
@@ -556,7 +570,9 @@ public class PaSend extends Activity {
     void loadConsole() {
         mainFrameFailed = false;
         errPage.setVisibility(View.GONE);
-        web.loadUrl(CONSOLE_URL);
+        if (errUrlText != null)         // 板子地址可能刚改过, 错误页地址同步刷新
+            errUrlText.setText(consoleUrl() + "\n\n检查板子是否开机、遥控器 WiFi 是否连上");
+        web.loadUrl(consoleUrl());
         // 板子暂时不在线时每 5s 静默重试, 通了页面自动出现
         if (retryHandler == null) retryHandler = new android.os.Handler();
         if (retryRun == null) {
@@ -564,7 +580,7 @@ public class PaSend extends Activity {
                 public void run() {
                     if (mainFrameFailed) {
                         mainFrameFailed = false;
-                        web.loadUrl(CONSOLE_URL);
+                        web.loadUrl(consoleUrl());
                     }
                     if (retryHandler != null) retryHandler.postDelayed(this, 5000);
                 }
@@ -573,6 +589,38 @@ public class PaSend extends Activity {
             retryHandler.removeCallbacks(retryRun);
         }
         retryHandler.postDelayed(retryRun, 5000);
+    }
+
+    /** ⚙ 板子地址设置: 存 pa_prefs 键 board_ip, 所有 UDP/HTTP 目标运行时读它 */
+    void showIpDialog() {
+        final android.widget.EditText et = new android.widget.EditText(this);
+        et.setText(PaService.boardIp(this));
+        et.setSingleLine();
+        android.app.AlertDialog d = new android.app.AlertDialog.Builder(this)
+                .setTitle("板子地址 (IP)")
+                .setView(et)
+                .setPositiveButton("保存", new android.content.DialogInterface.OnClickListener() {
+                    public void onClick(android.content.DialogInterface dg, int w) {
+                        String ip = et.getText().toString().trim();
+                        boolean ipOk = ip.matches("(\\d{1,3}\\.){3}\\d{1,3}");
+                        if (ipOk) {
+                            for (String seg : ip.split("\\.")) {
+                                if (Integer.parseInt(seg) > 255) { ipOk = false; break; }
+                            }
+                        }
+                        if (!ipOk) {
+                            toast("地址格式不对(每段 0~255), 例: " + PaService.DEFAULT_IP);
+                            return;
+                        }
+                        getSharedPreferences("pa_prefs", MODE_PRIVATE)
+                                .edit().putString("board_ip", ip).apply();
+                        toast("板子地址已存: " + ip);
+                        loadConsole();   // 立即按新地址重连控制台
+                    }
+                })
+                .setNegativeButton("取消", null)
+                .create();
+        d.show();
     }
 
     int dp(float v) {

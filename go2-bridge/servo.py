@@ -90,6 +90,28 @@ class Servo:
             self.ok = False
 
 
+class RelayPwm:
+    """B 键继电器双路并出(2026-10-24 统一两台狗): PWM1+PWM2 同值同时输出。
+    dog2 的航模继电器接 pwm2(16脚) / dog3 接 pwm1(15脚), 双路并出后一份代码通吃。
+    对外只暴露 set_us/cur_us(与 Servo 同接口, rc_loop/影子/FsmActive 复用);
+    单路 export 失败由 Servo 自身降级空转, 另一路照常工作。"""
+
+    def __init__(self, outs):
+        self.outs = outs        # [Servo(pwm1), Servo(pwm2)]
+
+    @property
+    def cur_us(self):
+        return self.outs[0].cur_us   # 两路同值写, 取第一路代表(仅写成功后更新)
+
+    @property
+    def level(self):
+        return self.outs[0].level
+
+    def set_us(self, us):
+        for s in self.outs:
+            s.set_us(us)
+
+
 class GpioOut:
     """sysfs GPIO 恒电平输出(继电器直控, 2026-10-10 定稿; 比 PWM 更直接)
     gpio 号 = gpiochip0 base(0) + 全局引脚号: PI3=259(35脚) PI4=260(37脚) PI14=270(40脚)

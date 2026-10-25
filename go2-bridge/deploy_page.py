@@ -13,7 +13,7 @@ HOST = os.environ.get("BRIDGE_HOST", "192.168.123.50")
 USER = os.environ.get("BRIDGE_USER", "pi")
 PW = os.environ.get("BRIDGE_PW", "")
 LOCAL = pathlib.Path(__file__).parent
-APP = pathlib.Path(__file__).parent / "PaSend-v35-网络遥控.apk"   # 本版本目录内成品, 防构建目录落后时静默上架旧版
+APP = pathlib.Path(__file__).parent / "PaSend-v36-网络遥控.apk"   # 本版本目录内成品, 防构建目录落后时静默上架旧版
 PAGE_DIR = os.environ.get("BRIDGE_PAGE_DIR", "/home/%s/pa-page" % USER)
 
 INDEX_HTML = """<!doctype html>
@@ -33,7 +33,7 @@ INDEX_HTML = """<!doctype html>
 </body></html>
 """
 
-VERSION_JSON = '{"version": 35, "file": "PaSend.apk"}\n'
+VERSION_JSON = '{"version": 36, "file": "PaSend.apk"}\n'
 
 UNIT = """[Unit]
 Description=PA app download page (port 15080)
