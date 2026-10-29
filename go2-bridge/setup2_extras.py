@@ -15,10 +15,10 @@ SP = "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages"
 FORK_TAR_CANDIDATES = [
     pathlib.Path(os.environ.get("TEMP", r"C:\Users\Administrator\AppData\Local\Temp"))
     / "uwc-fork-pkg.tar.gz",
-    pathlib.Path(r"D:\ZcodeRely\uwc-fork-pkg.tar.gz"),
+    pathlib.Path(r"D:\ZcodeRely\projects\go2\uwc-fork-pkg.tar.gz"),
 ]
-DEBS = [r"D:\ZcodeRely\walnutpi\debs\libjack-jackd2-0_1.9.20%7edfsg-1_arm64.deb",
-        r"D:\ZcodeRely\walnutpi\debs\libportaudio2_19.6.0-1.1_arm64.deb"]
+DEBS = [r"D:\ZcodeRely\projects\walnutpi\debs\libjack-jackd2-0_1.9.20%7edfsg-1_arm64.deb",
+        r"D:\ZcodeRely\projects\walnutpi\debs\libportaudio2_19.6.0-1.1_arm64.deb"]
 PWM_RULE = ('SUBSYSTEM=="pwm", ACTION=="add|change", '
             'RUN+="/bin/sh -c \'chown -R pi:pi /sys%p; chmod -R g+w /sys%p\'"\n')
 
