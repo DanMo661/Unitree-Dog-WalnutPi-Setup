@@ -36,7 +36,7 @@ USER = "pi"
 REMOTE_DIR = "/home/pi/go2-bridge"
 # 板上运行时文件全集(netrc.py / config_local.py 按源码目录里有没有而增删)
 FILES = ["bridge.py", "config.py", "sbus.py", "servo.py", "pa.py", "pa_recv.py",
-         "journal.py", "core/__init__.py", "core/fsm.py",
+         "journal.py", "languard.py", "core/__init__.py", "core/fsm.py",
          "static/index.html", "static/sbus.html"]
 
 
@@ -242,14 +242,27 @@ def main():
     # ---- 上传 + 校验 ----
     # core/ 与 static/ 子目录: sftp.put 不会自动建目录(全新板子首次部署会裸炸)
     run("mkdir -p %s/core %s/static" % (REMOTE_DIR, REMOTE_DIR))
+
+    # 备份(2026-10-29 审查): 原先上传即覆盖 —— 若随后 md5/语法门失败, 脚本只是
+    # "服务未动"退出, 板上文件却已经是新的, 下次重启就跑坏代码且无从回退。
+    # 这里给每个文件留 .bak, 任一校验失败自动还原, 部署成功再删。
+    bak_list = " ".join(files) + " netrc.py"
+    run("cd %s && for f in %s; do [ -f \"$f\" ] && cp -f \"$f\" \"$f.bak\" 2>/dev/null; done; true"
+        % (REMOTE_DIR, bak_list))
+
+    def rollback(why):
+        run("cd %s && for f in %s; do [ -f \"$f.bak\" ] && mv -f \"$f.bak\" \"$f\"; done; sync; true"
+            % (REMOTE_DIR, bak_list))
+        sys.exit("%s\n已自动还原板上文件(服务未动), 可直接重跑本脚本" % why)
+
     sftp = c.open_sftp()
     try:
         for f in files:
             sftp.put(str(lpath(f)), REMOTE_DIR + "/" + f)
     except Exception as e:
-        # 半途断连: 服务未动(restart 在后面), ext4 未 sync 大概率没落盘,
-        # 下次部署 md5 门可拦 —— 直接重跑即可
-        sys.exit("上传中断(%s: %r), 服务未动, 直接重跑本脚本" % (type(e).__name__, e))
+        sftp.close()
+        # 半途断连: 半套新文件 + 半套旧文件, 靠 .bak 一律还原, 别赌"ext4 没落盘"
+        rollback("上传中断(%s: %r)" % (type(e).__name__, e))
     if "netrc.py" not in files:
         run("rm -f %s/netrc.py" % REMOTE_DIR)   # 回退原版: 板上残留的 netrc.py 一并清掉
         print("已删板上 netrc.py(回退原版)")
@@ -260,7 +273,7 @@ def main():
     # 缺失时 bad 列表看不到该文件, 会谎报"全部一致"
     rc, out, err = run("md5sum %s" % " ".join(REMOTE_DIR + "/" + f for f in files))
     if rc != 0:
-        sys.exit("上传后 md5sum 执行失败(rc=%d), 已中止(服务未动):\n%s%s" % (rc, out, err))
+        rollback("上传后 md5sum 执行失败(rc=%d):\n%s%s" % (rc, out, err))
     remote = {}
     for line in out.strip().splitlines():
         p = line.split()
@@ -269,8 +282,7 @@ def main():
     missing = [f for f in files if f not in remote]
     bad = [f for f in files if f in remote and remote[f] != md5(lpath(f))]
     if missing or bad:
-        sys.exit("上传后校验失败, 已中止(服务未动): 缺失=%s md5不一致=%s"
-                 % (missing, bad))
+        rollback("上传后校验失败: 缺失=%s md5不一致=%s" % (missing, bad))
     print("上传完成, md5 全部一致")
 
     # ---- 板上语法门: 编不过不许重启 ----
@@ -280,7 +292,9 @@ def main():
                    for f in files if f.endswith(".py"))
     rc, out, err = run('cd %s && .venv/bin/python -c "%s"' % (REMOTE_DIR, chk))
     if rc != 0:
-        sys.exit("板上语法检查失败, 已中止(服务未动):\n" + out + err)
+        rollback("板上语法检查失败:\n" + out + err)
+    # 语法通过: 删备份, 收尾干净
+    run("cd %s && for f in %s; do rm -f \"$f.bak\"; done; true" % (REMOTE_DIR, bak_list))
 
     # ---- 重启 + 验活 (P0-1 音频拆分后双服务) ----
     # 新 bridge 不再在进程内启动音频: 板上必须有 go2-audio, 否则音频被静默丢掉。

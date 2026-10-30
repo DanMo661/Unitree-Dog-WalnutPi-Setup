@@ -12,6 +12,9 @@ User=root
 WorkingDirectory=/home/pi/go2-bridge
 ExecStart=/home/pi/go2-bridge/.venv/bin/python bridge.py
 Environment=PYTHONUNBUFFERED=1
+# 10-29 第三台狗: 重连失败路径曾漏 ICE socket(v2.0 库无 close()), 1024 上限几分钟
+# 打满就永久瘫(网页也 accept 不了)。泄漏已修, 这里抬高上限做保险: 同类问题退化成慢而不是死
+LimitNOFILE=8192
 SupplementaryGroups=dialout
 Restart=always
 RestartSec=5

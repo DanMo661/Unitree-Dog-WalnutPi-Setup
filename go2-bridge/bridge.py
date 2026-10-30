@@ -27,6 +27,7 @@ from sbus import Sbus
 from servo import Servo, GpioOut, RelayPwm
 from pa import Pa          # P0-1/T2.2 后 main 不再用 Pa, 但测试经 bridge.Pa 构造, 保留导出
 import netrc
+from languard import NetGuard
 
 try:  # v2.x 把类挪进了 webrtc_driver 子模块, 兼容两种导入路径
     from unitree_webrtc_connect.webrtc_driver import (
@@ -448,6 +449,7 @@ class DogLink:
         asyncio.ensure_future(self._loop_ticker())
         if config.AES_KEY:
             kw["aes_128_key"] = config.AES_KEY
+        fails = 0            # 连续连接失败次数(退避用)
         while True:
             state.link = "connecting"
             try:
@@ -475,6 +477,7 @@ class DogLink:
                     await self.conn.datachannel.wait_for_connection()  # v1.x API, v2 已内置验证
                 state.link = "up"
                 state.link_gen += 1
+                fails = 0
                 log("WebRTC 已连接")
                 self._subscribe_dog_state()   # 先订阅真实姿态, 再决定 reset 的本地 mode
                 await self._wait_dog_state()
@@ -487,9 +490,12 @@ class DogLink:
                 await self._guarded_consume()
             except Exception as e:
                 state.link = "down"
-                log("WebRTC 会话结束, 3s 后重连:", repr(e))
-            self._close_conn()
-            await asyncio.sleep(3)
+                log("WebRTC 会话结束, %ss 后重连:" % (3 * min(fails + 1, 5)), repr(e))
+                fails += 1
+            await self._close_conn()
+            # 退避(2026-10-29): 狗死了但网口载波还在时, 原先固定 3s 无限重试;
+            # 3/6/9/12/15s 递增, 连上即清零 —— 狗真回来时最多多等 12s, 平时不再空转
+            await asyncio.sleep(3 * min(fails, 5) if fails else 3)
 
     async def _guarded_consume(self):
         """_consume/看门狗/心跳 三方赛跑: 拔网线靠看门狗, 会话半死靠心跳, 谁先出事都强拆重连"""
@@ -641,17 +647,22 @@ class DogLink:
             % config.DOG_STATE_WAIT_S)
         return False
 
-    def _close_conn(self):
+    async def _close_conn(self):
         c, self.conn = self.conn, None
         if c is None:
             return
+        # v1.x 有 close(), fork 的 v2.0 只有 disconnect() —— 调不存在的 close 会被
+        # 静默吞掉, aiortc 的 pc 从不关闭 => 每次重连失败漏一批 ICE UDP socket,
+        # 1024 fd 上限几分钟就见底(10-29 第三台狗实测: 967 socket 卡死桥+网页)
+        fn = getattr(c, "close", None) or getattr(c, "disconnect", None)
+        if fn is None:
+            return
         try:
-            r = c.close()            # 库版本不同 close 可能是同步/异步, 都兼容
+            r = fn()
             if hasattr(r, "__await__"):
-                fut = asyncio.ensure_future(r)
-                fut.add_done_callback(lambda t: t.cancelled() or t.exception())
-        except Exception:
-            pass
+                await asyncio.wait_for(r, 8)   # 必须等 pc 真关完才放下一轮
+        except Exception as e:
+            log("关闭狗连接异常(忽略):", repr(e)[:120])
 
     def _drop(self, why, name):
         """队列丢弃计数 + 限流日志(P1: 5s 一条, 不刷控制台/journal/fsync)。"""
@@ -1997,6 +2008,10 @@ def web_server(d):
 
     app = FastAPI()
 
+    web_guard = NetGuard(token=getattr(config, "WEB_TOKEN", ""), log=log, name="网页遥控")
+    web_guard.assert_configured(
+        log, "浏览器端谁都能 arm/开走狗; config.py 配 WEB_TOKEN 后访问 /?tok=<串>")
+
     def _fsm_feed():
         """网页事件喂给唯一的 FSM 句柄: active=FsmActive(执行), shadow=FsmShadow(只同步)"""
         return _ACTIVE if _ACTIVE is not None else _SHADOW
@@ -2083,6 +2098,13 @@ def web_server(d):
     @app.websocket("/ws")
     async def ws(sock: WebSocket):
         await sock.accept()
+        # 令牌门(2026-10-29 审查): WEB_TOKEN 非空时浏览器必须带 ?tok=<串> 才能遥控。
+        # 原先 0.0.0.0:8000 无鉴权, 同网段任何人 {"cmd":"arm"} 就能让狗站起来开走。
+        if not web_guard.token_ok(sock.query_params.get("tok")):
+            journal.record("event", ev="ws_rejected", detail="token")
+            log("网页端令牌不符, 拒绝接入:", sock.client)
+            await sock.close(code=4401)
+            return
         log("网页端接入")
         last_status = 0.0
         try:
@@ -2159,13 +2181,16 @@ def web_server(d):
         except Exception:
             pass
         finally:
-            log("网页端断开, 解除网页控制并趴下")
+            # 关网页只停走、保持站姿(2026-10-29 审查: 原为 set_mode(0) 直接趴下 ——
+            # 谁打开再关掉页面都会让狗当场卧倒, 站楼梯/斜坡/货架边就是摔机风险;
+            # 趴下改为只认显式命令)
+            log("网页端断开, 解除网页控制并停走(保持站姿)")
             if state.web_armed:
                 journal.record("event", ev="disarm", src="web")
             state.web_armed = False
             state.web_vx = state.web_vy = state.web_vyaw = 0.0
-            if not state.rc_armed:
-                d.set_mode(0)
+            if not state.rc_armed and state.link == "up":
+                d.hold()
             _f = _fsm_feed()
             if _f is not None:
                 _f.web_cmd("closed")
@@ -2251,7 +2276,9 @@ def main():
     # 也不注入回调; App 动作改走本地 UDP(TRICK_PORT), App "RC" 轮询由音频服务 HTTP 读 /state。
     # rc_loop 的 pa 形参仅留签名兼容(测试在用), 函数体不碰音频。
     threading.Thread(target=trick_udp_loop, args=(_trick_gate,), daemon=True).start()
-    netrc.start(getattr(config, "NETRC_PORT", 15010), log)
+    netrc.start(getattr(config, "NETRC_PORT", 15010), log,
+                allow=getattr(config, "NETRC_ALLOW", []),
+                token=getattr(config, "NETRC_TOKEN", ""))
     threading.Thread(target=web_server, args=(dog,), daemon=True).start()
     log("go2-bridge 启动: 网页端口=%d, SBUS=%s, 连狗方式=%s"
         % (config.WEB_PORT, config.SBUS_PORT, config.METHOD))

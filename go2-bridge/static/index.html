@@ -124,7 +124,7 @@ body.offline .estop{opacity:.35;pointer-events:none}
   </section>
   <button class="estop" id="estop">急停 · 趴下</button>
   <p class="tip" id="hint" style="color:var(--warn);min-height:1.4em"></p>
-  <p class="tip">流程：解锁 → 站立 → 行走，再拖摇杆。遥控器解锁时本页不生效；关闭本页自动上锁趴下。</p>
+  <p class="tip">流程：解锁 → 站立 → 行走，再拖摇杆。遥控器解锁时本页不生效；关闭本页会自动停走（保持站姿）。</p>
 </main>
 <script>
 const $ = id => document.getElementById(id);
@@ -132,9 +132,11 @@ const fmt = v => (v >= 0 ? '+' : '') + v.toFixed(2);
 let ws = null, retry = 0, hintTimer = null;
 const send = o => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
 const buzz = p => { try { navigator.vibrate(p); } catch (e) {} };
+// tok: 板上 config.WEB_TOKEN 非空时, 页面必须带 ?tok=<串> 才能遥控(10-29 鉴权)
+const WS_TOK = new URLSearchParams(location.search).get('tok') || '';
 
 function connect(){
-  ws = new WebSocket(`ws://${location.host}/ws`);
+  ws = new WebSocket(`ws://${location.host}/ws${WS_TOK ? '?tok=' + encodeURIComponent(WS_TOK) : ''}`);
   ws.onopen = () => { retry = 0;
     document.body.classList.remove('reconnecting', 'offline'); send({ping:1}); };
   ws.onmessage = e => render(JSON.parse(e.data));

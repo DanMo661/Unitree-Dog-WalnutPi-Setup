@@ -12,7 +12,7 @@ import paramiko
 HOST, USER, PW = "192.168.123.50", "pi", "pi"
 LOCAL = pathlib.Path(__file__).parent
 BRIDGE_FILES = ["bridge.py", "config.py", "sbus.py", "servo.py", "pa.py",
-                "pa_recv.py", "netrc.py", "journal.py",
+                "pa_recv.py", "netrc.py", "journal.py", "languard.py",
                 "core/__init__.py", "core/fsm.py", "sbus_diag.py", "requirements.txt"]
 RDIR = "/home/pi/go2-bridge"
 

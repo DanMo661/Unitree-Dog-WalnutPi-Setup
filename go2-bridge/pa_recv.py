@@ -24,6 +24,19 @@ import urllib.request
 import zlib
 
 import config
+from languard import NetGuard
+
+_WARNED = [False]
+
+
+def _mk_guard(cfg, log, name):
+    """每个监听循环一个守卫; 告警只打一次(三个口共用一份 PA_ALLOW 配置)。
+    2026-10-29 审查: 喊话/上传/控制三口原为 0.0.0.0 全开放, 同网段可远程喊话+占盘。"""
+    g = NetGuard(allow=getattr(cfg, "PA_ALLOW", []), log=log, name=name)
+    if not _WARNED[0]:
+        _WARNED[0] = True
+        g.assert_configured(log, "config.py 配 PA_ALLOW 可只放行自己的 App")
+    return g
 
 FILES_DIR = os.path.join(os.path.expanduser("~"), "pa-files")
 NAME_OK = re.compile(u"^[0-9A-Za-z_\\-\u4e00-\u9fff]{1,40}$")
@@ -245,10 +258,13 @@ def _ctrl_loop(pa, config, log):
         return
     log("喊话控制就绪: UDP :%d (HELLO/VOL/LIST/PLAY/TALK/RATE)" % config.PA_CTRL_PORT)
     _ready[0] = True                    # 状态文件 ready 字段: 控制口活着才算就绪
+    guard = _mk_guard(config, log, "喊话控制")
     while True:
         try:
             data, addr = sock.recvfrom(2048)
         except Exception:
+            continue
+        if not guard.ip_ok(addr[0]):
             continue
         line = data.decode("utf-8", "replace").strip()
         parts = line.split(" ")
@@ -506,10 +522,13 @@ def _loop(pa, config, log):
         return
     sock.settimeout(0.5)
     log("喊话接收就绪: UDP :%d (PCM S16LE, 采样率可变)" % config.PA_UDP_PORT)
+    guard = _mk_guard(config, log, "喊话音频")
     proc = None
     while True:
         try:
-            data, _ = sock.recvfrom(8192)
+            data, addr = sock.recvfrom(8192)
+            if not guard.ip_ok(addr[0]):
+                continue
         except socket.timeout:
             # 链路静默 2s 视为对讲结束(App 崩溃/断链时不等 TALK 0)
             if _talk["on"] and time.monotonic() - _talk["last"] > 2.0:
@@ -606,6 +625,7 @@ def _up_loop(pa, config, log):
         log("上传端口 %d 被占, 停用: %r" % (config.PA_UP_PORT, e))
         return
     log("上传就绪: UDP :%d (预设文件 -> %s)" % (config.PA_UP_PORT, FILES_DIR))
+    guard = _mk_guard(config, log, "喊话上传")
     sess = {}
     sock.settimeout(1.0)
     while True:
@@ -619,6 +639,8 @@ def _up_loop(pa, config, log):
         except socket.timeout:
             continue
         except Exception:
+            continue
+        if not guard.ip_ok(addr[0]):
             continue
         if len(data) < 2:
             continue

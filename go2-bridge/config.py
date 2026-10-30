@@ -12,6 +12,18 @@ ETH_IFACE   = "eth0"          # 连狗网口(看门狗监视网线载波, 松动
 SIGNAL_PORT = 9991            # 狗 webrtc_bridge 信令口(con_notify), 看门狗 TCP 探测用
 NETRC_PORT = 15010            # 网络遥控: App 杆量通道(UDP, 新鲜时优先于 SBUS 线)
 
+# ---- 控制面鉴权(2026-10-29 代码审查: 原为 0.0.0.0 全开放, 同网段任何设备可解锁开走狗) ----
+# 两项都留空 = 保持旧行为(完全开放, 启动时打一条告警); 配了就强制校验。
+# 配法示例(按现场填):
+#   NETRC_ALLOW = ["192.168.8.0/24"]        # 只收这个网段的杆量包(手机 App 所在网段)
+#   NETRC_TOKEN = "换成你自己的随机串"       # App 若支持带 tok 字段则一并校验
+#   WEB_TOKEN   = "换成你自己的随机串"       # 浏览器访问 http://<板>:8000/?tok=<串>
+#   PA_ALLOW    = ["192.168.8.0/24"]        # 喊话/上传只收这个网段
+NETRC_ALLOW = []
+NETRC_TOKEN = ""
+WEB_TOKEN   = ""
+PA_ALLOW    = []
+
 # ---- 狗会话心跳闭环(09-29: 狗侧会话半死时信令活着但运动指令进黑洞, 横幅仍显示可控) ----
 HEARTBEAT_S       = 5.0   # 心跳周期 s: 发有回包的 GetSpeedLevel 探狗应用层
 HEARTBEAT_TIMEOUT = 4.0   # 单次心跳等回包超时 s

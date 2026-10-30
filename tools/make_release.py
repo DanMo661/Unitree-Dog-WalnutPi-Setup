@@ -27,6 +27,7 @@ ROOT_FILES = [
     "pa_recv.py",
     "netrc.py",
     "journal.py",
+    "languard.py",      # 控制面鉴权(2026-10-29): netrc/网页/喊话共用
     "go2-bridge.service",
     "go2-audio.service",
     "install.sh",
