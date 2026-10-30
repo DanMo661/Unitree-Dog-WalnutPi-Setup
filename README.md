@@ -90,9 +90,11 @@ curl http://192.168.123.50:8000/sbus    # 浏览器调试台(16通道实时/帧�
 | `SOP.md` | 主文档：每阶段的详细步骤与技术坑（venv 缺件/SDK 库差异/root 服务/热点上限/驱动僵死/日志分锅…） |
 | `go2-bridge/` | 板端全套源码（bridge.py 转发层 + 部署脚本 + systemd 服务 + 测试） |
 | `go2-bridge/core/` | 遥控状态机纯逻辑（fsm.py，表驱动可测；经 `config.FSM_MODE` 与旧路径双轨） |
-| `go2-bridge/android-app/` | 遥控器 App 源码（GO2控制台：喊话台/动作面板/调试台/网络遥控） |
-| `go2-bridge/research/` | Go2 低层控制调研（SDK2 关节级/固件解锁/MCF 指令表） |
+| `go2-bridge/legacy/` | 历史归档脚本（旧网络配置/旧调试页，不参与运行，仅存档） |
 | `assets/MANIFEST.md` | TF 卡镜像、离线依赖等大文件素材的获取方式 |
+
+> `go2-bridge/` 里与运行/装机直接相关的文件集合以 `tools/make_release.py` 白名单为准；
+> 标定用 `calibrate.py` 与 `sbus_monitor.py`，遥控器 App 以 releases/安装页的成品 APK 为准（源码不在本仓）。
 
 ## 已知边界
 

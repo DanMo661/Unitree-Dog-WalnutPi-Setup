@@ -20,7 +20,15 @@ G12遥控器 ──2.4G──► G12接收机 ──SBUS──► [反相] ─�
 | 接收机供电 | 先确认型号：R12 类(4.5–5.5V) 从板子 5V 取电；GR01 类(7.2–72V XT30) 需 5V→12V 升压模块 |
 | USB-TTL（备选） | 必须支持非标 100000 波特率：CP2102/FT232 稳；接 24pin 扩展板的 USB-A |
 
-> 文档分工：使用=本文件；约定/基线=CLAUDE.md；架构=ARCHITECTURE.md；改造清单=OPTIMIZATION.md；台账=TODO.md。
+> 文档分工：使用=本文件；部署流程总览=仓库根 README；分阶段技术坑=SOP.md。
+
+## 目录里什么是什么
+
+- **板上运行集**（`go2-bridge.service`/`go2-audio.service` 实际加载）：`bridge.py` `config.py` `sbus.py` `servo.py` `pa.py` `pa_recv.py` `netrc.py` `journal.py` `languard.py` + `core/` `static/`
+- **装机/部署工具**（PC 上跑，把上面那排送上板子）：`setup3_dog3.py`（全新装机）→ `setup2_extras.py`（SDK 库/音频/权限）→ `deploy_page.py`（App 安装页）；日常改代码用 `deploy_pc.py`
+- **标定/诊断**：`calibrate.py`（通道标定采样，SOP §5.1）、`sbus_monitor.py`（SBUS 实时帧流）、`board_wifi_setup.py`（WiFi 双档案）
+- **离线测试**：`test_*.py`（PC 上 `python run_test_shim.py test_xxx.py`；`test_pa_v3.py` 需板子在线，离线跑必然 FAIL，不算回归）
+- **历史归档**：`legacy/`（不参与运行，仅存档）
 
 ## 接线
 

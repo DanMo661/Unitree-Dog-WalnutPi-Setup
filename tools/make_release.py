@@ -38,6 +38,7 @@ ROOT_FILES = [
     "board_wifi_setup.py",
     "push_song.py",     # 预设音频上载工具(a172116 起随运行集同步)
     "sbus_monitor.py",  # SBUS 实时帧流(换遥控器重标定用, SOP §5 引用)
+    "calibrate.py",     # 通道标定采样工具(SOP §5.1 引用, 2026-10-30 起入白名单)
     "PaSend-v36-网络遥控.apk",  # deploy_page.py 上架的成品(缺它发布树无法直接上架)
 ]
 
