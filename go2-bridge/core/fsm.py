@@ -73,6 +73,7 @@ class DogFsm:
         self.last_clean = t0          # 最近干净帧时刻: 失控保护计时锚点(:556)
         self.last_any = t0            # 最近任意帧(含坏帧)时刻: 只反映链路是否活着(:557)
         self.prev_high = None         # A 键上一帧电平(None=首帧只记录)(:559)
+        self.last_src = None          # 帧来源(sbus/netrc): 换源首帧只记电平, 跨源差不合成边沿
         self.last_arm_edge = None     # A 解锁上升沿时刻(去抖锚点, 10-20; rc_loop 同名局部)
         self.last_gear = 0            # 拨档当前位(0=未同步; 趴下切挡只记账)(:560)
         self.gear_sent = 0            # 已真正发给狗的挡位(趴下不发送, 防步态弹狗)(:561)
@@ -264,6 +265,10 @@ class DogFsm:
             # 调用方全是字面量, 此门纯防御: -1 会静默穿过元组负索引污染 mode
             raise ValueError("set_mode: 非法模式 %r(只收 0趴/1站/2走/3坐)" % (m,))
         if m == self.mode:
+            return True, out
+        # 起立流程中 1->2 只是目标标签对齐(bridge.Dog 同款守护 10-31): 清了 rising 会让
+        # BalanceStand 补发永久丢失, 且下一帧步态同步会插进物理 StandUp(10-21 断电模式)
+        if self.rising and m == 2 and self.mode == 1:
             return True, out
         # 坐姿规则(P1, bridge.Dog 同步): 坐着时 C 在上位不算数, 提前返回且不发任何
         # 指令 —— 否则 C 停在上位时每帧一条 StopMove(20Hz 刷指令队列)
@@ -473,7 +478,16 @@ class DogFsm:
             return []
         self.last_clean = now                     # :598
         self.last_any = now                       # :599
-        out = self._maybe_balance(now, height, height_t)   # 状态驱动起立判定(same tick)
+        if source != self.last_src:
+            # 换源首帧只记电平不当边沿(bridge.rc_loop 同款 10-31): App 与实体遥控同时
+            # 在线时, 跨源电平差不得合成 A/C/B 边沿(防丢包窗口振荡 / 切后台回来自动起立)
+            self.last_src = source
+            self.prev_high = None
+            self.stand_prev = ch[self.cfg.CH_STAND] > self.cfg.STAND_ON
+            self.key_high = {cid: ch[cid] > self.cfg.KEY_THRESHOLD
+                             for cid in self.cfg.KEY_ACTIONS}
+        out = self._apply_reconcile(now, False, height, height_t)  # 重连对账未决时续判
+        out += self._maybe_balance(now, height, height_t)   # 状态驱动起立判定(same tick)
         out += self._drain_pending(now)           # :600 d.tick() —— 必须在帧处理前:
         #                                           set_mode 若清 pending, 迟到指令不得先漏发
         # 载荷输出(bridge.py:601-607 原注释): B键->15脚pwm1两档脉宽(1650分界的
@@ -482,6 +496,7 @@ class DogFsm:
         out += self._set_relay(lv)                # :604-606 set_us(1950/1050) + set_level(lv)
         # A 键: 解锁/上锁(bridge.py:610-636)
         a_high = ch[self.cfg.CH_ARM] > self.cfg.ARM_ON          # :610
+        stand = ch[self.cfg.CH_STAND] > self.cfg.STAND_ON       # :637 C 电平每帧都算(上锁期也跟)
         if self.link_gen != self.link_gen_cur:    # :611 (重)连上狗: 回到上锁态, 防重连瞬间狗自行动作
             self.link_gen = self.link_gen_cur     # :612
             self.stand_req = False                # 撤销挂起的姿态请求, 防重解锁后自动执行(10-20)
@@ -512,9 +527,12 @@ class DogFsm:
                 self.armed = True                 # :630
                 self.web_armed = False            # :632 RC 接管, 网页控制让位
                 out.append(("log", "已解锁(RC)"))  # :635
+                if self.mode != 3 and stand:
+                    # 解锁即可控(10-31, 与 bridge 同步): C 已在上位则视同 C 上沿起立请求,
+                    # 省掉"解锁后再拨一次 C"; C 在下位或坐姿则不动
+                    self.stand_req = True
             self.last_arm_edge = now
         self.prev_high = a_high                   # :636
-        stand = ch[self.cfg.CH_STAND] > self.cfg.STAND_ON   # :637 C 电平每帧都算(上锁期也跟)
         if self.armed:
             # 姿态请求标志+每帧重试(10-20 供电口事故): C 边沿只置标志, set_mode 被互锁/
             # 起立保护期拦下(返回 False)时标志保留, 到点自动重试; C 回对面电平则撤销。
@@ -608,23 +626,26 @@ class DogFsm:
         return out
 
     def web_cmd(self, cmd, vx=None, vy=None, vyaw=None, now=None):
-        """网页 /ws 指令(bridge.py:746-767) + 连接断开(:786-793)。
+        """网页 /ws 指令(bridge.py:746-767) + 连接断开(:2221-2231)。
         cmd: "arm"/"disarm"/"damp"/"stand"/"walk"/"axes"(摇杆值)/"closed"(ws 断开)"""
         now = time.monotonic() if now is None else now
         out = []
         if cmd == "axes":
-            # :764-767 原注释: 摇杆消息三键齐全才赋值; 心跳{ping:1}不得清零速度
+            # 只更新带来的键, 缺键不清零(10-31): 网页双摇杆各发各的键才能边走边转;
+            # 心跳{ping:1}三键全缺, 天然不动
             if vx is not None:
                 self.web_vx = clamp01(vx)
-                self.web_vy = clamp01(vy if vy is not None else 0.0)
-                self.web_vyaw = clamp01(vyaw if vyaw is not None else 0.0)
+            if vy is not None:
+                self.web_vy = clamp01(vy)
+            if vyaw is not None:
+                self.web_vyaw = clamp01(vyaw)
             return out
         if self.armed:
             return out                       # :748-750 RC 优先, 网页指令忽略
         if cmd == "arm":
             self.web_armed = True            # :751-753
-            if self.mode == 0:
-                out += self.set_mode(1, now=now)[1]  # :754-755 (被互锁/保护期拦则无输出)
+            # 统一(10-31, 与 bridge 同步): arm 直接到可控, 不再先到站立平衡
+            out += self.set_mode(2, now=now)[1]  # 被互锁/保护期拦则无输出
         elif cmd in ("disarm", "damp"):
             self.web_armed = False            # :756-758
             out += self.set_mode(0, now=now)[1]      # :759
@@ -634,9 +655,10 @@ class DogFsm:
             if not self.rising:
                 out += self.set_mode(1 if cmd == "stand" else 2, now=now)[1]
         elif cmd == "closed":
-            # :786-793 网页端断开, 解除网页控制并趴下(仅 RC 也未解锁时)
+            # :2221-2231 网页端断开, 解除网页控制并停走保持姿态(10-29 起:
+            # 趴下只认显式命令; 关网页就趴下在楼梯/斜坡/货架边是摔机风险)
             self.web_armed = False
             self.web_vx = self.web_vy = self.web_vyaw = 0.0
-            if not self.armed:
-                out += self.set_mode(0, now=now)[1]  # :792-793
+            if not self.armed and self.link_up:   # 与桥同款: 断链时不发
+                out += self.hold()                # 幂等 StopMove, mode 不动
         return out

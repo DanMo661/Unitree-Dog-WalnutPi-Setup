@@ -6,7 +6,7 @@
 用例相互独立: 各自新建 DogFsm(now=0), 时钟由每个事件的 now 参数显式推进,
 不 sleep、不依赖真实时间、不碰硬件。
 
-覆盖(任务点名场景全覆盖, 共 41 例):
+覆盖(任务点名场景全覆盖, 共 42 例):
   解锁抖动 / C 抖动 / 趴下切挡 / 起立3s内拨C / 坏帧夹在边沿中间 / 重连陈旧电平 /
   坐姿+挡位 / 冷却中摇杆 / 断链30s上锁 / 首连零指令 / 坐->趴静默 / 坐->走忽略,
   另补: 首帧电平只记录、短丢帧恢复不解锁、网页指令 RC 优先/抢占/退出趴下/damp、
@@ -428,11 +428,12 @@ CASES = [
      "post": [("attr", "armed", True), ("attr", "web_armed", False),
               ("attr", "mode", 2)]},
 
-    # 21. 网页会话闭环: arm(趴->站: StandUp+rising) -> 起立中 walk 被明确拒绝(P1)
-    #     -> 无遥测 6s 兜底 BalanceStand 解除 rising -> walk(1->2 无 StandUp)
-    #     -> axes+tick 驱动 Move -> ws closed 自动趴下(距 StandUp >= 2s 过互锁),
-    #     网页控制解除
-    {"name": "web_session_drive_then_close_lies_down",
+    # 21. 网页会话闭环: arm(趴->可控: StandUp+rising, 10-31 起 arm 直接到 mode 2, 不再两步)
+    #     -> 起立中 walk 被明确拒绝(P1) -> 无遥测 6s 兜底 BalanceStand 解除 rising
+    #     -> walk 已是 mode 2 无输出 -> axes+tick 驱动 Move
+    #     -> ws closed 解除网页控制并停走保持姿态(10-29 起趴下只认显式命令;
+    #        本例未连狗 link_down, 与 bridge:2230 同款不发指令), mode 不动
+    {"name": "web_session_drive_then_close_holds",
      "events": [
          ("web", "arm", 5.25),
          ("web", "walk", 5.50),        # 起立中: 拒绝, 不得清 rising 放行 Move
@@ -443,12 +444,10 @@ CASES = [
          ("web", "closed", 13.75),
          ("tick", 14.00),
      ],
-     "expect": [STOP, S("StandUp"), M1,
+     "expect": [STOP, S("StandUp"), M2,
                 S("BalanceStand"),
-                STOP, M2,
-                S("Move", x=0.25, y=0.0, z=0.0),
-                STOP, S("StandDown"), M0],
-     "post": [("attr", "web_armed", False), ("attr", "mode", 0),
+                S("Move", x=0.25, y=0.0, z=0.0)],
+     "post": [("attr", "web_armed", False), ("attr", "mode", 2),
               ("attr", "pending", [])]},
 
     # 22. 网页 damp: 与 disarm 同径趴下(距 StandUp >= 2s 过互锁), 且清掉 arm 挂的 pending
@@ -458,7 +457,7 @@ CASES = [
          ("web", "damp", 7.50),
          ("tick", 10.00),
      ],
-     "expect": [STOP, S("StandUp"), M1,
+     "expect": [STOP, S("StandUp"), M2,
                 STOP, S("StandDown"), M0],
      "post": [("attr", "mode", 0), ("attr", "web_armed", False),
               ("attr", "pending", [])]},
@@ -629,12 +628,12 @@ CASES = [
     #     趴下永远允许(距 StandUp 2.25s 过互锁)
     {"name": "web_stand_walk_blocked_while_rising",
      "events": [
-         ("web", "arm", 5.25),          # 0->1: StandUp, 进入 rising
+         ("web", "arm", 5.25),          # 0->2: StandUp, 进入 rising(arm 直接到可控)
          ("web", "walk", 5.30),         # 起立中: 拒绝
          ("web", "stand", 5.35),        # 起立中: 拒绝
          ("web", "disarm", 7.50),       # 趴下永远允许
      ],
-     "expect": [STOP, S("StandUp"), M1,
+     "expect": [STOP, S("StandUp"), M2,
                 STOP, S("StandDown"), M0],
      "post": [("attr", "rising", False), ("attr", "mode", 0)]},
 
@@ -746,6 +745,26 @@ CASES = [
                 S("Move", x=-2.0, y=0.0, z=0.0),
                 STOP],
      "post": [("attr", "moving", False)]},
+
+    # 40. 网页会话闭环(连着狗): 网页开车中关网页 = 解除网页控制并停走保持姿态,
+    #     mode 不动(10-29 起趴下只认显式命令; fsm 与 bridge:2225-2231 对齐。
+    #     这正是 10-31 上午 12:48 App 接管差异告警的根因场景: closed 旧语义把
+    #     影子 mode 悄悄置 0, 下次解锁沿 C 上位即假报 StandUp 差异)
+    {"name": "web_close_holds_when_linked",
+     "events": [
+         ("link", 1),
+         ("frame", {"A": A_OFF, "C": C_UP}, 0, 0, 5.00),
+         ("web", "arm", 5.25),         # 首连 mode=1 -> 走: StopMove+M2, 网页控制开
+         ("webaxes", 0.5, 0.0, 0.0, 5.50),
+         ("tick", 5.75),               # 网页驱动 Move
+         ("web", "closed", 6.00),      # 关网页: 停走保持姿态(趴下只认显式命令)
+         ("tick", 6.25),
+     ],
+     "expect": [FIRST, REL1050, STOP, M2,
+                S("Move", x=0.25, y=0.0, z=0.0),
+                STOP],
+     "post": [("attr", "web_armed", False), ("attr", "web_vx", 0.0),
+              ("attr", "mode", 2), ("attr", "moving", False)]},
 ]
 
 

@@ -126,7 +126,9 @@ def main():
     bridge.config.FS_DAMP_S = 1.5              # 仿真缩短真失联判定(真机30s), 代码路径相同
     bridge.config.STAND_TIMEOUT_S = 1.0        # 仿真缩短无遥测兜底(真机6s), 代码路径相同
     bridge.Sbus = FakeSbus                     # 注入物理线桩
-    assert netrc.start(15010, print)           # 真实 netrc 接收器
+    def _log(*a, **kw):                        # log(..., lvl=) 兼容
+        print(*a)
+    assert netrc.start(15010, _log)             # 真实 netrc 接收器
     pa = bridge.Pa(30, print)
 
     t0 = time.monotonic()

@@ -43,14 +43,23 @@ except ImportError:
     except ImportError:
         DOG_LIB = False
 
+# 候选遥测探测(10-31): 第二客户端实测部分话题只发第一个连接, 挂桥自己连接上记
+# 首包确认这台固件发什么; 只诊断不进 state, 固件将来开始发也能自动浮出
+_PROBE_SEEN = set()
+PROBE_TOPICS = ("BMS_STATE", "SELF_TEST", "SERVICE_STATE", "LIDAR_STATE",
+                "SECONDARY_IMU", "WIRELESS_CONTROLLER", "UWB_STATE")
 
 _LOG_BUF = collections.deque(maxlen=600)   # 内存日志环: /logs 端点给控制台日志面板用
 _J_EVERY_N = max(1, int(config.JOURNAL_EVERY_N))   # journal 高频采样比(帧/Move), 防误配 0
 _T0 = time.monotonic()    # 进程启动锚点: /state 的 uptime_s 用
 
 
-def log(*a):
-    line = time.strftime("[%H:%M:%S]") + " " + " ".join(str(x) for x in a)
+def log(*a, lvl=""):
+    tag = ("[%s] " % lvl) if lvl else ""
+    # 时区: 板子系统时钟是 UTC, 按 config.LOG_TZ_OFFSET_H 换算成当地时间再显示
+    stamp = time.strftime("[%H:%M:%S]",
+                          time.gmtime(time.time() + config.LOG_TZ_OFFSET_H * 3600))
+    line = stamp + " " + tag + " ".join(str(x) for x in a)
     _LOG_BUF.append(line)
     print(line, flush=True)
 
@@ -113,6 +122,18 @@ def _sys_snapshot():
     except Exception:
         pass
     return {"load1": load1, "mem_pct": mem_pct, "cpu_temp": cpu_temp}
+
+
+def _dog2_snapshot(now):
+    """GO2 信息卡数据(10-31): lowstate 关节温度/电池 + mainboardstate 机身温度。
+    只读镜像, 订阅没数据时字段为 None, 绝不抛。"""
+    age = (round(now - state.dog_low_t, 2)
+           if state.dog_low_t is not None else None)
+    return {"joints": state.dog_joints, "bms": state.dog_bms,
+            "mb": state.dog_mb, "imu_t": state.dog_imu_t,
+            "rpy": state.dog_rpy, "err": state.dog_err,
+            "low_age": age, "n": state.dog_low_n,
+            "fresh": age is not None and age < 5.0}
 
 
 def _dog_height_valid(now=None):
@@ -219,13 +240,13 @@ def _pick_robot_ip(timeout=0.8):
     if _LAST_ROBOT_IP:
         if try_ip(_LAST_ROBOT_IP):
             return _LAST_ROBOT_IP
-        log("狗地址不可达, 清空上次解析:", _LAST_ROBOT_IP)
+        log("狗地址不可达, 清空上次解析:", _LAST_ROBOT_IP, lvl="debug")
         _LAST_ROBOT_IP = None
     try:
         infos = socket.getaddrinfo(host, config.SIGNAL_PORT,
                                    socket.AF_INET, socket.SOCK_STREAM)
     except OSError as e:
-        log("狗地址解析失败:", host, repr(e))
+        log("狗地址解析失败:", host, repr(e), lvl="warn")
         infos = []
     ips = []
     for _fam, _typ, _proto, _canon, sa in infos:
@@ -299,6 +320,16 @@ class State:
     dog_vel = None        # [vx, vy, wz] 狗自报速度
     dog_state_t = None    # 最近一条 sportmodestate 的 monotonic 时刻(stale 判定)
     dog_state_n = 0       # 收到状态包计数(诊断"订阅到底通没通")
+    # ---- GO2 信息卡(rt/lf/lowstate + mainboardstate, 10-31): 只读监控, 不碰控制 ----
+    dog_joints = None     # 关节温度列表(°C, 槽位序: FR/FL/RR/RL 各 髋/大腿/小腿)
+    dog_bms = None        # 电池摘要 dict(SOC/current/voltage/temperature, lowstate 自带)
+    dog_mb = None         # 主板/机身温度(°C, mainboardstate.temperature_ntc1)
+    dog_imu_t = None      # IMU 温度(sportmodestate.imu_state.temperature 原值, 单位待校准)
+    dog_rpy = None        # IMU 姿态角[横滚,俯仰,偏航](rad, sportmodestate.imu_state.rpy)
+    dog_err = None        # 狗错误码(sportmodestate.error_code 原值; 语义待映射)
+    dog_low_t = None      # 最近一条 lowstate 的 monotonic 时刻(新鲜度)
+    dog_low_n = 0         # lowstate 包计数
+    dog_mb_n = 0          # mainboardstate 包计数(首包日志用, 该话题可能不发)
     last_src = "sbus"     # 最近控制帧来源: sbus / netrc
     last_cmd = None       # 最近一条非 Move 指令 {name, ts, result}
     last_big_sent = None  # 最近一次大动作(StandUp/StandDown)真实发往狗的时刻(队列互锁用)
@@ -343,6 +374,7 @@ class SbusStats:
         self._sec0 = None       # 当前秒桶
         self._sec_n = 0         # 当前秒已收帧数
         self._hist_i = 59       # 环形最新槽位
+        self._roll_n = 0        # 启动以来完成统计的秒数(趋势图启动零桶垫平用)
 
     def _roll(self, sec):
         """秒桶翻转: 结算旧秒并补零推进(链路停了也照推, 柱状图不说谎)。须持锁调用"""
@@ -352,6 +384,7 @@ class SbusStats:
         if sec == self._sec0:
             return
         self.hist[self._hist_i] = self._sec_n
+        self._roll_n += 1
         for _ in range(min(sec - self._sec0, 60)):
             self._hist_i = (self._hist_i + 1) % 60
             self.hist[self._hist_i] = 0
@@ -392,7 +425,12 @@ class SbusStats:
             self.fps = len(self._ts)
             self._roll(int(now))
             hist = self.hist[self._hist_i + 1:] + self.hist[:self._hist_i + 1]
-            hist[-1] = self._sec_n      # 最新一秒是进行中的当前秒
+            hist = hist[:-1]   # 丢"进行中的当前秒": 只计了部分帧, 画进趋势会形成右端规律性低点
+            done = min(self._roll_n, len(hist))
+            if done < len(hist):   # 启动未满一窗: 从未统计过的零桶按当前水平延展(首个实测秒
+                pad = hist[-1] or int(self.fps)   # 是爬坡值, 拿它垫会前半段贴地)
+                for i in range(len(hist) - done):
+                    hist[i] = pad
             return {"total": self.total, "fs_cnt": self.fs_cnt,
                     "lost_cnt": self.lost_cnt, "gap_cnt": self.gap_cnt,
                     "last_iv": self.last_iv, "fps": self.fps,
@@ -433,7 +471,7 @@ class DogLink:
     def _run(self):
         if not DOG_LIB:
             state.link = "lib_missing"
-            log("unitree_webrtc_connect 未安装, 连狗功能停用 (bash install.sh)")
+            log("unitree_webrtc_connect 未安装, 连狗功能停用 (bash install.sh)", lvl="error")
             return
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
@@ -458,7 +496,7 @@ class DogLink:
                 while not await self._probe():
                     state.link = "down"
                     if n % 10 == 0:
-                        log("到狗链路不通(网线/狗未开机), 等待恢复...")
+                        log("到狗链路不通(网线/狗未开机), 等待恢复...", lvl="debug")
                     n += 1
                     await asyncio.sleep(2)
                 ip = _pick_robot_ip()
@@ -478,7 +516,7 @@ class DogLink:
                 state.link = "up"
                 state.link_gen += 1
                 fails = 0
-                log("WebRTC 已连接")
+                log("WebRTC 已连接", lvl="state")
                 self._subscribe_dog_state()   # 先订阅真实姿态, 再决定 reset 的本地 mode
                 await self._wait_dog_state()
                 if dog is not None:
@@ -490,7 +528,7 @@ class DogLink:
                 await self._guarded_consume()
             except Exception as e:
                 state.link = "down"
-                log("WebRTC 会话结束, %ss 后重连:" % (3 * min(fails + 1, 5)), repr(e))
+                log("WebRTC 会话结束, %ss 后重连:" % (3 * min(fails + 1, 5)), repr(e), lvl="warn")
                 fails += 1
             await self._close_conn()
             # 退避(2026-10-29): 狗死了但网口载波还在时, 原先固定 3s 无限重试;
@@ -535,27 +573,27 @@ class DogLink:
                 if down_since is None:
                     down_since = now
                     log("看门狗: %s 载波丢失, %.0fs 内恢复则保持会话"
-                        % (config.ETH_IFACE, config.CARRIER_GRACE_S))
+                        % (config.ETH_IFACE, config.CARRIER_GRACE_S), lvl="debug")
                 elif now - down_since >= config.CARRIER_GRACE_S:
                     log("看门狗: %s 载波持续丢失 %.0fs, 拆会话"
-                        % (config.ETH_IFACE, now - down_since))
+                        % (config.ETH_IFACE, now - down_since), lvl="warn")
                     return
                 continue
             if down_since is not None:
                 log("看门狗: %s 载波恢复(丢失 %.1fs), 保持会话"
-                    % (config.ETH_IFACE, now - down_since))
+                    % (config.ETH_IFACE, now - down_since), lvl="state")
                 down_since = None
                 tcp_miss = 0
             if n % 3 == 0:
                 if await self._probe(True):
                     if tcp_miss:
-                        log("看门狗: 狗信令口恢复")
+                        log("看门狗: 狗信令口恢复", lvl="state")
                     tcp_miss = 0
                 else:
                     tcp_miss += 1
-                    log("看门狗: 狗信令口探测失败 %d/2" % tcp_miss)
+                    log("看门狗: 狗信令口探测失败 %d/2" % tcp_miss, lvl="debug")
                     if tcp_miss >= 2:
-                        log("看门狗: 狗信令口连续 2 次不可达, 拆会话")
+                        log("看门狗: 狗信令口连续 2 次不可达, 拆会话", lvl="warn")
                         return
 
     async def _heartbeat(self):
@@ -577,16 +615,16 @@ class DogLink:
                 data = r.get("data", {}).get("data")
                 if data != self._last_gear_read:
                     self._last_gear_read = data
-                    log("心跳回读挡位:", data)
+                    log("心跳回读挡位:", data, lvl="debug")
             except asyncio.TimeoutError:
                 miss += 1
-                log("心跳无回包 %d/%d" % (miss, config.HEARTBEAT_MISS))
+                log("心跳无回包 %d/%d" % (miss, config.HEARTBEAT_MISS), lvl="debug")
                 if miss >= config.HEARTBEAT_MISS:
-                    log("狗应用层连续无响应, 判会话半死, 强制重连")
+                    log("狗应用层连续无响应, 判会话半死, 强制重连", lvl="error")
                     return
             except Exception as e:
                 miss += 1     # 发送本身异常(重连窗口期常见)同样计一次失联
-                log("心跳发送异常 %d/%d:" % (miss, config.HEARTBEAT_MISS), repr(e)[:80])
+                log("心跳发送异常 %d/%d:" % (miss, config.HEARTBEAT_MISS), repr(e)[:80], lvl="warn")
                 if miss >= config.HEARTBEAT_MISS:
                     return
 
@@ -610,9 +648,24 @@ class DogLink:
                 if not topic:
                     continue
                 self.conn.datachannel.pub_sub.subscribe(topic, self._on_sport_state)
-                log("已订阅狗姿态:", topic)
+                log("已订阅狗姿态:", topic, lvl="debug")
+            for key, cb in (("LOW_STATE", self._on_low_state),
+                            ("MAIN_BOARD_STATE", self._on_mb_state)):
+                topic = RTC_TOPIC.get(key)
+                if not topic:
+                    continue
+                self.conn.datachannel.pub_sub.subscribe(topic, cb)
+                log("已订阅狗信息:", topic, lvl="debug")
+            # 候选遥测探测(10-31): 第二客户端实测部分话题只发第一个连接(bmsstate 等),
+            # 挂在桥自己(第一客户端)上记首包, 确认这台固件到底发什么; 不进 state
+            for key in PROBE_TOPICS:
+                topic = RTC_TOPIC.get(key)
+                if not topic:
+                    continue
+                self.conn.datachannel.pub_sub.subscribe(topic, self._probe_cb(topic))
+                log("已订阅探测:", topic, lvl="debug")
         except Exception as e:
-            log("订阅狗姿态失败(起立判定回落超时兜底):", repr(e))
+            log("订阅狗姿态失败(起立判定回落超时兜底):", repr(e), lvl="warn")
 
     def _on_sport_state(self, msg):
         """回调跑在 asyncio 线程: 只存快照(单属性赋值), 不碰控制路径。"""
@@ -627,10 +680,89 @@ class DogLink:
             v = d.get("velocity")
             state.dog_vel = ([float(v[0]), float(v[1]), float(v[2])]
                              if isinstance(v, (list, tuple)) and len(v) >= 3 else None)
+            imu = d.get("imu_state")
+            if isinstance(imu, dict):
+                r = imu.get("rpy")
+                if isinstance(r, (list, tuple)) and len(r) >= 3:
+                    state.dog_rpy = [float(x) for x in r[:3]]
+                if isinstance(imu.get("temperature"), (int, float)):
+                    state.dog_imu_t = float(imu["temperature"])
+            ec = d.get("error_code")
+            if isinstance(ec, (int, float)):
+                state.dog_err = int(ec)
             state.dog_state_t = time.monotonic()
             state.dog_state_n += 1
             if state.dog_state_n == 1:
-                log("狗姿态首包:", str(d)[:300])
+                log("狗姿态首包:", str(d)[:1200], lvl="debug")
+        except Exception:
+            pass
+
+    def _probe_cb(self, topic):
+        """候选话题首包诊断(10-31): 每话题只记一次, 不进 state 不进控制。"""
+        def cb(msg, _t=topic):
+            if _t in _PROBE_SEEN:
+                return
+            _PROBE_SEEN.add(_t)
+            log("探测首包[%s]:" % _t, str(msg)[:800], lvl="debug")
+        return cb
+
+    def _on_low_state(self, msg):
+        """lowstate 回调(asyncio 线程): 只取监控用的关节温度/电池摘要, 不碰控制路径。
+        首包打 debug 便于核对字段(槽位数/单位与狗固件有关)。"""
+        d = msg.get("data") if isinstance(msg, dict) else None
+        if not isinstance(d, dict):
+            return
+        try:
+            ms = d.get("motor_state")
+            if isinstance(ms, list):
+                tj = []
+                for mtr in ms:
+                    t = mtr.get("temperature") if isinstance(mtr, dict) else None
+                    tj.append(float(t) if isinstance(t, (int, float)) else None)
+                state.dog_joints = tj
+            b = d.get("bms_state")
+            if isinstance(b, dict):
+                # 实测键名(10-31 全包抓取): soc/cycle/bq_ntc[2]/mcu_ntc[2]/current(-98x
+                # 哨兵)/version_*, 无 voltage; 机身温度 temperature_ntc1 在 lowstate 顶层
+                clean = {}
+                soc = b.get("soc")
+                if isinstance(soc, (int, float)) and 0 <= soc <= 100:
+                    clean["SOC"] = float(soc)
+                cur = b.get("current")
+                if isinstance(cur, (int, float)) and cur > -900:
+                    clean["current"] = float(cur)
+                for k in ("bq_ntc", "mcu_ntc"):
+                    v = b.get(k)
+                    if (isinstance(v, (list, tuple)) and v
+                            and isinstance(v[0], (int, float)) and v[0] > -900):
+                        clean[k] = float(v[0])
+                cy = b.get("cycle")
+                if isinstance(cy, (int, float)):
+                    clean["cycle"] = int(cy)
+                state.dog_bms = clean or None
+            t1 = d.get("temperature_ntc1")
+            if isinstance(t1, (int, float)):
+                state.dog_mb = float(t1)   # 机身温度(mainboardstate 话题不发, lowstate 自带)
+            state.dog_low_t = time.monotonic()
+            state.dog_low_n += 1
+            if state.dog_low_n == 1:
+                log("lowstate 首包:", str(d)[:400], lvl="debug")
+        except Exception:
+            pass
+
+    def _on_mb_state(self, msg):
+        """mainboardstate 回调: 机身温度(temperature_ntc1), 其余字段忽略。
+        首包打 debug 核对键名(该话题这台狗可能压根不发)。"""
+        d = msg.get("data") if isinstance(msg, dict) else None
+        if not isinstance(d, dict):
+            return
+        try:
+            state.dog_mb_n += 1
+            if state.dog_mb_n == 1:
+                log("mainboardstate 首包:", str(d)[:300], lvl="debug")
+            t = d.get("temperature_ntc1")
+            if isinstance(t, (int, float)):
+                state.dog_mb = float(t)
         except Exception:
             pass
 
@@ -644,7 +776,7 @@ class DogLink:
                 return True
             await asyncio.sleep(0.1)
         log("(重)连 %.0fs 内未收到有效狗姿态高度, 本地模式按未知处理(等遥测再对账)"
-            % config.DOG_STATE_WAIT_S)
+            % config.DOG_STATE_WAIT_S, lvl="debug")
         return False
 
     async def _close_conn(self):
@@ -662,7 +794,7 @@ class DogLink:
             if hasattr(r, "__await__"):
                 await asyncio.wait_for(r, 8)   # 必须等 pc 真关完才放下一轮
         except Exception as e:
-            log("关闭狗连接异常(忽略):", repr(e)[:120])
+            log("关闭狗连接异常(忽略):", repr(e)[:120], lvl="debug")
 
     def _drop(self, why, name):
         """队列丢弃计数 + 限流日志(P1: 5s 一条, 不刷控制台/journal/fsync)。"""
@@ -670,7 +802,7 @@ class DogLink:
         now = time.monotonic()
         if now - self._drop_log_t >= 5.0:
             self._drop_log_t = now
-            log("指令队列丢弃(%s): %s (累计 ttl=%d)" % (why, name, self.drop_ttl))
+            log("指令队列丢弃(%s): %s (累计 ttl=%d)" % (why, name, self.drop_ttl), lvl="warn")
 
     def _cancel_rise_cmds(self):
         """上锁/趴下时撤销 _nm_q 里尚未发出的 StandUp/BalanceStand(收权优先):
@@ -775,17 +907,19 @@ class DogLink:
                 config.REQ_TIMEOUT_S)   # 无回包上限: 防狗半死时单条请求冻死整条指令管线
             code = r.get("data", {}).get("header", {}).get("status", {}).get("code")
             if code not in (0, None, 200):
-                log(name, "被狗拒绝 code =", code)
+                # StopMove code=-1 = 狗无运动可停的常规应答(解锁/趴下转换都有), 降调试级
+                log(name, "被狗拒绝 code =", code,
+                    lvl="debug" if (name == "StopMove" and code == -1) else "warn")
                 _set_cmd_result(name, "rejected:%s" % code)
             else:
                 _set_cmd_result(name, "ok")
                 if name == "GetSpeedLevel":
-                    log("狗侧回读挡位:", r.get("data", {}).get("data"))
+                    log("狗侧回读挡位:", r.get("data", {}).get("data"), lvl="debug")
         except asyncio.TimeoutError:
-            log("发送超时(狗 %ss 无回包):" % config.REQ_TIMEOUT_S, name)
+            log("发送超时(狗 %ss 无回包):" % config.REQ_TIMEOUT_S, name, lvl="warn")
             _set_cmd_result(name, "timeout")
         except Exception as e:
-            log("发送失败:", name, repr(e))
+            log("发送失败:", name, repr(e), lvl="error")
             _set_cmd_result(name, "error")
 
     def submit(self, name, **p):
@@ -807,7 +941,7 @@ class DogLink:
         # Move 是 20Hz 连发流, 不进 LOG_CMDS(微抖值每条都不同, 会变刷屏+刷TF卡)
         if config.LOG_CMDS and name != "Move" and (name, p) != self._last_logged:
             self._last_logged = (name, p)
-            log("指令 ->", name, p if p else "")
+            log("指令 ->", name, p if p else "", lvl="debug")
         try:
             self.loop.call_soon_threadsafe(self.q.put_nowait,
                                            (name, p, time.monotonic()))
@@ -861,13 +995,13 @@ class Dog:
             journal.record("event", ev="stand_guard", to=m, remain=round(remain, 3))
             _ev("safety", "stand_guard", "to=%s" % m)
             log("起立保护期: 拒绝起立(开机 %.0fs 内), %.1fs 后到点自动重试"
-                % (config.STAND_GUARD_S, remain))
+                % (config.STAND_GUARD_S, remain), lvl="warn")
         else:
             # 大动作互锁(10-20): 两次起立/趴下太近会触发狗供电口保护性断电
             journal.record("event", ev="interlock", to=m, remain=round(remain, 3))
             _ev("safety", "interlock", "to=%s" % m)
             log("互锁: 距上一次起立/趴下 %.2fs < %.1fs, 拒绝(%.1fs 后到点自动重试)"
-                % (now - self._last_big, config.MODE_DWELL_S, remain))
+                % (now - self._last_big, config.MODE_DWELL_S, remain), lvl="warn")
 
     def _resolve_block(self, m, now):
         """拦截 episode 收尾(调用方持锁): 同一 episode 只记首次拦截 + 最终放行/撤销。
@@ -880,7 +1014,7 @@ class Dog:
         if m == target:
             journal.record("event", ev="unblock", reason=reason, to=m)
             _ev("safety", "unblock", "%s→%s" % (reason, m))
-            log("拦截解除: %s 请求到点放行 -> %s" % (reason, m))
+            log("拦截解除: %s 请求到点放行 -> %s" % (reason, m), lvl="state")
         else:
             journal.record("event", ev="req_cancel", reason=reason, to=m)
             _ev("safety", "req_cancel", "%s" % reason)
@@ -923,6 +1057,12 @@ class Dog:
                                         self._last_big + config.MODE_DWELL_S)
                     return False
             prev_mode = self.mode     # journal 用: 切换前旧模式
+            # 起立流程中 1->2 只是目标标签对齐: 不清 rising(清了会让 BalanceStand 补发
+            # 永久丢失, 且下一帧步态同步会插进物理 StandUp —— 10-21 上装断电事故模式);
+            # rise 完成后 rc_loop 的"C 稳在上补同步"自然切 2
+            if self.rising and m == 2 and self.mode == 1:
+                self._resolve_block(m, now)
+                return True
             # 模式一变就作废未到点的延迟指令与起立流程: 起立过程中拨 C 趴下时,
             # 迟到的 BalanceStand 会把趴着的狗瞬间弹起(10-17 实测危险)
             self.pending = []
@@ -939,7 +1079,7 @@ class Dog:
                 self._sync_pending = False
                 self._resolve_block(m, now)
                 journal.record("event", ev="mode", prev=prev_mode, to=0)
-                log("模式 -> 趴")
+                log("模式 -> 趴", lvl="state")
                 return True
             self.link.submit("StopMove")
             if m == 0:
@@ -958,7 +1098,7 @@ class Dog:
                     self._drop_warn_t = now
                     journal.record("event", ev="drop_cmd", to=m)
                     _ev("dog", "drop_cmd", "to=%s" % m)
-                    log("指令未入队(链路/循环不可用), 模式保持 %s, 等重试" % self.mode)
+                    log("指令未入队(链路/循环不可用), 模式保持 %s, 等重试" % self.mode, lvl="warn")
                 return False
             self.mode = m
             self.moving = False
@@ -969,7 +1109,7 @@ class Dog:
             self._resolve_block(m, now)
             journal.record("event", ev="mode", prev=prev_mode, to=m)
             _ev("mode", "mode", "%s→%s" % (prev_mode, m))
-            log("模式 ->", ("趴", "站", "走", "坐")[m])
+            log("模式 ->", ("趴", "站", "走", "坐")[m], lvl="state")
             if big and self._t0 is not None:
                 self._last_big = now
             return True
@@ -1000,8 +1140,7 @@ class Dog:
         journal.record("event", ev="balance", why=why,
                        dt=round(now - self.rise_t, 2), height=h)
         _ev("dog", "balance", "%s %.2fs" % (why, now - self.rise_t))
-        log("起立判定(%s): %.2fs 后补 BalanceStand, 狗自报高度=%s"
-            % (why, now - self.rise_t, ("%.3fm" % h) if h is not None else "n/a"))
+        log("起立稳定 %.2fs ✓ -> 补 BalanceStand" % (now - self.rise_t), lvl="state")
         return True
 
     def _stand_failed(self, now, h):
@@ -1017,7 +1156,7 @@ class Dog:
                        dt=round(now - self.rise_t, 2))
         _ev("dog", "stand_failed", "height=%s" % h)
         log("起立失败: 狗未起立(高度 %s < %.2fm), 不发 BalanceStand, 等待重新拨 C"
-            % (("%.3fm" % h) if h is not None else "n/a", config.DOG_STAND_HEIGHT))
+            % (("%.3fm" % h) if h is not None else "n/a", config.DOG_STAND_HEIGHT), lvl="warn")
 
     def _maybe_balance(self, now):
         """状态驱动起立完成判定(调用方持锁): 狗自报 body_height 的**不同遥测包**
@@ -1043,7 +1182,7 @@ class Dog:
                                    dt=round(now - self.rise_t, 2))
                     _ev("dog", "no_telemetry", "%.0fs" % config.STAND_TIMEOUT_S)
                     log("告警: 无狗姿态遥测, 起立判定退化为 %.0fs 兜底(本次起立)"
-                        % config.STAND_TIMEOUT_S)
+                        % config.STAND_TIMEOUT_S, lvl="warn")
                 self._finish_rise(now, "no_telemetry", None)
             return
         if ts != self._h_ts:
@@ -1086,7 +1225,7 @@ class Dog:
                        mode=self.mode)
         _ev("dog", "state_sync", "height=%.3f mode=%s" % (h, self.mode))
         log("遥测对账: 狗真实高度 %.3fm -> 本地 mode=%d(%s)"
-            % (h, self.mode, "站立" if self.mode else "趴下"))
+            % (h, self.mode, "站立" if self.mode else "趴下"), lvl="debug")
 
     def damp(self):
         """应急泄力趴窝(已弃用: 自动失控保护改走 set_mode(0) 缓降, 函数保留仅供手动)"""
@@ -1108,7 +1247,7 @@ class Dog:
             if gait:
                 self.link.submit(gait)
                 journal.record("event", ev="gear", g=g, gait=gait)
-                log("挡位 ->", g, "(%s)" % gait)
+                log("挡位 ->", g, "(%s)" % gait, lvl="state")
 
     def trick(self, name, dur):
         """花样动作: 仅走模式(站立)可触发; 播放期(冷却)内摇杆/新动作被屏蔽
@@ -1126,13 +1265,13 @@ class Dog:
             state.action = name        # 镜像给网页端显示动作锁(只动 state, 不碰统计锁)
             state.action_end = now + dur
             journal.record("event", ev="trick", name=name, dur=dur)
-            log("动作 ->", name, "(%ds)" % dur)
+            log("动作 ->", name, "(%ds)" % dur, lvl="state")
             if name == "Sit":
                 # 坐下是持续姿态: 记成独立状态, C 拨下(静默)->拨上才会再起立
                 self.mode = 3
                 state.mode = 3
                 journal.record("event", ev="mode", prev=2, to=3)
-                log("模式 -> 坐")
+                log("模式 -> 坐", lvl="state")
             return True
 
     def move(self, vx, vy, vyaw):
@@ -1194,11 +1333,11 @@ class Dog:
                 # 对账标志保留, 迟到的遥测仍会纠正(中间区不猜)
                 self.mode = 1
                 state.mode = 1
-                log("首连无有效姿态数据, 按旧逻辑假定站立(等遥测再对账)")
+                log("首连无有效姿态数据, 按旧逻辑假定站立(等遥测再对账)", lvl="debug")
             state.mode = self.mode
             journal.record("event", ev="reset", first=first, mode=self.mode)
             log("开机首连: 已锁定等待解锁(不发任何指令)" if first
-                else "断链重连: 停走保持姿态, 请重新解锁")
+                else "断链重连: 停走保持姿态, 请重新解锁", lvl="state")
 
 
 # ---- FSM 影子模式(P0-3 / T1.3): 旧逻辑照跑, core/fsm.py 的 DogFsm 并行对照, 只比不发 ----
@@ -1415,14 +1554,18 @@ class FsmShadow:
                     "gear_sent": self.fsm.gear_sent, "moving": self.fsm.moving}
         if fsm_sub == old_sub and fsm_rg == old_rg:
             return
-        ch, fs, lost = f if f is not None else (None, None, None)
-        journal.record("fsm_divergence",
-                       src=("netrc" if nf is not None else "sbus") if f is not None else None,
-                       fs=fs, lost=lost, gap=round(gap_clean, 3),
-                       ch=list(ch) if ch else None,
-                       old_sub=old_sub, fsm_sub=fsm_sub,
-                       old_relay=old_rg, fsm_relay=fsm_rg, fsm=snap)
-        log("FSM 差异: 旧=%s 新=%s (fsm=%s)" % (old_sub + old_rg, fsm_sub + fsm_rg, snap))
+        now = time.monotonic()
+        if getattr(self, "_div_log_t", None) is None or now - self._div_log_t >= 5.0:
+            self._div_log_t = now
+            ch, fs, lost = f if f is not None else (None, None, None)
+            journal.record("fsm_divergence",
+                           src=("netrc" if nf is not None else "sbus") if f is not None else None,
+                           fs=fs, lost=lost, gap=round(gap_clean, 3),
+                           ch=list(ch) if ch else None,
+                           old_sub=old_sub, fsm_sub=fsm_sub,
+                           old_relay=old_rg, fsm_relay=fsm_rg, fsm=snap)
+            log("FSM 差异: 旧=%s 新=%s (fsm=%s)" % (old_sub + old_rg, fsm_sub + fsm_rg, snap),
+                lvl="warn")   # 分歧是影子存在的意义, 精简模式也要可见; 5s 限频防逐帧刷屏/journal
 
 
 def _shadow_safe(meth):
@@ -1435,7 +1578,7 @@ def _shadow_safe(meth):
         except Exception as e:
             if _SHADOW is self:
                 _SHADOW = None
-                log("FSM 影子异常, 已停用影子(旧路径不受影响):", repr(e))
+                log("FSM 影子异常, 已停用影子(旧路径不受影响):", repr(e), lvl="warn")
     return wrap
 
 
@@ -1491,7 +1634,7 @@ class FsmActive:
                 # 绝不静默丢指令(send 语义的失败回传只在 FSM 事件内部成立)。
                 if not self._warned_raw_submit:
                     self._warned_raw_submit = True
-                    log("FSM active: 出现未经 send 落地的 submit(接线异常), 已直发:", c[1])
+                    log("FSM active: 出现未经 send 落地的 submit(接线异常), 已直发:", c[1], lvl="warn")
                 self.link.submit(c[1], **c[2])
             elif kind == "relay":
                 us = c[1]
@@ -1513,7 +1656,7 @@ class FsmActive:
                 if self._sv1 is not None:
                     _relay_journal(self._sv1, self._svs, was_us, was_lv)
             elif kind == "log":
-                log(c[1])
+                log(c[1], lvl="debug")
 
     # ---- FSM 真身 -> state 镜像(/state 与网页端口径不变) ----
 
@@ -1646,14 +1789,14 @@ def _make_controller(link, now):
         try:
             return FsmActive(link, now=now), None
         except ImportError:
-            log("core/fsm.py 不可用, FSM active 无法接管, 回落旧路径(不会空转)")
+            log("core/fsm.py 不可用, FSM active 无法接管, 回落旧路径(不会空转)", lvl="warn")
     d = Dog(link, now=now)
     sh = None
     if config.FSM_SHADOW:
         try:
             sh = FsmShadow(d)
         except ImportError:
-            log("core/fsm.py 不可用, FSM 影子模式停用(部署清单需补 core/, 旧路径不受影响)")
+            log("core/fsm.py 不可用, FSM 影子模式停用(部署清单需补 core/, 旧路径不受影响)", lvl="warn")
     return d, sh
 
 
@@ -1679,7 +1822,7 @@ def _loop_alive_check(now):
     ts = state.loop_ts
     if ts is not None and now - ts >= 10.0 and now - _LOOP_STALL_LOG_T >= 10.0:
         _LOOP_STALL_LOG_T = now
-        log("桥事件循环停摆 %.0fs(板子 IO 卡死?), 控制指令可能没有发出!" % (now - ts))
+        log("桥事件循环停摆 %.0fs(板子 IO 卡死?), 控制指令可能没有发出!" % (now - ts), lvl="error")
 
 
 def _rc_loop_active(d):
@@ -1734,13 +1877,15 @@ def rc_loop(d, pa):
         try:
             _SHADOW = FsmShadow(d)   # main() 已建则复用; 测试直跑 rc_loop 时在此创建
         except ImportError:
-            log("core/fsm.py 不可用, FSM 影子模式停用(部署清单需补 core/, 旧路径不受影响)")
+            log("core/fsm.py 不可用, FSM 影子模式停用(部署清单需补 core/, 旧路径不受影响)", lvl="warn")
     sbus = Sbus(config.SBUS_PORT, on_frames=sbus_stats.feed)
-    armed = False
+    # 解锁状态唯一状态源: /state 与 App 查询都读它(GIL 下单属性赋值即原子)
+    state.rc_armed = False
     last_clean = time.monotonic()   # 最近干净帧时刻: 失控保护计时锚点(hold/趴下都看它)
     last_any = time.monotonic()     # 最近任意帧(含坏帧)时刻: 只反映链路是否活着
     link_gen = 0          # WebRTC 连接代数: 每次重连都强制重新解锁
     prev_high = None      # A 键上一帧电平(None=首帧只记录), 解锁只认上锁->解锁的翻拨边沿
+    last_src = None       # 帧来源(sbus/netrc): 换源首帧只记电平, 跨源电平差不合成边沿
     last_gear = 0         # 拨档当前位(0=未同步; 趴下切挡只记账, 起立时补同步)
     gear_sent = 0         # 已真正发给狗的挡位(趴下时拨档变化不发送, 防步态指令把狗弹起来)
     stand_prev = True     # C 键上一帧电平(True=首帧前视为稳态, 防把开机电平当边沿)
@@ -1762,8 +1907,7 @@ def rc_loop(d, pa):
         if not sbus.opened:
             if sbus.open():
                 log("SBUS 串口已打开:", config.SBUS_PORT)
-                armed = False               # 串口重开必须重新解锁, 防插拔误触发
-                state.rc_armed = False
+                state.rc_armed = False               # 串口重开必须重新解锁, 防插拔误触发
                 state.gear = None
                 prev_high = None
                 stand_req = False           # 全新会话: 撤销挂起的姿态请求, 防解锁后自动执行
@@ -1795,11 +1939,21 @@ def rc_loop(d, pa):
             if _SHADOW is not None:
                 _SHADOW.frame(ch, fs, lost, "netrc" if nf is not None else "sbus", now)
             state.last_frame_t = now     # /state 镜像: 最近任意帧(含坏帧/网络源)时刻, frame_age 用
+            src = "netrc" if nf is not None else "sbus"
+            if src != last_src and not (fs or lost):   # 坏帧不播种(脏值会合成假 C/B 边沿), 下一好帧再播
+                # 换源首帧只记电平不当边沿: App 与实体遥控同时在线时, 跨源电平差不得合成
+                # A/C/B 键边沿(防 UDP 丢包窗口 1Hz 解锁-趴下振荡、App 切后台回来时拿
+                # SBUS 电平合成解锁边沿自动起立); 真实翻拨发生在单一源连续帧里不受影响
+                last_src = src
+                prev_high = None
+                stand_prev = ch[config.CH_STAND] > config.STAND_ON
+                key_high = {cid: ch[cid] > config.KEY_THRESHOLD
+                            for cid in config.KEY_ACTIONS}
             if fs or lost:                  # 坏帧: 链路活着但数据脏, 不作控制输入
                 bad = True
                 j_must = True
                 last_any = now
-                if armed:
+                if state.rc_armed:
                     d.hold()                # 立即站定等待恢复(幂等); 不上锁不趴下
             else:
                 last_clean = now
@@ -1823,17 +1977,15 @@ def rc_loop(d, pa):
                     lie_req = False
                     d.note_cancel(2, now)         # 拦截 episode 收尾(撤销)
                     arm_dbg_logged = False
-                    if armed:
-                        armed = False
+                    if state.rc_armed:
                         state.rc_armed = False
                         d.hold()                  # 停走保持姿态, 不趴下(09-29 用户要求)
                         journal.record("event", ev="disarm", src="relink")
-                        log("链路重连, 已回上锁态(保持站立), 请重新解锁")
+                        log("链路重连, 已回上锁态(保持站立), 请重新解锁", lvl="state")
                     prev_high = a_high
                 if prev_high is None:             # 首帧只记录电平, 不判定解锁边沿
                     prev_high = a_high
-                if armed and not a_high:
-                    armed = False
+                if state.rc_armed and not a_high:
                     state.rc_armed = False
                     stand_req = False             # 上锁即撤销挂起的姿态请求(解锁不做自动动作)
                     lie_req = False
@@ -1842,8 +1994,8 @@ def rc_loop(d, pa):
                     journal.record("event", ev="disarm", src="rc")
                     _ev("rc", "disarm")
                     j_must = True
-                    log("已上锁(RC)")
-                elif not armed and a_high and not prev_high:
+                    log("已上锁(RC)", lvl="state")
+                elif not state.rc_armed and a_high and not prev_high:
                     # A 去抖(10-20): 解锁上升沿距上次解锁边沿太近则忽略(边沿仍刷新锚点,
                     # 连续抖动期内一直忽略, 稳定超过 ARM_DEBOUNCE_S 的翻拨才解锁)。
                     # P1 日志限流: 同一抖动 episode 只记首次, 不 20Hz 写 journal/fsync
@@ -1855,21 +2007,27 @@ def rc_loop(d, pa):
                                            dt=round(now - last_arm_edge, 3))
                             _ev("rc", "arm_debounced", "%.2fs" % (now - last_arm_edge))
                             log("A 键抖动: 解锁边沿距上次 %.2fs < %.1fs, 已拦(稳定后重翻)"
-                                % (now - last_arm_edge, config.ARM_DEBOUNCE_S))
+                                % (now - last_arm_edge, config.ARM_DEBOUNCE_S), lvl="warn")
                     else:
-                        armed = True              # 只认翻拨动作, A 一直停在解锁位不算
-                        state.rc_armed = True
+                        state.rc_armed = True              # 只认翻拨动作, A 一直停在解锁位不算
                         state.web_armed = False   # RC 接管, 网页控制让位
                         arm_dbg_logged = False
                         journal.record("event", ev="arm", src="rc")
                         _ev("rc", "arm")
                         j_must = True
-                        log("已解锁(RC)")
+                        log("已解锁(RC)", lvl="state")
+                        # 解锁即可控(10-31 用户): 解锁瞬间 C 已在上位则视同 C 上沿起立请求,
+                        # 省掉"解锁后再拨一下 C"(开机狗自站立场景尤其繁琐); C 在下位则
+                        # 保持趴/坐不动, 想起立照旧拨 C。坐姿(3)除外: 尊重坐姿规则
+                        # ("C 上位不算数", 防坐下即被拉起), 照旧等 C 下->上边沿。
+                        # 复用 stand_req 每帧重试: 互锁/起立保护期到点自动放行。
+                        if d.mode != 3 and ch[config.CH_STAND] > config.STAND_ON:
+                            stand_req = True
                     last_arm_edge = now
                     state.arm_blocked_until = now + config.ARM_DEBOUNCE_S
                 prev_high = a_high
                 stand = ch[config.CH_STAND] > config.STAND_ON   # C 电平每帧都算(上锁期也跟)
-                if armed:
+                if state.rc_armed:
                     # 姿态请求标志+每帧重试(10-20 供电口事故): C 边沿只置标志, set_mode 被
                     # 互锁/起立保护期拦下(返回 False)时标志保留, 到点自动重试, 不会因边沿
                     # 只来一次就丢请求; C 回对面电平则撤销。趴下只认 C 上->下边沿(旧的
@@ -1894,7 +2052,7 @@ def rc_loop(d, pa):
                         elif d.set_mode(0, now=now):
                             lie_req = False
                     if not handled and stand and d.mode != 0:
-                        d.set_mode(2, now=now)    # C 稳在上且狗本是站/走: 补同步模式(开机首连 mode=1)
+                        d.set_mode(2, now=now)    # C 稳在上且狗非趴: 补同步模式(坐姿由 set_mode 坐姿规则拒; 开机首连 mode=1)
                     g = pos(ch[config.CH_GEAR], 3) + 1   # 三档拨档 -> 挡1/2/3
                     if g != last_gear:
                         last_gear = g
@@ -1943,13 +2101,12 @@ def rc_loop(d, pa):
             for s in svs:
                 s.set_level(False)
             _relay_journal(sv1, svs, was_us, was_lv)
-            if armed:
+            if state.rc_armed:
                 d.hold()
                 if gap_clean > config.FS_DAMP_S:        # 持续 30s 无干净帧: 真失联
                     journal.record("event", ev="disarm", src="fs",
                                    gap=round(gap_clean, 1))
-                    log("RC 失联 %.0fs, 上锁停走(保持姿态, 09-29 起不再趴下)" % config.FS_DAMP_S)
-                    armed = False
+                    log("RC 失联 %.0fs, 上锁停走(保持姿态, 09-29 起不再趴下)" % config.FS_DAMP_S, lvl="warn")
                     state.rc_armed = False
                     stand_req = False         # 上锁即撤销挂起的姿态请求(与其他上锁路径同语义)
                     lie_req = False
@@ -1960,7 +2117,7 @@ def rc_loop(d, pa):
             _SHADOW.safety(gap_clean, now)
 
         # 网页端: 仅 RC 上锁时接管
-        if not armed and state.web_armed:
+        if not state.rc_armed and state.web_armed:
             d.move(state.web_vx * config.VX_MAX,
                    state.web_vy * config.VY_MAX,
                    state.web_vyaw * config.VYAW_MAX)
@@ -2035,6 +2192,14 @@ def web_server(d):
         with open(page, encoding="utf-8") as fh:
             return HTMLResponse(fh.read())
 
+    @app.get("/sbus-old.html")
+    async def sbus_old_page():
+        """旧版调试台回退入口(v1 起随包分发, 只读静态页)"""
+        page = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "static", "sbus-old.html")
+        with open(page, encoding="utf-8") as fh:
+            return HTMLResponse(fh.read())
+
     @app.get("/journal")
     async def journal_tail(n: int = 100):
         """黑匣子尾部只读端点: /journal?n=100(上限 500), 直接看最后几行 JSONL。"""
@@ -2087,6 +2252,7 @@ def web_server(d):
                     "gait": state.dog_gait, "vel": state.dog_vel,
                     "age": dog_age, "n": state.dog_state_n,
                     "fresh": dog_age is not None and dog_age < config.DOG_STATE_STALE_S},
+            "dog2": _dog2_snapshot(now),
             "pids": {"bridge": os.getpid(), "audio": audio["pid"],
                      "audio_age": audio["age"]},
             "last_stop": journal.last_stop(),
@@ -2102,10 +2268,10 @@ def web_server(d):
         # 原先 0.0.0.0:8000 无鉴权, 同网段任何人 {"cmd":"arm"} 就能让狗站起来开走。
         if not web_guard.token_ok(sock.query_params.get("tok")):
             journal.record("event", ev="ws_rejected", detail="token")
-            log("网页端令牌不符, 拒绝接入:", sock.client)
+            log("网页端令牌不符, 拒绝接入:", sock.client, lvl="warn")
             await sock.close(code=4401)
             return
-        log("网页端接入")
+        log("网页端接入", lvl="state")
         last_status = 0.0
         try:
             while True:
@@ -2121,8 +2287,9 @@ def web_server(d):
                         elif c == "arm":
                             state.web_armed = True
                             journal.record("event", ev="arm", src="web")
-                            if state.mode == 0:
-                                d.set_mode(1)
+                            # 统一(10-31): 网页 arm 与 RC 解锁同语义 —— 直接到可控,
+                            # 不再"先 arm 到站立平衡、再点行走才吃摇杆"(趴下时走起立流程)
+                            d.set_mode(2)
                         elif c in ("disarm", "damp"):
                             state.web_armed = False
                             journal.record("event", ev="disarm", src="web")
@@ -2140,14 +2307,19 @@ def web_server(d):
                         _f = _fsm_feed()
                         if _f is not None:
                             _f.web_cmd(c)             # 影子: 只同步; active: 落地执行
-                    elif "vx" in m:   # 摇杆消息三键齐全才赋值; 心跳{ping:1}不得清零速度
-                        state.web_vx = clamp01(m.get("vx", 0.0))
-                        state.web_vy = clamp01(m.get("vy", 0.0))
-                        state.web_vyaw = clamp01(m.get("vyaw", 0.0))
+                    elif "vx" in m or "vy" in m or "vyaw" in m:
+                        # 摇杆消息只更新带来的键, 缺键不清零(10-31): 网页双摇杆各发
+                        # 各的键, 才能边走边转; 心跳{ping:1}三键全缺, 天然不清零
+                        if "vx" in m:
+                            state.web_vx = clamp01(m["vx"])
+                        if "vy" in m:
+                            state.web_vy = clamp01(m["vy"])
+                        if "vyaw" in m:
+                            state.web_vyaw = clamp01(m["vyaw"])
                         _f = _fsm_feed()
                         if _f is not None:
-                            _f.web_cmd("axes", vx=m.get("vx", 0.0),
-                                       vy=m.get("vy", 0.0), vyaw=m.get("vyaw", 0.0))
+                            _f.web_cmd("axes", vx=m.get("vx"), vy=m.get("vy"),
+                                       vyaw=m.get("vyaw"))
                 now = time.monotonic()
                 if now - last_status > 0.5:
                     last_status = now
@@ -2184,7 +2356,7 @@ def web_server(d):
             # 关网页只停走、保持站姿(2026-10-29 审查: 原为 set_mode(0) 直接趴下 ——
             # 谁打开再关掉页面都会让狗当场卧倒, 站楼梯/斜坡/货架边就是摔机风险;
             # 趴下改为只认显式命令)
-            log("网页端断开, 解除网页控制并停走(保持站姿)")
+            log("网页端断开, 解除网页控制并停走(保持站姿)", lvl="state")
             if state.web_armed:
                 journal.record("event", ev="disarm", src="web")
             state.web_armed = False
@@ -2207,9 +2379,9 @@ def trick_udp_loop(gate):
     try:
         sock.bind(("127.0.0.1", config.TRICK_PORT))
     except Exception as e:
-        log("TRICK 本地口 %d 起不来, App 动作将不可用: %r" % (config.TRICK_PORT, e))
+        log("TRICK 本地口 %d 起不来, App 动作将不可用: %r" % (config.TRICK_PORT, e), lvl="error")
         return
-    log("TRICK 本地口就绪: UDP 127.0.0.1:%d (go2-audio -> 桥)" % config.TRICK_PORT)
+    log("TRICK 本地口就绪: UDP 127.0.0.1:%d (go2-audio -> 桥)" % config.TRICK_PORT, lvl="debug")
     while True:
         try:
             data, addr = sock.recvfrom(256)
@@ -2223,7 +2395,7 @@ def trick_udp_loop(gate):
                 r = gate(parts[1], int(parts[2])) or "NOTSTAND"
             except Exception as e:
                 r = "NOTSTAND"
-                log("TRICK 网关异常:", parts[1], repr(e))
+                log("TRICK 网关异常:", parts[1], repr(e), lvl="error")
         try:
             sock.sendto(r.encode("utf-8"), addr)
         except Exception:
@@ -2252,10 +2424,10 @@ def main():
     # journal 黑匣子最先就位: 之后所有线程的记录才不会丢头几条; 失败只一行警告, 不挡启动
     if config.JOURNAL_ENABLED and not journal.init(config.JOURNAL_DIR or None,
                                                    config.JOURNAL_MAX_MB):
-        log("警告: journal 黑匣子目录不可写, 本次运行不落盘")
+        log("警告: journal 黑匣子目录不可写, 本次运行不落盘", lvl="warn")
     else:
         _ev("sys", "boot", "last_stop=%s" % journal.last_stop())
-        log("黑匣子上次停机标记:", journal.last_stop())
+        log("黑匣子上次停机标记:", journal.last_stop(), lvl="debug")
     link = DogLink()
     # 执行开关(T3.4): active 只建 FsmActive(旧 Dog/影子都不建); shadow = 现行为。
     # 先于 web/TRICK 线程构造, 启动期指令从第一条起就只有一个来源。

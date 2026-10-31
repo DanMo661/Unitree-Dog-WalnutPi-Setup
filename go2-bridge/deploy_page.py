@@ -13,7 +13,7 @@ HOST = os.environ.get("BRIDGE_HOST", "192.168.123.50")
 USER = os.environ.get("BRIDGE_USER", "pi")
 PW = os.environ.get("BRIDGE_PW", "")
 LOCAL = pathlib.Path(__file__).parent
-APP = pathlib.Path(__file__).parent / "PaSend-v36-网络遥控.apk"   # 本版本目录内成品, 防构建目录落后时静默上架旧版
+APP = pathlib.Path(__file__).parent / "PaSend-v37-网络遥控.apk"   # 本版本目录内成品, 防构建目录落后时静默上架旧版
 PAGE_DIR = os.environ.get("BRIDGE_PAGE_DIR", "/home/%s/pa-page" % USER)
 
 INDEX_HTML = """<!doctype html>
@@ -21,7 +21,7 @@ INDEX_HTML = """<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>喊话台安装</title></head>
 <body style="font-family:sans-serif;background:#0b1220;color:#e2e8f0;max-width:480px;margin:0 auto;padding:32px 16px">
-<h2 style="color:#60a5fa">🎮 GO2控制台 v34</h2>
+<h2 style="color:#60a5fa">🎮 GO2控制台 v37</h2>
 <p><a href="PaSend.apk" download style="display:block;text-align:center;padding:16px;background:#2563eb;color:#fff;border-radius:10px;font-size:18px;text-decoration:none">下载 PaSend.apk</a></p>
 <ol style="line-height:1.9;color:#94a3b8">
 <li>点上面按钮下载 APK, 点开安装(允许未知来源)</li>
@@ -33,7 +33,7 @@ INDEX_HTML = """<!doctype html>
 </body></html>
 """
 
-VERSION_JSON = '{"version": 36, "file": "PaSend.apk"}\n'
+VERSION_JSON = '{"version": 37, "file": "PaSend.apk"}\n'
 
 UNIT = """[Unit]
 Description=PA app download page (port 15080)

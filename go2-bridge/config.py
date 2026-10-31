@@ -10,6 +10,8 @@ ROBOT_IP = "192.168.123.161"  # LocalSTA 用: 实测本狗 webrtc_bridge 在 .16
 AES_KEY  = ""                 # 仅固件 >=1.1.15 需要(32位hex, 库内 fetch_aes_key.py 获取); 1.1.1~1.1.14 留空
 ETH_IFACE   = "eth0"          # 连狗网口(看门狗监视网线载波, 松动即刻发现)
 SIGNAL_PORT = 9991            # 狗 webrtc_bridge 信令口(con_notify), 看门狗 TCP 探测用
+# 日志时间戳时区偏移(小时): 板子系统时区是 UTC, 控制台/日志页按人看的时间显示
+LOG_TZ_OFFSET_H = 8   # +8 = 北京时间; 换时区只改这里, 不动板子系统配置
 NETRC_PORT = 15010            # 网络遥控: App 杆量通道(UDP, 新鲜时优先于 SBUS 线)
 
 # ---- 控制面鉴权(2026-10-29 代码审查: 原为 0.0.0.0 全开放, 同网段任何设备可解锁开走狗) ----
@@ -165,8 +167,8 @@ NONMOVE_TTL_S = 3.0       # 非 Move 入队后超过此秒数未发出即丢弃(
 # FSM_MODE 是执行开关, 两条路径互斥, 同一时刻只有一条会向狗下发指令:
 #   "shadow" = 现行为: 旧 rc_loop/Dog 执行, DogFsm(core/fsm.py) 影子比对(只比不发);
 #   "active" = 新状态机: DogFsm 产生实际指令, 旧 Dog/rc_loop 控制路径停用。
-# 真机验证由主代理按用户节奏执行; 本仓库默认始终 shadow。
-FSM_MODE   = "shadow"
+# 真机验证由主代理按用户节奏执行; 2026-10-31 下午 shadow 零差异 34min 过门, 翻 active。
+FSM_MODE   = "active"
 FSM_SHADOW = True     # 仅 shadow 模式生效: True = 建影子逐帧对照(输出只比不发, 差异记
                       # "FSM 差异" + journal); False = 完全不建影子(零行为零开销)。
                       # active 模式忽略本开关(active 自身就是执行路径, 不会另建影子)

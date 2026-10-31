@@ -216,12 +216,16 @@ def _trick_query(name, dur, config):
 
 def _state_query(config):
     """App "RC" 轮询 -> 桥: HTTP 读 /state(stdlib urllib, 零新依赖)取 rc_armed/mode/gear。
+    另带狗电量(dog2.bms.SOC)与新鲜度 fresh(10-31: App 手动页电池图标);
+    电量离狗不新鲜(fresh=0)时 App 端按未知显示, 防断电后拿旧电量充数。
     失败抛异常, 调用方回 ERR NOTREADY(与拆分前 state_cb 异常同口径)。
     空 ProxyHandler: 127.0.0.1 必须直连, 防环境里的 http_proxy 把回环请求劫去代理。"""
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     with opener.open("http://127.0.0.1:%d/state" % config.WEB_PORT, timeout=1.0) as r:
         m = json.load(r)
-    return bool(m["rc_armed"]), int(m["mode"]), m["gear"]
+    d2 = m.get("dog2") or {}
+    soc = (d2.get("bms") or {}).get("SOC")
+    return bool(m["rc_armed"]), int(m["mode"]), m["gear"], soc, bool(d2.get("fresh"))
 
 
 def _state_write_loop(pa, config, log):
@@ -274,9 +278,12 @@ def _ctrl_loop(pa, config, log):
         elif line == "RC":
             # App 手动控制面板轮询: 桥的真实解锁/模式/挡位(防 UI 与桥状态脱钩的盲区)
             # P0-1/T2.2 拆分后: HTTP 读桥的 /state(不再由 bridge 注入 state_cb)
+            # 10-31 起追加第 4/5 字段: 电量 %(未知=-1)与新鲜度 —— "RC arm mode gear soc fresh"
             try:
-                rc, mode, gear = _state_query(config)
-                reply = "RC %d %d %s" % (1 if rc else 0, mode, gear)
+                rc, mode, gear, soc, fresh = _state_query(config)
+                reply = "RC %d %d %s %s %d" % (
+                    1 if rc else 0, mode, gear,
+                    "-1" if soc is None else int(soc), 1 if fresh else 0)
             except Exception:
                 reply = "ERR NOTREADY"
         elif line == "VOL?":

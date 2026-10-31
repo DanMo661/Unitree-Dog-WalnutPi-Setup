@@ -193,18 +193,19 @@ def run_case(case):
 
 
 def check_switch_helper():
-    """_fsm_mode 的取值/回落(默认 shadow; 旧名 live/拼错一律回落旧路径)"""
+    """_fsm_mode 的取值/回落(默认 active, 10-31 shadow 零差异过门后翻转;
+    旧名 live/拼错一律回落旧路径=安全方向)"""
     import bridge
     print("== FSM_MODE 取值与回落 ==")
-    ok(bridge.config.FSM_MODE == "shadow", "仓库默认 FSM_MODE=shadow")
-    ok(bridge._fsm_mode() == "shadow", "默认解析为 shadow")
-    bridge.config.FSM_MODE = "active"
-    ok(bridge._fsm_mode() == "active", "active 原样识别")
+    ok(bridge.config.FSM_MODE == "active", "仓库默认 FSM_MODE=active(10-31 翻转)")
+    ok(bridge._fsm_mode() == "active", "默认解析为 active")
     bridge.config.FSM_MODE = "ACTIVE"
     ok(bridge._fsm_mode() == "active", "大小写不敏感")
     bridge.config.FSM_MODE = "live"
     ok(bridge._fsm_mode() == "shadow", "旧名 live 回落 shadow(失败方向=旧路径)")
     bridge.config.FSM_MODE = "shadow"
+    ok(bridge._fsm_mode() == "shadow", "shadow 原样识别")
+    bridge.config.FSM_MODE = "active"
 
 
 def main():

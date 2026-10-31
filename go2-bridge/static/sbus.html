@@ -3,193 +3,535 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SBUS 调试台</title>
+<title>哨兵S1调试台</title>
 <style>
+/* ==== 浅色主题 (方案 v2: FlClash 浅色实测值) ==== */
 :root{
-  --bg:#0c0e0d; --panel:#141716; --line:#262c29; --txt:#e6ebe8; --dim:#8b948f;
-  --ok:#5ad191; --warn:#f0b35e; --bad:#ff6459; --accent:#7ee2a8;
+  --bg-primary:#F5F6FA; --bg-secondary:#FFFFFF; --bg-tertiary:#FAFBFC;
+  --text-primary:#1F2937; --text-secondary:#6B7280; --text-tertiary:#9CA3AF;
+  --border-light:#E5E7EB; --border-medium:#D1D5DB;
+  --color-primary:#3B82F6; --color-success:#10B981; --color-warning:#F59E0B; --color-danger:#EF4444;
+  --hover-bg:#F3F4F6;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+  /* 旧变量别名(renderSys 内联样式沿用) */
+  --txt:var(--text-primary); --dim:var(--text-secondary);
+  --ok:var(--color-success); --warn:var(--color-warning); --bad:var(--color-danger);
+  --accent:var(--color-primary);
 }
-*{box-sizing:border-box}
+*{box-sizing:border-box;margin:0;padding:0}
 html,body{margin:0}
 body{
-  min-height:100dvh; background:var(--bg); color:var(--txt);
-  font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  display:flex; flex-direction:column; align-items:center;
-  padding:10px 14px 30px;
+  background:var(--bg-primary); color:var(--text-primary);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:14px; line-height:1.6;
 }
 .num{font-family:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;
      font-variant-numeric:tabular-nums}
-.wrap{width:100%;max-width:760px;display:flex;flex-direction:column;gap:14px}
+button{font-family:inherit; touch-action:manipulation}
+a{color:var(--color-primary);text-decoration:none;font-weight:500}
+a:hover{text-decoration:underline}
 
-header{display:flex;align-items:center;justify-content:space-between;
-       padding:10px 2px 4px;gap:8px;flex-wrap:wrap}
-h1{font-size:15px;margin:0;letter-spacing:.12em;color:var(--dim);font-weight:600}
-h1 b{color:var(--txt);letter-spacing:.04em}
-.chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dim);
-      border:1px solid var(--line);border-radius:999px;padding:4px 10px;background:var(--panel)}
-.chip.main{font-size:13px;color:var(--txt);padding:6px 12px}
-.dot{width:8px;height:8px;border-radius:50%;background:#3a423e;flex:none}
-.dot.ok{background:var(--ok);box-shadow:0 0 7px #5ad19166}
-.dot.warn{background:var(--warn);box-shadow:0 0 7px #f0b35e55}
-.dot.bad{background:var(--bad);box-shadow:0 0 7px #ff645955}
+/* ==== 布局: 侧边栏 + 主区 (方案 v2 §1.2, v2.1 加宽) ==== */
+.container{display:flex;height:100vh;height:100dvh}
+.sidebar{width:104px;flex:none;background:var(--bg-secondary);
+  border-right:1px solid var(--border-light);box-shadow:var(--shadow-sm);
+  display:flex;flex-direction:column;padding:16px 0;z-index:2}
+.brand{font-size:14px;font-weight:700;letter-spacing:.08em;text-align:center;
+  color:var(--color-primary);margin-bottom:14px;white-space:nowrap}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:5px;
+  margin:2px 10px;padding:12px 0;border-radius:10px;
+  border-left:3px solid transparent;cursor:pointer;user-select:none;
+  color:var(--text-secondary);font-size:11.5px;transition:background .15s,color .15s}
+.nav-item svg{width:22px;height:22px;flex:none}
+.nav-item:hover{background:var(--hover-bg);color:var(--text-primary)}
+.nav-item.active{color:var(--color-primary);background:#EFF6FF;
+  border-left-color:var(--color-primary)}
 
-.banner{text-align:center;font-size:13px;padding:9px 12px;display:none;
-        border-radius:10px;margin-bottom:10px}
-.banner.offline{display:block;background:#3a1f1c;color:#ff8f85}
-.banner.action{display:block;background:#33270f;color:var(--warn);font-weight:600}
+.main{flex:1;min-width:0;overflow-y:auto;padding:26px 32px;-webkit-overflow-scrolling:touch}
+.page{display:none;max-width:920px;margin:0 auto}
+.page.active{display:block}
 
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;
-       padding:14px 16px}
-.pt{font-size:12px;color:var(--dim);letter-spacing:.1em;margin:0 0 10px}
+.header{display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:22px;gap:10px;flex-wrap:wrap}
+.header h1{font-size:22px;font-weight:600;white-space:nowrap}
+.status-chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:6px;padding:4px 11px;
+  background:var(--bg-secondary);border:1px solid var(--border-light);
+  border-radius:20px;font-size:12px;color:var(--text-secondary);white-space:nowrap}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:var(--border-medium);flex:none}
+.chip .dot.ok{background:var(--color-success);box-shadow:0 0 6px #10B98155}
+.chip .dot.info{background:var(--color-primary)}
+.chip .dot.warn{background:var(--color-warning)}
+.chip .dot.bad{background:var(--color-danger)}
 
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:10px}
-.stat{background:#101312;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
-.stat .v{font-size:26px;line-height:1.15;font-weight:600}
-.stat .v small{font-size:13px;color:var(--dim);font-weight:400;margin-left:2px}
-.stat .k{font-size:11px;color:var(--dim);margin-top:3px}
-.stat.bad .v{color:var(--bad)}
-.stat.warn .v{color:var(--warn)}
+/* ==== 卡片 (v2 §1.3: 白底+边框+轻阴影; v2.1 控件收紧) ==== */
+.card{background:var(--bg-secondary);border:1px solid var(--border-light);
+  border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
+.card-title{font-size:12px;font-weight:600;color:var(--text-secondary);
+  letter-spacing:.05em;margin-bottom:10px;display:flex;
+  justify-content:space-between;align-items:center;gap:8px}
 
-canvas{display:block;width:100%;height:110px}
+/* KPI 四联(任何宽度一排四个) */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.keyseg{min-height:104px}
+.kpi-card .value{margin-top:2px}
+.kpi-card{background:var(--bg-secondary);border:1px solid var(--border-light);
+  border-radius:10px;padding:14px 6px;text-align:center;box-shadow:var(--shadow-sm);min-width:0;
+  display:flex;flex-direction:column;justify-content:center}
+.kpi-card .value{font-size:23px;font-weight:600;line-height:1.2;color:var(--text-primary)}
+.kpi-card .value small{font-size:11px;color:var(--text-tertiary);font-weight:400;margin-left:1px}
+.kpi-card .label{font-size:10.5px;color:var(--text-secondary);margin-top:3px;letter-spacing:.04em;white-space:nowrap}
+.kpi-card.warn .value{color:var(--color-warning)}
+.kpi-card.bad .value{color:var(--color-danger)}
+.kpi-card.success .value{color:var(--color-success)}
 
-.chrow{display:grid;grid-template-columns:150px 1fr 52px;gap:10px;align-items:center;
-       padding:3px 0}
-.chrow .lbl{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chrow .lbl b{color:var(--txt);font-weight:500}
-.bar{position:relative;height:14px;background:#101312;border:1px solid var(--line);
-     border-radius:4px;overflow:hidden}
+/* 按键状态: 迷你分段(块体与 KPI 卡同大, 当前态=蓝实心白字) */
+.key-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.keyseg{background:var(--bg-secondary);border:1px solid var(--border-light);
+  border-radius:10px;padding:14px 6px;text-align:center;box-shadow:var(--shadow-sm);min-width:0;
+  display:flex;flex-direction:column;justify-content:center;gap:11px}
+.keyseg .label{font-size:13px;color:var(--text-secondary);font-weight:500;white-space:nowrap}
+.miniseg{display:flex;background:var(--bg-tertiary);border:1px solid var(--border-light);
+  border-radius:999px;padding:3px;gap:2px}
+.miniseg span{flex:1;min-width:0;text-align:center;font-size:15px;line-height:1.5;
+  padding:7px 0;border-radius:999px;color:var(--text-secondary);white-space:nowrap}
+.miniseg span.on{background:var(--color-primary);color:#fff;font-weight:600}
+
+/* 通道条 */
+.chrow{display:grid;grid-template-columns:150px minmax(0,1fr) 52px;gap:10px;
+  align-items:center;padding:3px 0}
+.chrow .lbl{font-size:12px;color:var(--text-secondary);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.chrow .lbl b{color:var(--text-primary);font-weight:600}
+.bar{position:relative;height:10px;background:var(--bg-tertiary);
+  border:1px solid var(--border-light);border-radius:999px;overflow:hidden}
 .bar .fill{position:absolute;left:0;top:0;bottom:0;width:0;
-           background:linear-gradient(90deg,#2f6b4d,#4fae7c);transition:width .12s}
-.bar.dirty .fill{background:linear-gradient(90deg,#6b5427,#ae8a4f)}
-.bar .tick{position:absolute;top:-1px;bottom:-1px;width:0;border-left:1px dashed #8b948f}
-.bar .tick i{position:absolute;top:-4px;left:-3px;width:5px;height:5px;border-radius:50%;
-             background:var(--warn)}
-.chrow .val{font-size:12px;text-align:right;color:var(--txt)}
+  background:var(--color-primary);transition:width .12s}
+.bar .tick{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--color-danger)}
+.chrow .val{font-size:12.5px;text-align:right;color:var(--text-primary);font-weight:500}
 
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-.card{background:#101312;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
-.card .t{font-size:11px;color:var(--dim);letter-spacing:.06em;margin-bottom:8px;
-         display:flex;justify-content:space-between}
-.card .t em{font-style:normal;color:var(--accent)}
-.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.seg span{flex:1;text-align:center;font-size:13px;color:#a8b0ab;padding:7px 4px}
-.seg span + span{border-left:1px solid var(--line)}
-.seg span.on{background:#223028;color:var(--accent);font-weight:600}
-.seg span.on.hot{background:#2b2416;color:var(--warn)}
-.bigval{font-size:26px;font-weight:600;padding:2px 0 4px}
+canvas{display:block;width:100%;max-width:100%;height:36px}
 
-/* 系统与事件 */
-.pwbad{display:none;text-align:center;font-size:13px;font-weight:600;padding:9px 12px;
-  border-radius:10px;margin-bottom:10px;background:#3a1f1c;color:#ff8f85;
-  border:1px solid #6b3129}
-.kv{display:grid;grid-template-columns:92px 1fr;gap:7px 10px;font-size:13px}
-.kv .k{font-size:12px;color:var(--dim);padding-top:1px;white-space:nowrap}
-.kv .v{color:var(--txt);word-break:break-all;min-width:0}
-.evs{display:flex;flex-direction:column;gap:3px}
-.evrow{display:flex;gap:8px;font-size:12px;line-height:1.5;align-items:baseline;min-width:0}
-.evrow .t{color:var(--dim);flex:none}
-.evrow .tag{flex:none;font-size:11px;line-height:1.4;padding:0 6px;border-radius:4px;
-  border:1px solid var(--line);background:#101312;color:var(--dim)}
-.evrow.err .tag{color:var(--bad);border-color:#5c2f28;background:#241514}
-.evrow.warn .tag{color:var(--warn);border-color:#54452a;background:#241f12}
-.evrow.act .tag{color:var(--ok);border-color:#2f5b45;background:#14201a}
-.evrow .txt{color:#c8d2cc;word-break:break-all;min-width:0}
-.evrow .txt b{color:var(--txt);font-weight:500}
+/* 按钮 (v2: 主/次/危险, 圆角8; v2.1 收紧) */
+.btn{display:inline-flex;align-items:center;justify-content:center;
+  padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;
+  cursor:pointer;border:none;transition:background .15s;appearance:none}
+.btn-primary{background:var(--color-primary);color:#fff}
+.btn-primary:active{background:#2563EB}
+.btn-secondary{background:var(--bg-secondary);color:var(--text-primary);
+  border:1.5px solid var(--border-medium)}
+.btn-secondary:active{background:var(--hover-bg)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.mut{font-size:11.5px;color:var(--text-tertiary);margin-top:10px}
 
-.tip{font-size:12px;color:var(--dim);text-align:center;line-height:1.7;margin:0}
-a{color:var(--accent)}
-.logbtn{cursor:pointer;user-select:none}
-.logbtn.main{border-color:var(--accent);color:var(--accent)}
-#logPanel pre{max-height:320px;overflow:auto;font:11px/1.55 ui-monospace,monospace;
-  white-space:pre-wrap;word-break:break-all;background:#101312;border:1px solid var(--line);
-  border-radius:8px;padding:8px 10px;margin:0;color:#c8d2cc}
+/* 系统 kv / 统计块 */
+.kv{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px 10px;font-size:13px}
+.kv .k{font-size:12px;color:var(--text-secondary);padding-top:1px;white-space:nowrap}
+.kv .v{color:var(--text-primary);overflow-wrap:break-word;min-width:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:10px}
+.stat{background:var(--bg-tertiary);border:1px solid var(--border-light);
+  border-radius:10px;padding:10px 12px}
+.stat .v{font-size:20px;line-height:1.2;font-weight:600}
+.stat .v small{font-size:12px;color:var(--text-tertiary);font-weight:400;margin-left:2px}
+.stat .k{font-size:11px;color:var(--text-secondary);margin-top:3px}
+.stat.bad .v{color:var(--color-danger)}
+.stat.warn .v{color:var(--color-warning)}
+.pwbad{display:none;text-align:center;font-size:13px;font-weight:600;
+  padding:9px 12px;border-radius:8px;margin-bottom:12px;
+  background:#FEE2E2;color:#991B1B}
+
+/* 事件列表 (v2: 底色行+彩色标签) */
+.evs{display:flex;flex-direction:column;gap:8px}
+.evrow{display:flex;gap:10px;align-items:baseline;padding:9px 10px;
+  background:var(--bg-tertiary);border-radius:8px;font-size:13px;min-width:0}
+.evrow .t{color:var(--text-tertiary);flex:none;font-size:12px}
+.evrow .tag{flex:none;font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px}
+.evrow.info .tag{background:#DBEAFE;color:#1E40AF}
+.evrow.act .tag{background:#D1FAE5;color:#065F46}
+.evrow.warn .tag{background:#FEF3C7;color:#92400E}
+.evrow.err .tag{background:#FEE2E2;color:#991B1B}
+.evrow .txt{color:var(--text-primary);overflow-wrap:break-word;min-width:0}
+.evrow .txt b{font-weight:600}
+#logPre{max-height:360px;overflow:auto;font:11.5px/1.6 ui-monospace,monospace;
+  white-space:pre-wrap;word-break:break-all;background:var(--bg-tertiary);
+  border:1px solid var(--border-light);border-radius:8px;padding:12px;
+  margin:0;color:var(--text-secondary)}
+.logtools{display:flex;gap:10px;margin-bottom:12px}
+.live{color:var(--color-success);font-weight:400;letter-spacing:0}
+
+@media (max-width:768px){
+  .sidebar{width:72px;padding:12px 0}
+  .brand{font-size:12px;margin-bottom:10px}
+  .nav-item{font-size:10.5px;padding:11px 0;margin:2px 6px;gap:4px}
+  .nav-item svg{width:20px;height:20px}
+  .main{padding:14px 12px}
+  .header{gap:8px;margin-bottom:12px}
+  .header h1{font-size:19px}
+  .kpi-grid{gap:7px}
+  .keyseg{min-height:92px}
+  .kpi-card{padding:11px 4px}
+  .kpi-card .value{font-size:19px}
+  .kpi-card .label{font-size:9.5px}
+  canvas{height:34px}
+  .chrow{grid-template-columns:104px minmax(0,1fr) 46px;gap:8px}
+  .key-grid{gap:7px}
+  .keyseg{padding:11px 2px;gap:8px}
+  .keyseg .label{font-size:11px}
+  .miniseg{padding:2px;gap:1px}
+  .miniseg span{font-size:11px;padding:4px 0}
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .stat .v{font-size:16px}
+  .card{padding:12px;margin-bottom:12px}
+  .kv{grid-template-columns:76px minmax(0,1fr)}
+  .btn{padding:8px 12px}
+}
+  /* 遥控器图解: 跟随通道卡片实际宽度自适应; 仅极窄手机兜底横滑 */
+  @media (max-width:560px){
+    .rcmap svg{min-width:632px}
+  }
+  @media (max-width:430px){
+    .key-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+/* GO2 信息卡(10-31) */
+.g2grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.g2cell{background:var(--hover-bg);border-radius:10px;padding:7px 6px;text-align:center}
+.g2cell .l{font-size:11px;color:var(--text-tertiary)}
+.g2cell .t{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+/* 顶栏电池胶囊(10-31): 手机样式横椭圆+填充+百分比, 跟在运行状态 chip 右侧;
+   白底壳+内缩填充, 壳永远可辨, 填充色/壳描边随电量档变色 */
+.batt{position:relative;display:inline-block;width:24px;height:12px;margin-right:6px;
+  border:1.5px solid;color:var(--border-medium);border-radius:4px;
+  background:var(--bg-secondary);vertical-align:-1px;
+  box-sizing:border-box;transition:color .3s}
+.batt::after{content:"";position:absolute;right:-5px;top:50%;transform:translateY(-50%);
+  width:3px;height:5px;border-radius:1.5px;background:currentColor;
+  transition:background .3s}
+.batt .batt-fill{position:absolute;left:2px;top:2px;bottom:2px;width:0;
+  max-width:calc(100% - 4px);border-radius:1.5px;
+  transition:width .3s,background .3s}
+/* 低电量警告条(仪表盘 SBUS状态上方, <20% 出现) */
+.lowbatt{font-size:13px;font-weight:600;color:#fff;background:var(--color-danger);
+  border-radius:12px;padding:10px 14px;margin-bottom:14px;text-align:center}
 </style>
 </head>
 <body>
-<div class="banner" id="banner"></div>
-<div class="wrap">
-<header>
-  <h1><b>SBUS</b> 调试台</h1>
-  <div class="chips">
-    <span class="chip"><span class="dot" id="dLink"></span><span id="tLink">狗连接</span></span>
-    <span class="chip"><span class="dot" id="dRc"></span><span id="tRc">RC 上锁</span></span>
-    <span class="chip main"><span class="dot" id="dSbus"></span><span id="tSbus">SBUS</span></span>
-    <span class="chip"><span class="dot" id="dNet"></span><span id="tNet">网络遥控</span></span>
-    <span class="chip logbtn" id="logBtn">☰ 日志</span>
-  </div>
-</header>
+<div class="container">
+  <!-- 侧边栏导航 (方案 v2: 5 页面) -->
+  <nav class="sidebar">
+    <div class="brand">哨兵S1</div>
+    <div class="nav-item active" data-page="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 13.5a7.5 7.5 0 1 1 15 0"/><path d="M12 13.5l3.4-3.4"/><circle cx="12" cy="13.5" r="1.1" fill="currentColor" stroke="none"/><path d="M4.5 18.5h15"/></svg>
+      <div>仪表盘</div>
+    </div>
+    <div class="nav-item" data-page="channels">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h2.6l2-5 3.6 9.5 2.3-7 1.5 2.5H21"/></svg>
+      <div>通道</div>
+    </div>
+    <div class="nav-item" data-page="logs">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="3.8" width="13" height="16.4" rx="2"/><path d="M9 9h6M9 12.6h6M9 16.2h3.5"/></svg>
+      <div>日志</div>
+    </div>
+    <div class="nav-item" data-page="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7.5h15M4.5 12h15M4.5 16.5h15"/><circle cx="9.5" cy="7.5" r="1.8" fill="#fff"/><circle cx="15" cy="12" r="1.8" fill="#fff"/><circle cx="11" cy="16.5" r="1.8" fill="#fff"/></svg>
+      <div>设置</div>
+    </div>
+  </nav>
 
-<div class="panel">
-  <div class="pt" id="lockTitle">控制状态</div>
-  <div id="lockLine" style="font-size:14px">—</div>
-</div>
+  <main class="main">
+    <div class="header">
+      <h1>哨兵S1调试台</h1>
+      <div class="status-chips">
+        <span class="chip"><span class="dot" id="dLink"></span><span id="tLink">狗连接</span></span>
+        <span class="chip"><span class="dot" id="dSbus"></span><span id="tSbus">SBUS</span></span>
+        <span class="chip"><span class="dot" id="dCtl"></span><span id="tCtl">控制权</span></span>
+        <span class="chip"><span class="dot" id="dRun"></span><span id="tRun">—</span></span>
+        <span class="chip" id="chipBatt" title="狗电量"><span class="batt"><span class="batt-fill"></span></span><span id="tBatt">—</span></span>
+      </div>
+    </div>
 
-<div class="stats">
-  <div class="stat" id="sFps"><div class="v num">—<small>fps</small></div><div class="k">帧率 (1s 滑窗)</div></div>
-  <div class="stat" id="sLoss"><div class="v num">—<small>%</small></div><div class="k">丢帧率 (fs+lost/总)</div></div>
-  <div class="stat" id="sTotal"><div class="v num">—</div><div class="k">总帧数</div></div>
-  <div class="stat" id="sFs"><div class="v num">—</div><div class="k">fs 失控帧</div></div>
-  <div class="stat" id="sLost"><div class="v num">—</div><div class="k">lost 丢帧标志</div></div>
-  <div class="stat" id="sIv"><div class="v num">—<small>ms</small></div><div class="k">最近帧间隔 (&gt;25 计丢)</div></div>
-</div>
+    <!-- 页面 1: 仪表盘 -->
+    <div class="page active" id="page-dashboard">
+      <div class="lowbatt" id="lowBatt" hidden>⚠ 低电量警告：狗电池电量低，请尽快充电</div>
+      <div class="card">
+        <div class="card-title">SBUS状态</div>
+        <div class="kpi-grid">
+          <div class="kpi-card" id="kpiFps"><div class="value num">—</div><div class="label">帧率 fps</div></div>
+          <div class="kpi-card" id="kpiLoss"><div class="value num">—</div><div class="label">丢包率</div></div>
+          <div class="kpi-card" id="kpiIv"><div class="value num">—</div><div class="label">帧间隔</div></div>
+          <div class="kpi-card" id="kpiChart"><canvas id="chart"></canvas><div class="label">帧率趋势</div></div>
+        </div>
+      </div>
 
-<div class="panel">
-  <div class="pt">每秒帧数 · 最近 60s（右端为当前秒）</div>
-  <canvas id="chart"></canvas>
-</div>
+      <div class="card">
+        <div class="card-title">按键状态</div>
+        <div class="key-grid">
+          <div class="keyseg"><div class="label">A 键</div>
+            <div class="miniseg" id="segA"><span>解锁</span><span>上锁</span></div></div>
+          <div class="keyseg"><div class="label">B 键</div>
+            <div class="miniseg" id="segB"><span>高位</span><span>低位</span></div></div>
+          <div class="keyseg"><div class="label">C 键</div>
+            <div class="miniseg" id="segC"><span>趴下</span><span>站立</span></div></div>
+          <div class="keyseg"><div class="label">速度档位</div>
+            <div class="miniseg" id="segG"><span>1</span><span>2</span><span>3</span></div></div>
+        </div>
+      </div>
 
-<div class="panel">
-  <div class="pt">16 通道原始值（282 ~ 1722，虚线为判定阈值）</div>
-  <div id="chs"></div>
-</div>
+      <div class="card">
+        <div class="card-title">控制源</div>
+        <div class="kv">
+          <div class="k">运行状态</div><div class="v" id="kvRun">—</div>
+          <div class="k">当前控制</div><div class="v num" id="kvSrc">—</div>
+          <div class="k">网络遥控</div><div class="v num" id="kvNet">—</div>
+          <div class="k">RC 解锁</div><div class="v num" id="kvRc">—</div>
+          <div class="k">狗链路代数</div><div class="v num" id="kvLink">—</div>
+          <div class="k">狗真实姿态</div><div class="v num" id="kvDog">—</div>
+          <div class="k">控制抑制</div><div class="v num" id="kvCtl">—</div>
+          <div class="k">最后命令</div><div class="v num" id="kvCmd">—</div>
+        </div>
+      </div>
+    </div>
 
-<div class="panel" id="logPanel" hidden>
-  <div class="pt" style="display:flex;justify-content:space-between;align-items:center">
-    <span>板端实时日志 · 最近 600 行（每 2s 刷新）</span><span id="logLive" style="color:var(--ok)"></span>
-  </div>
-  <pre id="logPre">(点开中…)</pre>
-</div>
+    <!-- 页面 2: 通道监控 -->
+    <div class="page" id="page-channels">
 
-<div class="cards">
-  <div class="card"><div class="t">A 键 <em id="kArm"></em></div>
-    <div class="seg" id="cArm"><span>上锁</span><span>解锁</span></div></div>
-  <div class="card"><div class="t">B 键（动作）</div>
-    <div class="seg" id="cB"><span>低位</span><span>高位</span></div></div>
-  <div class="card"><div class="t">C 键（站/趴）</div>
-    <div class="seg" id="cC"><span>趴下</span><span>站立</span></div></div>
-  <div class="card"><div class="t">三挡 <em id="kGear"></em></div>
-    <div class="seg" id="cGear"><span>1 经济</span><span>2 自由</span><span>3 奔跑</span></div></div>
-  <div class="card"><div class="t">左拨杆 → 舵机</div>
-    <div class="bigval num" id="cServo">—<small style="font-size:13px;color:var(--dim)">°</small></div></div>
-</div>
+      <div class="card">
+        <div class="card-title">遥控器图解</div>
 
-<div class="panel">
-  <div class="pt" style="display:flex;justify-content:space-between;align-items:center">
-    <span>系统与事件</span><span id="sysLive" style="color:var(--ok)"></span>
-  </div>
-  <div class="pwbad" id="pwBanner">⚠ 上次异常断电</div>
-  <div class="kv">
-    <div class="k">上次关机</div><div class="v num" id="kvStop">—</div>
-    <div class="k">桥进程</div><div class="v num" id="kvBridge">—</div>
-    <div class="k">音频服务</div><div class="v num" id="kvAudio">—</div>
-    <div class="k">狗链路代数</div><div class="v num" id="kvLink">—</div>
-    <div class="k">控制源</div><div class="v num" id="kvSrc">—</div>
-    <div class="k">控制抑制</div><div class="v num" id="kvCtl">—</div>
-    <div class="k">最后命令</div><div class="v num" id="kvCmd">—</div>
-    <div class="k">狗真实姿态</div><div class="v num" id="kvDog">—</div>
-  </div>
-  <div class="stats" style="margin-top:12px">
-    <div class="stat" id="stLoad"><div class="v num">—</div><div class="k">系统负载 load1</div></div>
-    <div class="stat" id="stMem"><div class="v num">—<small>%</small></div><div class="k">内存占用</div></div>
-    <div class="stat" id="stTemp"><div class="v num">—<small>°C</small></div><div class="k">CPU 温度</div></div>
-  </div>
-  <div class="pt" style="margin-top:12px">最近事件 · 最近 10 条（错误红 / 警告黄 / 信息灰 / 动作绿）</div>
-  <div class="evs" id="evList"><div class="evrow info"><span class="txt" style="color:var(--dim)">—</span></div></div>
-</div>
+        <div class="rcmap" style="overflow-x:auto">
+        <svg viewBox="0 0 632 500" style="width:100%;height:auto;display:block;font-family:system-ui,sans-serif">
+          <!-- ===== 机身 ===== -->
+          <rect x="105" y="80" width="430" height="330" rx="36" fill="#E5E7EB" stroke="#9CA3AF" stroke-width="1.6"/>
+          <line x1="190" y1="84" x2="163" y2="20" stroke="#9CA3AF" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="162" cy="18" r="4.5" fill="#6B7280"/>
+          <line x1="450" y1="84" x2="477" y2="20" stroke="#9CA3AF" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="478" cy="18" r="4.5" fill="#6B7280"/>
+          <g stroke="#D1D5DB" stroke-width="1.6">
+            <line x1="110" y1="237" x2="110" y2="338"/><line x1="116" y1="232" x2="116" y2="343"/>
+            <line x1="530" y1="237" x2="530" y2="338"/><line x1="524" y1="232" x2="524" y2="343"/>
+          </g>
+          <!-- 摇杆 -->
+          <circle cx="209" cy="146" r="45" fill="#374151"/>
+          <circle cx="209" cy="146" r="33" fill="#4B5563"/>
+          <circle cx="209" cy="146" r="12" fill="#111827"/>
+          <circle cx="431" cy="146" r="45" fill="#374151"/>
+          <circle cx="431" cy="146" r="33" fill="#4B5563"/>
+          <circle cx="431" cy="146" r="12" fill="#111827"/>
+          <!-- G12 标牌 -->
+          <rect x="285" y="123" width="76" height="18" rx="9" fill="#111827"/>
+          <text x="323" y="136" text-anchor="middle" font-size="10.5" fill="#F59E0B" font-weight="700">G12</text>
+          <!-- A / 开机 / B -->
+          <path d="M268 166 h23 l5 14 h-33 z" fill="#E7E5E4" stroke="#9CA3AF"/>
+          <text x="281.5" y="177" text-anchor="middle" font-size="9.5" fill="#374151" font-weight="700">A</text>
+          <rect x="311" y="166" width="20" height="14" rx="4" fill="#E7E5E4" stroke="#9CA3AF"/>
+          <circle cx="321" cy="173" r="4" fill="none" stroke="#374151" stroke-width="1.2"/>
+          <line x1="321" y1="166.5" x2="321" y2="171" stroke="#374151" stroke-width="1.2"/>
+          <text x="321" y="197" text-anchor="middle" font-size="8" fill="#6B7280">开关机·长按</text>
+          <path d="M349 166 h23 l5 14 h-33 z" fill="#E7E5E4" stroke="#9CA3AF"/>
+          <text x="363" y="177" text-anchor="middle" font-size="9.5" fill="#374151" font-weight="700">B</text>
+          <!-- C / D 肩键 -->
+          <rect x="138" y="159" width="18" height="18" rx="3" fill="#E7E5E4" stroke="#9CA3AF"/>
+          <text x="147" y="191" text-anchor="middle" font-size="8.5" fill="#DC2626" font-weight="700">C</text>
+          <rect x="484" y="159" width="18" height="18" rx="3" fill="#E7E5E4" stroke="#9CA3AF"/>
+          <text x="493" y="191" text-anchor="middle" font-size="8.5" fill="#DC2626" font-weight="700">D</text>
+          <circle cx="127" cy="381" r="4" fill="#6B7280"/>
+          <!-- 屏幕(迷你调试台) -->
+          <rect x="169" y="208" width="302" height="184" rx="6" fill="#111827"/>
+          <rect x="175" y="214" width="290" height="172" rx="2.5" fill="#FFFFFF"/>
+          <rect x="175" y="214" width="34" height="172" fill="#F5F6FA"/>
+          <rect x="179" y="221" width="25" height="8.5" rx="1.5" fill="#3B82F6"/>
+          <rect x="179" y="236" width="25" height="8.5" rx="1.5" fill="#E5E7EB"/>
+          <rect x="179" y="251" width="25" height="8.5" rx="1.5" fill="#E5E7EB"/>
+          <rect x="179" y="266" width="25" height="8.5" rx="1.5" fill="#E5E7EB"/>
+          <rect x="179" y="281" width="25" height="8.5" rx="1.5" fill="#E5E7EB"/>
+          <rect x="179" y="296" width="25" height="8.5" rx="1.5" fill="#E5E7EB"/>
+          <rect x="216" y="220" width="74" height="10" rx="2" fill="#D1D5DB"/>
+          <rect x="298" y="220" width="26" height="10" rx="5" fill="#E5E7EB"/>
+          <rect x="328" y="220" width="26" height="10" rx="5" fill="#E5E7EB"/>
+          <rect x="358" y="220" width="26" height="10" rx="5" fill="#E5E7EB"/>
+          <rect x="388" y="220" width="26" height="10" rx="5" fill="#E5E7EB"/>
+          <rect x="216" y="240" width="78" height="34" rx="2.5" fill="#FFFFFF" stroke="#E5E7EB"/>
+          <rect x="298" y="240" width="78" height="34" rx="2.5" fill="#FFFFFF" stroke="#E5E7EB"/>
+          <rect x="380" y="240" width="78" height="34" rx="2.5" fill="#FFFFFF" stroke="#E5E7EB"/>
+          <rect x="216" y="282" width="249" height="98" rx="3" fill="#F9FAFB" stroke="#E5E7EB"/>
+          <rect x="222" y="290" width="66" height="7" rx="1.5" fill="#E5E7EB"/>
+          <rect x="222" y="303" width="110" height="5" rx="1.5" fill="#F3F4F6"/>
+          <rect x="222" y="313" width="110" height="5" rx="1.5" fill="#F3F4F6"/>
 
-<p class="tip">遥控页 <a href="/">/</a> · 黄灯=丢帧狗已站定等待恢复 · 10s 无干净帧才缓降趴下<br>
-帧间隔为串口批次推断均值（批间隔/批帧数），丢帧另有接收机 fs/lost 标志佐证</p>
+          <!-- ===== 左标注 ===== -->
+          <g font-size="11" fill="#1F2937">
+            <line x1="170" y1="131" x2="95" y2="86" stroke="#3B82F6" stroke-width="1.3"/>
+            <text x="6" y="78" font-weight="700">左摇杆</text>
+            <text x="6" y="94" fill="#6B7280">上=前进 下=后退</text>
+            <text x="6" y="108" fill="#6B7280">左=左移 右=右移</text>
+            <line x1="139" y1="168" x2="95" y2="155" stroke="#3B82F6" stroke-width="1.3"/>
+            <text x="6" y="150" font-weight="700">C 键（左肩）</text>
+            <text x="6" y="166" fill="#6B7280">站立 / 趴下</text>
+            <text x="6" y="180" fill="#6B7280">（解锁后有效）</text>
+            <polyline points="268,179 120,200 95,262" fill="none" stroke="#3B82F6" stroke-width="1.3"/>
+            <text x="6" y="254" font-weight="700">A 键</text>
+            <text x="6" y="270" fill="#6B7280">解锁 / 上锁</text>
+            <text x="6" y="284" fill="#6B7280">解锁后摇杆才生效</text>
+            <line x1="122" y1="384" x2="95" y2="470" stroke="#3B82F6" stroke-width="1.3"/>
+            <text x="6" y="462" font-weight="700">喊话 MIC</text>
+            <text x="6" y="478" fill="#6B7280">喊话台拾音</text>
+          </g>
+          <!-- ===== 右标注 ===== -->
+          <g font-size="11" fill="#1F2937">
+            <line x1="470" y1="131" x2="537" y2="86" stroke="#10B981" stroke-width="1.3"/>
+            <text x="541" y="78" font-weight="700">右摇杆</text>
+            <text x="541" y="94" fill="#6B7280">左=左转 右=右转</text>
+            <text x="541" y="108" fill="#6B7280">（上下无功能）</text>
+            <line x1="498" y1="168" x2="537" y2="155" stroke="#10B981" stroke-width="1.3"/>
+            <text x="541" y="150" font-weight="700">D 键（右肩）</text>
+            <text x="541" y="166" fill="#6B7280">预留（未映射）</text>
+            <polyline points="381,179 480,200 537,262" fill="none" stroke="#10B981" stroke-width="1.3"/>
+            <text x="541" y="254" font-weight="700">B 键</text>
+            <text x="541" y="270" fill="#6B7280">继电器输出</text>
+            <text x="541" y="284" fill="#6B7280">（接通外设供电）</text>
+            <line x1="467" y1="326" x2="537" y2="420" stroke="#10B981" stroke-width="1.3"/>
+            <text x="541" y="412" font-weight="700">显示屏</text>
+            <text x="541" y="428" fill="#6B7280">运行调试台</text>
+          </g>
+
+          <!-- ===== 顶边面(E/F 三段 + 波轮 G/H, 手册部件 11/12/15/16) ===== -->
+          <text x="320" y="14" text-anchor="middle" font-size="10" fill="#1F2937" font-weight="700">顶部：E = 速度档位（1经济 / 2自由 / 3奔跑）</text>
+          <text x="320" y="27" text-anchor="middle" font-size="10" fill="#6B7280">F 预留 · 波轮 G/H 直控云台</text>
+          <rect x="158" y="34" width="324" height="52" rx="14" fill="#DDE2E7" stroke="#9CA3AF" stroke-width="1.4"/>
+          <circle cx="195" cy="60" r="15" fill="#6B7280" stroke="#4B5563" stroke-width="3" stroke-dasharray="3 2.5"/>
+          <circle cx="195" cy="60" r="3.5" fill="#374151"/>
+          <rect x="250" y="54" width="36" height="7" rx="3.5" fill="#CBD5E1" stroke="#94A3B8" stroke-width="1"/>
+          <rect x="250" y="49" width="12" height="16" rx="3" fill="#374151"/>
+          <g stroke="#94A3B8" stroke-width="1.2">
+            <line x1="256" y1="65" x2="256" y2="70"/><line x1="268" y1="65" x2="268" y2="70"/><line x1="280" y1="65" x2="280" y2="70"/>
+          </g>
+          <rect x="357" y="54" width="36" height="7" rx="3.5" fill="#CBD5E1" stroke="#94A3B8" stroke-width="1"/>
+          <rect x="357" y="49" width="12" height="16" rx="3" fill="#374151"/>
+          <g stroke="#94A3B8" stroke-width="1.2">
+            <line x1="363" y1="65" x2="363" y2="70"/><line x1="375" y1="65" x2="375" y2="70"/><line x1="387" y1="65" x2="387" y2="70"/>
+          </g>
+          <circle cx="445" cy="60" r="15" fill="#6B7280" stroke="#4B5563" stroke-width="3" stroke-dasharray="3 2.5"/>
+          <circle cx="445" cy="60" r="3.5" fill="#374151"/>
+          <g font-size="8.5" fill="#374151">
+            <text x="195" y="82" text-anchor="middle">波轮G</text>
+            <text x="268" y="82" text-anchor="middle">三段E</text>
+            <text x="372" y="82" text-anchor="middle">三段F</text>
+            <text x="445" y="82" text-anchor="middle">波轮H</text>
+          </g>
+        </svg>
+        </div>
+        <div style="font-size:11px;color:#9CA3AF;line-height:1.7;padding:8px 4px 0;text-align:center">
+          A/B/C/D 为出厂键位（出厂 A/B/D 无功能、C 云台回中），本项目固件映射为 解锁 / 继电器 / 站立 / 预留；
+          未画：提手、扬声器、TYPE-C、SIM 卡槽（详见说明书部件图）
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span id="chTitle">关键通道</span>
+          <button class="btn btn-secondary btn-sm" id="btnToggleAll">显示全部 16 通道</button></div>
+        <div id="keyChannels"></div>
+        <div id="allChannels" hidden></div>
+      </div>
+    </div>
+
+    <!-- 页面 3: 系统日志 -->
+    <div class="page" id="page-logs">
+      <div class="card">
+        <div class="card-title">系统信息</div>
+        <div class="pwbad" id="pwBanner">⚠ 上次异常断电</div>
+        <div class="kv" style="margin-bottom:14px">
+          <div class="k">上次关机</div><div class="v num" id="kvStop">—</div>
+          <div class="k">桥进程</div><div class="v num" id="kvBridge">—</div>
+          <div class="k">音频服务</div><div class="v num" id="kvAudio">—</div>
+        </div>
+        <div class="stats" id="lossStats" style="margin-bottom:14px">
+          <div class="stat" id="sTotal"><div class="v num">—</div><div class="k">总帧数</div></div>
+          <div class="stat" id="sFs"><div class="v num">—</div><div class="k">fs 失控帧</div></div>
+          <div class="stat" id="sLost"><div class="v num">—</div><div class="k">lost 丢帧标志</div></div>
+        </div>
+        <div class="stats">
+          <div class="stat" id="stLoad"><div class="v num">—</div><div class="k">系统负载 load1</div></div>
+          <div class="stat" id="stMem"><div class="v num">—<small>%</small></div><div class="k">内存占用</div></div>
+          <div class="stat" id="stTemp"><div class="v num">—<small>°C</small></div><div class="k">CPU 温度</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span>GO2 信息<span style="font-weight:400;color:var(--text-tertiary)">（狗自报遥测 · 关节 FR/FL/RR/RL × 髋/大腿/小腿）</span></span><span class="live" id="g2Live"></span></div>
+        <div class="g2grid" id="g2Joints"></div>
+        <div class="kv" style="margin-top:12px">
+          <div class="k">姿态角</div><div class="v num" id="g2Rpy">—</div>
+          <div class="k">电池状态</div><div class="v num" id="g2Bms">—</div>
+          <div class="k">主板温度</div><div class="v num" id="g2Mb">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span>最近事件 · 最近 10 条</span><span class="live" id="sysLive"></span></div>
+        <div class="evs" id="evList"><div class="evrow info"><span class="txt" style="color:var(--text-tertiary)">—</span></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span>实时日志 · 每 2s 刷新</span><span class="live" id="logLive"></span></div>
+        <div class="logtools">
+          <button class="btn btn-primary btn-sm" id="btnLogAuto">自动滚动 ●</button>
+          <button class="btn btn-secondary btn-sm" id="btnLogLevel">精简 ●</button>
+          <button class="btn btn-secondary btn-sm" id="btnLogClear">清空</button>
+        </div>
+        <pre id="logPre">(进入本页后开始拉取)</pre>
+      </div>
+    </div>
+
+    <!-- 页面 5: 设置 -->
+    <div class="page" id="page-settings">
+      <div class="card">
+        <div class="card-title">显示选项</div>
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:14px">
+          <label style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="optFullChannels">
+            <span>通道页显示完整 16 通道</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="optLossDetail" checked>
+            <span>显示丢帧详情 (总帧 / fs / lost 计数)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="optChart" checked>
+            <span>仪表盘显示统计图表</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">关于</div>
+        <div class="kv">
+          <div class="k">版本</div><div class="v num" id="aboutVer">Go2-Bridge</div>
+          <div class="k">板端地址</div>
+          <div class="v">
+            <span class="num" id="aboutAddr">—</span>
+            <span style="display:flex;gap:6px;margin-top:6px;max-width:260px">
+              <input id="ipInput" class="num" placeholder="192.168.8.53"
+                style="flex:1;min-width:0;padding:6px 10px;font-size:13px;
+                       border:1px solid var(--border-medium);border-radius:8px;
+                       background:var(--bg-secondary);color:var(--text-primary)">
+              <button class="btn btn-primary btn-sm" id="btnApplyIp">应用</button>
+            </span>
+            <span class="mut" style="margin-top:6px" id="ipMsg">修改 App 里存的板子地址, 应用后 App 自动切换重连; 电脑浏览器里点应用无效</span>
+          </div>
+          <div class="k">页面</div><div class="v"><a href="sbus-old.html">旧版调试台</a></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">APP 网址</div>
+        <div class="kv">
+          <div class="k">遥控页</div>
+          <div class="v"><a href="/" id="appUrl" style="word-break:break-all">—</a>
+            <div class="mut" style="margin-top:4px">手机连同一 WiFi, 浏览器打开即可控制(双摇杆 / 解锁 / 急停)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
 </div>
 
 <script>
@@ -199,140 +541,174 @@ const CH_LO = 282, CH_HI = 1722;
 /* 通道映射名与阈值刻度(config.py 镜像; 改 config 时同步这里) */
 const CHS = [
   {n:"转向 · 右横"}, {n:"前后 · 左竖"}, {n:"右竖 · 未用"}, {n:"侧移 · 左横"},
-  {n:"A 键", tick:ARM_ON, tickName:"解锁"}, {n:"B 键"}, {n:"C 键", tick:STAND_ON, tickName:"站"},
-  {n:"左拨杆 · 舵机"}, {n:"D 键 · 退役"}, {n:"三挡"}, {n:"右拨杆 · 未用"},
+  {n:"A 键", tick:ARM_ON}, {n:"B 键"}, {n:"C 键", tick:STAND_ON},
+  {n:"左拨杆 · 舵机"}, {n:"D 键 · 预留"}, {n:"速度档位"}, {n:"右拨杆 · 未用"},
   {n:""}, {n:""}, {n:""}, {n:""}, {n:""}
 ];
 const NOM = (v) => Math.max(0, Math.min(1, (v - CH_LO) / (CH_HI - CH_LO)));
+/* 挡位脉宽映射: 282/1002/1722 标称值亦落此区间(与 config.py 挡位注释互参, 改标定两处同步) */
 const gearOf = v => Math.min(3, Math.max(1, Math.round((v - 172) / (1811 - 172) * 2) + 1));
 
-/* 构建通道行 */
-const chsEl = $("chs");
-const rows = CHS.map((c, i) => {
+/* 构建: 5 关键通道(通道页) + 16 完整通道(开关控制) */
+function chRow(i){
+  const c = CHS[i];
   const row = document.createElement("div"); row.className = "chrow";
   row.innerHTML = `<div class="lbl"><b>ch${i}</b> ${c.n}</div>
-    <div class="bar"><div class="fill"></div>${c.tick ? `<div class="tick" style="left:${NOM(c.tick)*100}%"><i></i></div>` : ""}</div>
+    <div class="bar"><div class="fill"></div>${c.tick ? `<div class="tick" style="left:${(NOM(c.tick)*100).toFixed(1)}%"></div>` : ""}</div>
     <div class="val num">—</div>`;
-  chsEl.appendChild(row);
   return {fill: row.querySelector(".fill"), val: row.querySelector(".val"),
           bar: row.querySelector(".bar")};
+}
+const KEY_CH = [0, 1, 3, 4, 9];
+const keyRows = {};
+KEY_CH.forEach(i => {
+  const r = chRow(i);
+  $("keyChannels").appendChild(r.fill.closest(".chrow"));
+  keyRows[i] = r;
+});
+const rows = CHS.map((c, i) => {
+  const r = chRow(i);
+  $("allChannels").appendChild(r.fill.closest(".chrow"));
+  return r;
 });
 
-/* 60s 柱状图 */
+/* 60s 帧率折线(KPI 第 4 格大小, 无轴标签; 页面隐藏时宽度为 0 跳过, 切回补画) */
 const cv = $("chart"), cx = cv.getContext("2d");
+let curPage = "dashboard";
 function drawChart(hist){
-  const dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
-  if (cv.width !== w * dpr){ cv.width = w * dpr; cv.height = h * dpr; }
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h || !hist.length) return;
+  const dpr = devicePixelRatio || 1;
+  if (cv.width !== Math.round(w * dpr)){ cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
   cx.setTransform(dpr, 0, 0, dpr, 0, 0);
   cx.clearRect(0, 0, w, h);
-  const max = Math.max(20, ...hist), n = hist.length, bw = w / n;
+  const max = Math.max(20, ...hist), n = hist.length, lo = 2, hi = h - 3;
+  const yOf = v => hi - (v / max) * (hi - lo);
+  /* 基线 */
+  cx.strokeStyle = "#E5E7EB"; cx.lineWidth = 1;
+  cx.beginPath(); cx.moveTo(0, h - 1); cx.lineTo(w, h - 1); cx.stroke();
+  /* 折线 */
+  cx.strokeStyle = "#3B82F6"; cx.lineWidth = 1.5;
+  cx.lineJoin = "round"; cx.beginPath();
   for (let i = 0; i < n; i++){
-    const v = hist[i] / max, x = i * bw;
-    cx.fillStyle = i === n - 1 ? "#4fae7c" : (v ? "#2f6b4d" : "#1a201d");
-    const bh = Math.max(v ? 2 : 1, v * (h - 14));
-    cx.fillRect(x + bw * 0.15, h - 12 - bh, bw * 0.7, bh);
+    const x = n === 1 ? w : i / (n - 1) * w, y = yOf(hist[i]);
+    i ? cx.lineTo(x, y) : cx.moveTo(x, y);
   }
-  cx.fillStyle = "#8b948f"; cx.font = "11px ui-monospace,monospace";
-  cx.fillText("0", 2, h - 2); cx.textAlign = "right";
-  cx.fillText(String(max), w - 2, h - 2); cx.textAlign = "left";
-  cx.fillText("-60s", 2, 10); cx.textAlign = "right"; cx.fillText("现在", w - 2, 10);
+  cx.stroke();
+  /* 末点高亮 */
+  cx.fillStyle = "#3B82F6";
+  cx.beginPath(); cx.arc(w - 2, yOf(hist[n - 1]), 2.2, 0, 7); cx.fill();
 }
 
-/* 灯/横幅/卡片 */
+/* 灯/KPI/按键 */
 function dot(el, cls){ el.className = "dot" + (cls ? " " + cls : ""); }
-function seg(id, on, hot){
-  $(id).querySelectorAll("span").forEach((s, i) => s.classList.toggle("on", i === on));
-  if (hot !== undefined)
-    $(id).querySelectorAll("span").forEach((s, i) => s.classList.toggle("hot", i === on && hot));
+function setKPI(id, html, cls){
+  const el = $(id);
+  el.querySelector(".value").innerHTML = html;
+  el.className = "kpi-card" + (cls ? " " + cls : "");
 }
 function setStat(id, v, cls){ const el = $(id); el.querySelector(".v").innerHTML = v;
   el.className = "stat" + (cls ? " " + cls : ""); }
+/* 按键迷你分段: 点亮当前态 */
+function setMini(id, val){
+  document.querySelectorAll("#" + id + " span").forEach(s =>
+    s.classList.toggle("on", s.textContent === val));
+}
 
+/* 运行状态: 顶栏胶囊短文案 + 仪表盘控制源卡完整解释(同色)
+   配色(用户定): 狗离线/断连=红(故障), 未解锁=黄(提示), 动作播放中=蓝(进行中), 已解锁=绿 */
+const RUN_CLR = {ok: "var(--color-success)", warn: "var(--color-warning)",
+                 bad: "var(--color-danger)", info: "var(--color-primary)"};
+function setRun(cls, short, full){
+  dot($("dRun"), cls || "");
+  $("tRun").textContent = short;
+  $("kvRun").innerHTML = '<span style="color:' + (RUN_CLR[cls] || "inherit")
+    + ';font-weight:600">' + full + "</span>";
+}
+
+let curSrc = null;   /* /state 快照里的控制源, 顶栏控制权灯用 */
 function render(s){
-  window.lastStatus = s;   /* App 端 evaluateJavascript 轮询动作状态用 */
-  if (document.hidden) return;   /* 息屏/后台: 状态照记(App轮询不受影响), 渲染全跳省电 */
-  /* 狗连接 / RC */
+  /* 指令应答帧等缺字段帧: 直接返回, 不进 lastStatus(会污染 App 端轮询) */
+  if (s && s.err) return;
+  window.lastStatus = s;   /* App 端轮询动作状态用 */
+  if (document.hidden) return;   /* 息屏/后台: 状态照记, 渲染全跳省电 */
+
+  /* 顶栏: 狗连接 / SBUS 质量 / 控制权 */
   const L = s.link;
   dot($("dLink"), L === "up" ? "ok" : L === "connecting" ? "warn" : "bad");
   $("tLink").textContent = L === "up" ? "狗在线" : L === "connecting" ? "狗连接中" :
     L === "lib_missing" ? "驱动未装" : "狗离线";
-  dot($("dRc"), s.rc ? "ok" : "");
-  $("tRc").textContent = s.rc ? "RC 解锁" : "RC 上锁";
-
-  /* SBUS 链路质量灯 */
   const dS = $("dSbus"), tS = $("tSbus");
   if (s.sbus && s.sbus_clean){ dot(dS, "ok"); tS.textContent = "数据干净"; }
   else if (s.sbus){ dot(dS, "warn"); tS.textContent = "丢包 · 狗已站定"; }
   else { dot(dS, "bad"); tS.textContent = "无帧"; }
+  dot($("dCtl"), s.net_ok ? "ok" : curSrc === "sbus" ? "warn" : "");
+  $("tCtl").textContent = "控制权 " + (s.net_ok ? "App" : curSrc === "sbus" ? "遥控器" : "—");
 
-  /* 网络遥控链路灯(App 杆量通道, 新鲜时优先于 SBUS) */
-  const dN = $("dNet"), tN = $("tNet");
-  if (s.net_ok){ dot(dN, "ok"); tN.textContent = "App 在控"; }
-  else { dot(dN, ""); tN.textContent = "网络遥控"; }
-
-  /* 控制状态横幅: 链路断最优先压顶(解锁是本地状态, 链路断时指令根本发不出去) */
-  const MODE_NAMES = {0:"趴下", 1:"站立", 2:"行走", 3:"坐姿"};
-  const banner = $("banner");
+  /* 运行状态(配色用户定: 离线=红, 未解锁=黄, 动作中=蓝, 已解锁=绿) */
   const acting = s.action || (s.action_left || 0) > 0;
   const m = s.mode;
-  let lockTxt, lockCls, lockOk = false;
-  if (L !== "up")       { lockTxt = L === "connecting" ? "狗连接中 · 指令暂发不出去" : "狗离线 · 解锁/摇杆指令发不出去 (查狗电/网线)"; lockCls = "offline"; }
-  else if (!s.rc)       { lockTxt = "未解锁 · 摇杆无效 (A 键翻拨解锁)"; lockCls = "action"; }
-  else if (acting)      { lockTxt = `动作播放中: ${s.action || "?"} (剩 ${(s.action_left || 0).toFixed(1)}s) 摇杆无效`; lockCls = "action"; }
-  else if (m === 0)     { lockTxt = "趴下 · 摇杆无效 (C 键拨上站立)"; lockCls = "action"; }
-  else if (m === 1)     { lockTxt = "站立平衡 · 摇杆无效 (等待进入行走)"; lockCls = "action"; }
-  else if (m === 3)     { lockTxt = "坐姿 · 摇杆无效 (C 键拨上起立)"; lockCls = "action"; }
-  else if (m === 2)     { lockTxt = "可控 —— 摇杆有效"; lockCls = ""; lockOk = true; }
-  else                  { lockTxt = `模式 ${m} · 摇杆无效`; lockCls = "action"; }
-  if (!lockOk){
-    banner.className = "banner " + lockCls;
-    banner.textContent = lockTxt;
-  } else {
-    banner.className = "banner";
-    banner.textContent = "";
-  }
-  $("lockTitle").textContent = "控制状态";
-  $("lockLine").innerHTML = lockOk
-    ? `<span style="color:var(--ok)">${lockTxt} · ${MODE_NAMES[m] || ""}</span>`
-    : `<span style="color:var(--warn)">${lockTxt} · 当前模式: ${MODE_NAMES[m] || m}</span>`;
+  let rT, rF, rCls;
+  if (L !== "up")       { rCls = "bad";
+                          rT = L === "connecting" ? "连接中" :
+                               L === "lib_missing" ? "驱动未装" : "狗离线";
+                          rF = L === "connecting" ? "狗连接中 · 指令暂发不出去" :
+                               L === "lib_missing" ? "驱动未装 · 狗链路起不来 (查驱动)" :
+                               "狗离线 · 解锁/摇杆指令发不出去 (查狗电/网线)"; }
+  else if (!s.rc)       { rCls = "warn"; rT = "未解锁"; rF = "未解锁 · 摇杆无效 (A 键翻拨解锁)"; }
+  else if (acting)      { rCls = "info"; rT = "动作中";
+                          rF = `动作播放中: ${s.action || "?"} · 剩 ${(s.action_left || 0).toFixed(1)}s · 摇杆无效`; }
+  else if (m === 0)     { rCls = "ok"; rT = "趴下"; rF = "已解锁 · 趴下 (C 键拨上站立)"; }
+  else if (m === 1)     { rCls = "ok"; rT = "站立"; rF = "已解锁 · 站立平衡 (等待进入行走)"; }
+  else if (m === 3)     { rCls = "ok"; rT = "坐姿"; rF = "已解锁 · 坐姿 (C 键拨上起立)"; }
+  else if (m === 2)     { rCls = "ok"; rT = "可控·行走"; rF = "可控 —— 摇杆有效 · 行走模式"; }
+  else                  { rCls = "ok"; rT = "模式 " + m; rF = `已解锁 · 模式 ${m}`; }
+  setRun(rCls, rT, rF);
 
-  /* 大数字 */
+  /* KPI 四联 + 丢帧计数 */
   const loss = s.total ? (s.fs_cnt + s.lost_cnt) / s.total * 100 : null;
-  setStat("sFps", `${s.fps}<small>fps</small>`);
-  setStat("sLoss", loss === null ? "—" : `${loss.toFixed(2)}<small>%</small>`,
+  setKPI("kpiFps", `${s.fps}<small>fps</small>`);
+  setKPI("kpiLoss", loss === null ? "—" : `${loss.toFixed(2)}<small>%</small>`,
           loss === null ? "" : loss > 5 ? "bad" : loss > 1 ? "warn" : "");
+  setKPI("kpiIv", s.last_iv === null || s.last_iv === undefined ? "—" : `${s.last_iv}<small>ms</small>`,
+          s.last_iv > 25 ? "bad" : "");
   setStat("sTotal", String(s.total));
   setStat("sFs", String(s.fs_cnt), s.fs_cnt ? "warn" : "");
   setStat("sLost", String(s.lost_cnt), s.lost_cnt ? "warn" : "");
-  setStat("sIv", s.last_iv === null || s.last_iv === undefined ? "—" : `${s.last_iv}<small>ms</small>`,
-          s.last_iv > 25 ? "bad" : "");
 
-  drawChart(s.hist || []);
   window.lastHist = s.hist || [];
+  if (curPage === "dashboard" && $("kpiChart").style.display !== "none")
+    drawChart(window.lastHist);
 
-  /* 通道条 */
+  /* 通道条: 关键 5 + 完整 16 */
   const ch = s.ch;
+  KEY_CH.forEach(i => { const r = keyRows[i];
+    if (!ch){ r.fill.style.width = "0"; r.val.textContent = "—"; return; }
+    r.fill.style.width = (NOM(ch[i]) * 100).toFixed(1) + "%";
+    r.val.textContent = ch[i];
+  });
   rows.forEach((r, i) => {
     if (!ch){ r.fill.style.width = "0"; r.val.textContent = "—"; return; }
-    const v = ch[i];
-    r.fill.style.width = (NOM(v) * 100).toFixed(1) + "%";
-    r.val.textContent = v;
+    r.fill.style.width = (NOM(ch[i]) * 100).toFixed(1) + "%";
+    r.val.textContent = ch[i];
   });
 
-  /* 按键卡片(从 ch 推导) */
+  /* 按键迷你分段(从 ch 推导开关位置) */
   if (ch){
-    seg("cArm", ch[4] > ARM_ON ? 1 : 0);
-    $("kArm").textContent = s.rc ? "RC 解锁中" : "";
-    seg("cB", ch[5] > B_MID ? 1 : 0);
-    seg("cC", ch[6] > STAND_ON ? 1 : 0);
-    seg("cGear", gearOf(ch[9]) - 1);
-    $("kGear").textContent = s.gear ? `狗已同步挡${s.gear}` : "未同步";
-    $("cServo").innerHTML = `${((ch[7] - 282) / 1440 * 180).toFixed(0)}<small style="font-size:13px;color:var(--dim)">°</small>`;
+    setMini("segA", ch[4] > ARM_ON ? "解锁" : "上锁");
+    setMini("segB", ch[5] > B_MID ? "高位" : "低位");
+    setMini("segC", ch[6] > STAND_ON ? "站立" : "趴下");
+    setMini("segG", String(gearOf(ch[9])));
   } else {
-    ["cArm","cB","cC","cGear"].forEach(id => seg(id, -1));
-    $("kArm").textContent = ""; $("kGear").textContent = "";
-    $("cServo").innerHTML = `—<small style="font-size:13px;color:var(--dim)">°</small>`;
+    ["segA","segB","segC","segG"].forEach(id =>
+      document.querySelectorAll("#" + id + " span").forEach(s => s.classList.remove("on")));
   }
+
+  /* 控制源卡: RC / 网络遥控(配色同运行状态: 已解锁绿/上锁红) */
+  $("kvRc").innerHTML = s.rc
+    ? '<span style="color:var(--color-success);font-weight:600">已解锁</span>'
+    : '<span style="color:var(--color-danger);font-weight:600">上锁</span>';
+  $("kvNet").innerHTML = s.net_ok ? '<span style="color:var(--color-success)">App 在控</span>' : "离线";
 
   /* 系统与事件: ws 推送带这些字段就直接用(future), 未带时落到 /state 轮询快照, 都缺显占位 */
   renderSys(sysSnap ? Object.assign({}, sysSnap, s) : s);
@@ -357,7 +733,7 @@ function fmtTs(ts){                       /* epoch 秒/毫秒 -> HH:MM:SS, 认�
   const d = new Date(v * 1000);
   return isNaN(d.getTime()) ? null : d.toLocaleTimeString("zh-CN", {hour12: false});
 }
-function evLevel(kind, ev){               /* 级别分色: 错误红 / 警告黄 / 信息灰 / 动作绿 */
+function evLevel(kind, ev){               /* 级别分色: 错误红 / 警告黄 / 信息蓝灰 / 动作绿 */
   const k = (String(kind || "") + " " + String(ev || "")).toLowerCase();
   if (/err|fail|bad|down|offline|diverg|abort|unclean/.test(k)) return "err";
   if (/warn|stale|retry|timeout|slow/.test(k)) return "warn";
@@ -369,16 +745,14 @@ function renderSys(m){
     if (!m || typeof m !== "object") m = {};
     const P = (m.pids && typeof m.pids === "object") ? m.pids : {};
     const AU = (m.audio && typeof m.audio === "object") ? m.audio : {};
-    /* 上次关机: unclean 才出红横幅(独立于顶部控制状态横幅, 互不覆盖) */
+    /* 上次关机: unclean 才出红横幅 */
     $("pwBanner").style.display = m.last_stop === "unclean" ? "block" : "none";
     $("kvStop").innerHTML = m.last_stop === "clean" ? '<span style="color:var(--ok)">正常关机</span>'
       : m.last_stop === "unclean" ? '<span style="color:var(--bad);font-weight:600">异常断电</span>'
       : m.last_stop === "unknown" ? "未知" : "—";
-    /* 桥进程: pids.bridge + uptime_s(现有 /state 字段) */
     const up = fmtUp(m.uptime_s);
     $("kvBridge").innerHTML = P.bridge != null
       ? `pid ${esc(P.bridge)}` + (up ? ` · 已运行 ${up}` : "") : (up ? `已运行 ${up}` : "—");
-    /* 音频服务: pids.audio/audio_age + 现有 audio.ready/volume */
     const aAge = numv(P.audio_age), aBits = [];
     if (P.audio != null) aBits.push("pid " + esc(P.audio));
     aBits.push(AU.ready === true ? '<span style="color:var(--ok)">就绪</span>'
@@ -386,12 +760,12 @@ function renderSys(m){
     if (AU.volume != null) aBits.push("音量 " + esc(AU.volume));
     if (aAge != null && aAge >= 0) aBits.push("状态 " + (fmtUp(aAge) || "0s") + " 前");
     $("kvAudio").innerHTML = aBits.filter(Boolean).join(" · ") || "—";
-    /* 狗链路代数 / 控制源(实际生效通道来源见 /state.ch_source) */
     $("kvLink").textContent = m.link_gen != null ? String(m.link_gen) : "—";
     const SRC = m.ch_source || m.src;
+    curSrc = SRC || curSrc;
     $("kvSrc").textContent = SRC === "sbus" ? "SBUS 遥控器"
       : SRC === "netrc" ? "网络遥控 (App)" : "—";
-    /* 控制抑制(P1): 请求被互锁/保护期拦下时显示"原因 + 剩余秒"; 起立中显示年龄 */
+    /* 控制抑制(P1) */
     const CT = (m.ctl && typeof m.ctl === "object") ? m.ctl : {};
     if (CT.blocked){
       const tg = CT.target == null ? "" : " → " + CT.target;
@@ -409,7 +783,7 @@ function renderSys(m){
     } else {
       $("kvCtl").textContent = "—";
     }
-    /* 最后一条命令: name · 时间 · 结果(OK 绿 / ERR 红) */
+    /* 最后一条命令 */
     const C = (m.last_cmd && typeof m.last_cmd === "object") ? m.last_cmd : {};
     if (C.name != null || C.result != null){
       const t = fmtTs(C.ts), r = C.result == null ? "?" : String(C.result);
@@ -418,7 +792,7 @@ function renderSys(m){
         + (t ? ` · <span style="color:var(--dim)">${t}</span>` : "")
         + ` · <span style="color:${rc}">${esc(r)}</span>`;
     } else $("kvCmd").textContent = "—";
-    /* 狗真实姿态(rt/sportmodestate): 高度/mode/步态/速度全用狗自报值, 不用本地推测 */
+    /* 狗真实姿态 */
     const D = (m.dog && typeof m.dog === "object") ? m.dog : {};
     const dh = numv(D.height), da = numv(D.age), dBits = [];
     dBits.push(D.fresh === true ? '<span style="color:var(--ok)">● 实时</span>'
@@ -438,12 +812,84 @@ function renderSys(m){
     setStat("stMem", mp == null ? "—" : `${mp.toFixed(0)}<small>%</small>`,
             mp > 90 ? "bad" : mp > 75 ? "warn" : "");
     setStat("stTemp", ct == null ? "—" : `${ct.toFixed(1)}<small>°C</small>`,
-            ct > 80 ? "bad" : ct > 70 ? "warn" : "");
-    /* 最近 10 条事件: 时间 + 级别标签 + 摘要, 内容全 esc 防注入 */
+            ct >= 80 ? "bad" : ct >= 60 ? "warn" : "");   /* ≥80红 / 60~80黄 / 以下默认 */
+    /* GO2 信息卡(10-31): lowstate 关节温度/电池 + 机身温度, /state.dog2 */
+    {
+      const g2 = (m.dog2 && typeof m.dog2 === "object") ? m.dog2 : {};
+      const LEG = ["FR", "FL", "RR", "RL"], PART = ["髋", "大腿", "小腿"];
+      const jts = Array.isArray(g2.joints) ? g2.joints : null;
+      let gh = "";
+      if (jts && jts.length){
+        for (let i = 0; i < Math.min(12, jts.length); i++){
+          const t = numv(jts[i]);
+          const col = t == null ? "var(--text-tertiary)"
+                    : t >= 65 ? "var(--color-danger)"
+                    : t >= 50 ? "var(--color-warning)" : "var(--text-primary)";
+          gh += `<div class="g2cell"><div class="l">${LEG[i/3|0]}${PART[i%3]}</div>` +
+                `<div class="t" style="color:${col}">${t == null ? "—" : t.toFixed(0) + "°"}</div></div>`;
+        }
+      } else {
+        gh = `<div class="g2cell" style="grid-column:1/-1"><div class="l">暂无 lowstate 数据（订阅没通/固件不上报）</div></div>`;
+      }
+      $("g2Joints").innerHTML = gh;
+      const b = (g2.bms && typeof g2.bms === "object") ? g2.bms : {};
+      const soc = numv(b.SOC), bv = numv(b.voltage), ba = numv(b.current);
+      const bq = numv(b.bq_ntc), mc = numv(b.mcu_ntc), cy = numv(b.cycle);
+      const bmsParts = [
+        soc == null ? null :
+          `<span style="color:${soc < 20 ? "var(--color-danger)" : soc < 40 ? "var(--color-warning)" : "var(--color-success)"}">电量 ${soc.toFixed(0)}%</span>`,
+        bv == null ? null : `电压 ${bv.toFixed(2)}V`,
+        ba == null ? null : `电流 ${ba.toFixed(2)}A`,
+        bq == null ? null : `电池温度 ${bq.toFixed(0)}℃`,
+        mc == null ? null : `电控温度 ${mc.toFixed(0)}℃`,
+        cy == null ? null : `循环 ${cy.toFixed(0)} 次`,
+      ].filter(x => x);
+      $("g2Bms").innerHTML = bmsParts.length ? bmsParts.join(" · ") : "固件未上报";
+      const mb = numv(g2.mb);   /* 机身温度: ≥70红 / ≥55黄 / 以下默认 */
+      if (mb == null) $("g2Mb").textContent = "—";
+      else {
+        const mc = mb >= 70 ? "var(--color-danger)" : mb >= 55 ? "var(--color-warning)" : "";
+        $("g2Mb").innerHTML = mc ?
+          `<span style="color:${mc}">${mb.toFixed(1)}℃</span>` : `${mb.toFixed(1)}℃`;
+      }
+      {   /* 低电量警告条: <20% 且数据新鲜才亮, 狗断电不拿旧值报警 */
+        const lb = $("lowBatt");
+        if (lb){
+          const on = soc != null && g2.fresh && soc < 20;
+          lb.hidden = !on;
+          if (on) lb.textContent = `⚠ 低电量警告：狗电池仅剩 ${soc.toFixed(0)}%，请尽快充电`;
+        }
+      }
+      {   /* 顶栏电池胶囊: 运行状态 chip 右侧, 狗不新鲜/未知时灰显 */
+        const chip = $("chipBatt");
+        if (chip){
+          const fillEl = chip.querySelector(".batt-fill"),
+                shellEl = chip.querySelector(".batt");
+          const col = soc == null || !g2.fresh ? "var(--text-tertiary)"
+                    : soc < 20 ? "var(--color-danger)"
+                    : soc < 40 ? "var(--color-warning)" : "var(--color-success)";
+          $("tBatt").textContent = soc == null ? "—" : soc.toFixed(0) + "%";
+          fillEl.style.width = (soc == null ? 0 : Math.min(100, Math.max(8, soc))) + "%";
+          fillEl.style.background = col;
+          shellEl.style.color = col;
+        }
+      }
+      /* 姿态角(rad->度) */
+      const rp = Array.isArray(g2.rpy) && g2.rpy.length >= 3 ? g2.rpy : null;
+      $("g2Rpy").textContent = rp ?
+        `横滚 ${(rp[0] * 57.2958).toFixed(1)}° · 俯仰 ${(rp[1] * 57.2958).toFixed(1)}° · 偏航 ${(rp[2] * 57.2958).toFixed(0)}°` : "—";
+      const age = numv(g2.low_age);
+      $("g2Live").textContent =
+        age == null ? "" : (g2.fresh ? "● " + age.toFixed(1) + "s 前" : "数据停更 " + age.toFixed(0) + "s");
+      $("g2Live").title = "狗遥测新鲜度: 距上一包 lowstate 的秒数";
+    }
+    /* 版本(关于页) */
+    if (m.ver) $("aboutVer").textContent = "Go2-Bridge " + m.ver;
+    /* 最近 10 条事件 */
     const list = Array.isArray(m.last_events) ? m.last_events.slice(0, 10) : [];
     let h;
     if (!list.length)
-      h = `<div class="evrow info"><span class="txt" style="color:var(--dim)">— 无事件记录 —</span></div>`;
+      h = `<div class="evrow info"><span class="txt" style="color:var(--text-tertiary)">— 无事件记录 —</span></div>`;
     else h = list.map(e => {
       e = (e && typeof e === "object") ? e : {};
       const lvl = evLevel(e.kind, e.ev), t = fmtTs(e.ts) || "--:--:--";
@@ -457,15 +903,60 @@ function renderSys(m){
   }catch(err){ /* 字段结构再离谱也只当占位, 绝不炸整个 render */ }
 }
 
+/* 侧边导航切换(切回通道页补画隐藏期间 clientWidth=0 跳过的帧; 进日志页开拉日志) */
+document.querySelectorAll(".nav-item").forEach(item => {
+  item.onclick = () => {
+    const p = item.dataset.page;
+    if (p === curPage) return;
+    curPage = p;
+    document.querySelectorAll(".nav-item").forEach(i => i.classList.toggle("active", i === item));
+    document.querySelectorAll(".page").forEach(pg =>
+      pg.classList.toggle("active", pg.id === "page-" + p));
+    if (p === "dashboard" && window.lastHist) drawChart(window.lastHist);
+    if (p === "logs") startLogs();
+    else if (logOn) { logOn = false; clearInterval(logTimer); }   /* 离开日志页停轮询 */
+  };
+});
+
+/* 显示选项(设置页, localStorage 持久) ↔ 通道页展开钮 双向同步 */
+const OPT_KEY = "sbusOpts";
+const opts = Object.assign({full:false, loss:true, chart:true}, (() => {
+  try { return JSON.parse(localStorage.getItem(OPT_KEY)) || {}; } catch (e){ return {}; }
+})());
+function applyOpts(){
+  $("optFullChannels").checked = opts.full;
+  $("optLossDetail").checked = opts.loss;
+  $("optChart").checked = opts.chart;
+  /* 通道卡单卡覆盖式切换: 16 通道就地替换关键 5 通道 */
+  $("keyChannels").hidden = opts.full;
+  $("allChannels").hidden = !opts.full;
+  $("chTitle").textContent = opts.full ? "完整 16 通道原始值" : "关键通道";
+  $("btnToggleAll").textContent = opts.full ? "只看关键 5 通道" : "显示全部 16 通道";
+  $("lossStats").style.display = opts.loss ? "" : "none";
+  $("kpiChart").style.display = opts.chart ? "" : "none";
+  if (opts.chart && curPage === "dashboard" && window.lastHist) drawChart(window.lastHist);
+}
+function setOpt(k, v){
+  opts[k] = v;
+  try { localStorage.setItem(OPT_KEY, JSON.stringify(opts)); } catch (e){}
+  applyOpts();
+}
+$("btnToggleAll").onclick = () => setOpt("full", !opts.full);
+$("optFullChannels").onchange = e => setOpt("full", e.target.checked);
+$("optLossDetail").onchange = e => setOpt("loss", e.target.checked);
+$("optChart").onchange = e => setOpt("chart", e.target.checked);
+applyOpts();
+$("aboutAddr").textContent = location.host || "—";
+$("appUrl").textContent = location.host ? "http://" + location.host + "/" : "—";
+
 /* /state 慢轮询: ws 推送不带系统/事件字段(不改桥), 3s 拉一次全量快照 */
 function fetchSys(){
   if (document.hidden || !location.host) return;
   fetch("/state").then(r => r.json()).then(m => {
     if (!m || typeof m !== "object") return;
     sysSnap = m;
-    $("sysLive").textContent = "● " + new Date().toLocaleTimeString();
     renderSys(m);
-  }).catch(() => { $("sysLive").textContent = ""; });
+  }).catch(() => {});
 }
 fetchSys();
 setInterval(fetchSys, 3000);
@@ -473,46 +964,108 @@ addEventListener("visibilitychange", () => { if (!document.hidden) fetchSys(); }
 
 /* WS 自动重连 */
 let ws = null, retry = 0;
+function runBad(short, full){
+  dot($("dRun"), "bad");
+  $("tRun").textContent = short;
+  $("kvRun").innerHTML = '<span style="color:var(--color-danger);font-weight:600">' + full + "</span>";
+}
 function connect(){
-  if (!location.host){ $("banner").className = "banner offline";
-    $("banner").textContent = "请通过 http://板子IP:8000/sbus 打开本页"; return; }
+  if (!location.host){
+    runBad("未连接", "请通过 http://板子IP:8000/sbus 打开本页"); return; }
   ws = new WebSocket(`ws://${location.host}/ws`);
   ws.onopen = () => { retry = 0; };
   ws.onmessage = e => { try { render(JSON.parse(e.data)); } catch (err) {} };
   /* 只让 onclose 排重连: onerror 后必跟 onclose, 两个都排会每轮翻倍攒出连接风暴 */
-  ws.onerror = () => {
-    $("banner").className = "banner offline";
-    $("banner").textContent = "连接断开，正在重连…";
-  };
+  ws.onerror = () => runBad("连接断开", "连接断开，正在重连…");
   ws.onclose = () => {
-    $("banner").className = "banner offline";
-    $("banner").textContent = "连接断开，正在重连…";
+    runBad("连接断开", "连接断开，正在重连…");
     setTimeout(connect, Math.min(1000 * ++retry, 5000));
   };
 }
 connect();
 addEventListener("resize", () => { if (window.lastHist) drawChart(window.lastHist); });
 
-/* 日志面板: /logs = 板端内存环形日志, 不用连网线看 journal */
-let logOn = false, logTimer = null;
+/* 日志面板: /logs = 板端内存环形日志, 进入日志页自动开始 2s 轮询
+   分级(桥端 log(lvl=) 写入行首标记): error=红故障 warn=黄拦截 state=绿状态变迁 debug=灰细节(精简隐藏) */
+let logOn = false, logTimer = null, logStick = true;
+let logFull = localStorage.getItem("sbusLogFull") === "1";
 const logPre = $("logPre");
+const LOG_CLR = {error: "var(--color-danger)", warn: "var(--color-warning)",
+                 state: "var(--color-success)", debug: "#9CA3AF"};
+const LOG_RE = /^((\[\d\d:\d\d:\d\d\]) )?(\[(error|warn|state|debug)\] )?(.*)$/;
+function renderLogs(t){
+  logPre.textContent = "";
+  if (!t) { logPre.textContent = "(暂无日志)"; return; }
+  const frag = document.createDocumentFragment();
+  t.split("\n").forEach(ln => {
+    if (!ln) return;
+    const m = ln.match(LOG_RE);
+    const lvl = m ? m[4] : null;
+    if (lvl === "debug" && !logFull) return;      /* 精简模式: 调试细节不显示 */
+    const row = document.createElement("div");
+    if (m && m[2]) {                              /* 时间戳压暗 */
+      const ts = document.createElement("span");
+      ts.textContent = m[2] + " ";
+      ts.style.color = "#9CA3AF";
+      row.appendChild(ts);
+    }
+    const clr = lvl ? LOG_CLR[lvl] : "";
+    if (lvl) {                                    /* 级别标记染色加粗 */
+      const tg = document.createElement("span");
+      tg.textContent = "[" + lvl + "] ";
+      tg.style.color = clr;
+      tg.style.fontWeight = "600";
+      row.appendChild(tg);
+    }
+    const tx = document.createElement("span");
+    tx.textContent = m ? m[5] : ln;
+    if (clr) tx.style.color = clr;
+    row.appendChild(tx);
+    frag.appendChild(row);
+  });
+  logPre.appendChild(frag);
+}
 function fetchLogs(){
   if (document.hidden) return;
-  fetch("/logs").then(r => r.text()).then(t => {
-    const atBottom = logPre.scrollTop + logPre.clientHeight >= logPre.scrollHeight - 40;
-    logPre.textContent = t || "(暂无日志)";
+  fetch("/logs").then(r => { if (!r.ok) throw 0; return r.text(); }).then(t => {
+    const near = logPre.scrollTop + logPre.clientHeight >= logPre.scrollHeight - 40;
+    renderLogs(t);
     $("logLive").textContent = "● " + new Date().toLocaleTimeString();
-    if (atBottom) logPre.scrollTop = logPre.scrollHeight;   /* 用户没往上翻才贴底 */
+    if (logStick || near) logPre.scrollTop = logPre.scrollHeight;   /* 用户没往上翻才贴底 */
   }).catch(() => {});
 }
-$("logBtn").onclick = () => {
-  logOn = !logOn;
-  $("logPanel").hidden = !logOn;
-  $("logBtn").classList.toggle("main", logOn);
-  if (logOn){ fetchLogs(); logTimer = setInterval(fetchLogs, 2000); }
-  else { clearInterval(logTimer); logTimer = null; }
+function paintLogBtns(){
+  $("btnLogAuto").textContent = logStick ? "自动滚动 ●" : "自动滚动 ○";
+  $("btnLogAuto").className = "btn btn-sm " + (logStick ? "btn-primary" : "btn-secondary");
+  $("btnLogLevel").textContent = logFull ? "全量 ●" : "精简 ●";
+  $("btnLogLevel").className = "btn btn-sm " + (logFull ? "btn-primary" : "btn-secondary");
+}
+$("btnLogLevel").onclick = () => {
+  logFull = !logFull;
+  localStorage.setItem("sbusLogFull", logFull ? "1" : "0");
+  paintLogBtns();
+  if (logOn) fetchLogs();
 };
+function startLogs(){
+  if (logOn) return;
+  logOn = true;
+  fetchLogs();
+  logTimer = setInterval(fetchLogs, 2000);
+}
+$("btnLogAuto").onclick = () => { logStick = !logStick; paintLogBtns();
+  if (logStick) logPre.scrollTop = logPre.scrollHeight; };
+$("btnLogClear").onclick = () => { logPre.textContent = "(已清空显示 · 2s 后刷新)"; };
+paintLogBtns();
 addEventListener("visibilitychange", () => { if (!document.hidden && logOn) fetchLogs(); });
+
+/* 板端地址修改(App 专用): 写 window.__appCmd, App 端 600ms 轮询带回并切换重连 */
+$("btnApplyIp").onclick = () => {
+  const ip = $("ipInput").value.trim();
+  const ok = /^(\d{1,3}\.){3}\d{1,3}$/.test(ip) && ip.split(".").every(x => +x <= 255);
+  if (!ok){ $("ipMsg").textContent = "地址格式不对(每段 0~255)"; return; }
+  window.__appCmd = { setIp: ip };
+  $("ipMsg").textContent = "已下发 " + ip + " · App 一秒内切换并按新地址重连";
+};
 </script>
 </body>
 </html>

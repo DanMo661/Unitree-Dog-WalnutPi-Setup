@@ -34,10 +34,36 @@ HOSTS = [h.strip() for h in os.environ.get(
     "BRIDGE_HOST", "192.168.123.50,192.168.8.52").split(",") if h.strip()]
 USER = "pi"
 REMOTE_DIR = "/home/pi/go2-bridge"
-# 板上运行时文件全集(netrc.py / config_local.py 按源码目录里有没有而增删)
-FILES = ["bridge.py", "config.py", "sbus.py", "servo.py", "pa.py", "pa_recv.py",
-         "journal.py", "languard.py", "core/__init__.py", "core/fsm.py",
-         "static/index.html", "static/sbus.html"]
+def collect_files(src):
+    """自动收集上板清单(2026-10-31): 从两个入口脚本静态解析本地 import, 再并入 static/ 全量 html。
+    手写清单时代漏过 sbus-old.html / static 目录 / 变体里新增的模块, 改自动发现;
+    netrc.py 与 config_local.py 由 import 发现(不存在则跳过: 纯 SBUS 原版没有 netrc,
+    板上原 config_local.py 也不动)。"""
+    import ast
+    src = pathlib.Path(src)
+    seen, queue = set(), [pathlib.Path("bridge.py"), pathlib.Path("pa_recv.py")]
+    while queue:
+        p = queue.pop()
+        if p in seen or not (src / p).is_file():
+            continue
+        seen.add(p)
+        tree = ast.parse((src / p).read_text(encoding="utf-8"))
+        mods = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                mods += [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                mods.append(node.module)
+        for m in mods:
+            parts = m.split(".")
+            for i in range(len(parts), 0, -1):
+                for cand in (pathlib.Path(*parts[:i]).with_suffix(".py"),
+                             pathlib.Path(*parts[:i]) / "__init__.py"):
+                    if cand not in seen and (src / cand).is_file():
+                        queue.append(cand)
+    out = {p.as_posix() for p in seen}
+    out |= {"static/" + p.name for p in (src / "static").glob("*.html")}
+    return sorted(out)
 
 
 def md5(p):
@@ -161,9 +187,7 @@ def main():
         src = pathlib.Path(__file__).parent
     if not (src / "bridge.py").exists():
         sys.exit("源码目录不对(缺 bridge.py): %s" % src)
-    files = list(FILES) + (["netrc.py"] if (src / "netrc.py").exists() else [])
-    if (src / "config_local.py").exists():
-        files.append("config_local.py")   # 板级差异(不进 git): 有就一起烧; 本地没有则不动板上原文件
+    files = collect_files(src)   # 自动发现(见 collect_files): 入口脚本的本地 import + static/*.html
 
     # ---- 变体代码落后硬门(2026-10-24 dog2 教训): --src 指向变体目录时, 代码文件必须与
     # 本脚本所在目录(真身)一致。否则 md5 门只比"板上 vs 变体"(两边同旧, 全一致),
