@@ -31,6 +31,8 @@ def ctrl(cmd, timeout=1.5):
         s.sendto(cmd.encode("utf-8"), (HOST, CTRL))
         d, _ = s.recvfrom(2048)
         return d.decode("utf-8")
+    except ConnectionResetError:
+        return None    # Windows: 对端端口无人监听时 UDP 触发 10054, 与超时同义
     except socket.timeout:
         return None
     finally:

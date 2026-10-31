@@ -384,7 +384,7 @@ class SbusStats:
         if sec == self._sec0:
             return
         self.hist[self._hist_i] = self._sec_n
-        self._roll_n += 1
+        self._roll_n += min(sec - self._sec0, 60)   # 跳几秒算几秒: 少记会把真实零桶当未统计垫平(nitpick#2)
         for _ in range(min(sec - self._sec0, 60)):
             self._hist_i = (self._hist_i + 1) % 60
             self.hist[self._hist_i] = 0
@@ -427,8 +427,9 @@ class SbusStats:
             hist = self.hist[self._hist_i + 1:] + self.hist[:self._hist_i + 1]
             hist = hist[:-1]   # 丢"进行中的当前秒": 只计了部分帧, 画进趋势会形成右端规律性低点
             done = min(self._roll_n, len(hist))
-            if done < len(hist):   # 启动未满一窗: 从未统计过的零桶按当前水平延展(首个实测秒
-                pad = hist[-1] or int(self.fps)   # 是爬坡值, 拿它垫会前半段贴地)
+            if done < len(hist):   # 启动未满一窗: 从未统计过的零桶按当前水平延展
+                # 首个完成秒是串口爬坡值, done<=1 时拿它垫仍会整幅贴地(nitpick#3)
+                pad = hist[-1] if done > 1 else int(self.fps)
                 for i in range(len(hist) - done):
                     hist[i] = pad
             return {"total": self.total, "fs_cnt": self.fs_cnt,
@@ -1732,6 +1733,14 @@ class FsmActive:
     def web_cmd(self, cmd, vx=None, vy=None, vyaw=None):
         with self.lock:
             self._exec(self.fsm.web_cmd(cmd, vx=vx, vy=vy, vyaw=vyaw))
+            self._sync()
+
+    def hold(self):
+        """失控保护/网页断开停走(web_server finally 直接调用, nitpick#1):
+        FSM 幂等 StopMove —— 缺此方法会让关网页钩子抛 AttributeError 半途夭折,
+        FSM 收不到 closed, 网页残留杆量被 tick 持续下发(跑飞风险)"""
+        with self.lock:
+            self._exec(self.fsm.hold())
             self._sync()
 
     def set_mode(self, m):

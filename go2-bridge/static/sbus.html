@@ -572,7 +572,7 @@ const rows = CHS.map((c, i) => {
   return r;
 });
 
-/* 60s 帧率折线(KPI 第 4 格大小, 无轴标签; 页面隐藏时宽度为 0 跳过, 切回补画) */
+/* 帧率折线: 最近 59 个完成秒(KPI 第 4 格大小, 无轴标签; 页面隐藏时宽度为 0 跳过, 切回补画) */
 const cv = $("chart"), cx = cv.getContext("2d");
 let curPage = "dashboard";
 function drawChart(hist){
@@ -868,8 +868,8 @@ function renderSys(m){
           const col = soc == null || !g2.fresh ? "var(--text-tertiary)"
                     : soc < 20 ? "var(--color-danger)"
                     : soc < 40 ? "var(--color-warning)" : "var(--color-success)";
-          $("tBatt").textContent = soc == null ? "—" : soc.toFixed(0) + "%";
-          fillEl.style.width = (soc == null ? 0 : Math.min(100, Math.max(8, soc))) + "%";
+          $("tBatt").textContent = (soc == null || !g2.fresh) ? "—" : soc.toFixed(0) + "%";
+          fillEl.style.width = (soc == null || !g2.fresh) ? 0 : Math.min(100, Math.max(8, soc)) + "%";
           fillEl.style.background = col;
           shellEl.style.color = col;
         }

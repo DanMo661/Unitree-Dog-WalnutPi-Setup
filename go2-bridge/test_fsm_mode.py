@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""test_fsm_mode.py —— FSM 执行开关(T3.4)两种模式的仿真验证
+"""test_fsm_mode.py —— FSM 执行开关(T3.4)三用例的仿真验证(shadow/active/webface 调用面契约)
 
 验证目标: 同一段遥控时序下, 指令到底由哪条路径产生(下发来源), 且两路互斥:
   shadow  : 旧 rc_loop/Dog 真实下发; DogFsm 影子只比对(FSM 独有的指令不得出现在链路上)
@@ -179,11 +179,37 @@ def run_active():
     ok(bridge._SHADOW is None and bridge._ACTIVE is dog, "唯一执行句柄是 FsmActive")
 
 
+def run_web_interface():
+    """web_server 调用面契约(nitpick 10-31 #1/#10): active 下 d 必须实现 ws 侧调用的
+    全部方法; 模拟 ws finally 序列(hold + closed)不得抛异常 —— #1 的 FsmActive 缺
+    hold 正漏在这条缝里(关网页钩子半途夭折, FSM 收不到 closed, 残留杆量被 tick 持续下发)。"""
+    import bridge
+    print("== active: web_server 调用面契约 ==")
+    bridge.config.FSM_MODE = "active"
+    bridge._SHADOW = bridge._ACTIVE = None
+    dog, _ = bridge._make_controller(StubLink(), time.monotonic())
+    for name in ("hold", "set_mode", "web_cmd", "trick", "rising", "rise_t",
+                 "reset", "link_poll", "frame", "tick", "safety",
+                 "serial_reopened", "serial_offline"):
+        ok(hasattr(dog, name), "FsmActive 实现 web 侧调用的 %s()" % name)
+    bridge.state.link = "up"
+    dog.reset()
+    dog.fsm.link_up = True            # web_cmd("closed") 的停走分支直接依赖它
+    dog.web_cmd("arm")
+    ok(dog.fsm.web_armed is True, "网页 arm 生效(可控)")
+    dog.hold()                        # ws finally 第一连击: #1 在此抛 AttributeError
+    dog.web_cmd("closed")             # ws finally 第二连击
+    ok(dog.fsm.web_armed is False, "closed 真正送达 FSM, 网页控制解除")
+    ok(dog.fsm.moving is False, "hold 幂等停走落地")
+
+
 def run_case(case):
     if case == "shadow":
         run_shadow()
     elif case == "active":
         run_active()
+    elif case == "webface":
+        run_web_interface()
     else:
         raise SystemExit("未知用例: %r" % (case,))
     if FAILS:
@@ -215,7 +241,7 @@ def main():
         return
     check_switch_helper()
     rc_all = 0
-    for c in ("shadow", "active"):
+    for c in ("shadow", "active", "webface"):
         env = dict(os.environ, FSM_MODE_CASE=c)
         r = subprocess.run([sys.executable,
                             os.path.join(HERE, "run_test_shim.py"),
@@ -226,7 +252,7 @@ def main():
     if FAILS or rc_all:
         print("test_fsm_mode: FAIL")
         raise SystemExit(1)
-    print("test_fsm_mode: 两种模式下发来源全部通过")
+    print("test_fsm_mode: 三用例(shadow/active/webface)全部通过")
 
 
 if __name__ == "__main__":

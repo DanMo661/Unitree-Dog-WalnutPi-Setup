@@ -23,7 +23,11 @@ class NetGuard:
                 self.allow.append(ipaddress.ip_network(str(r), strict=False))
             except ValueError:
                 if log:
-                    log("!! %s 白名单项无效已忽略: %r" % (name, r))
+                    msg = "!! %s 白名单项无效已忽略: %r" % (name, r)
+                    try:
+                        log(msg, lvl="warn")
+                    except TypeError:   # 文档签名允许 log=print(无 lvl 形参), 同 _reject
+                        log(msg)
         self.token = token or ""
         self.rej = 0
         self.log = log
@@ -53,14 +57,21 @@ class NetGuard:
 
     def _reject(self, why):
         self.rej += 1
-        if self.log and self.rej in (1, 10, 100) or (self.log and self.rej % 500 == 0):
-            self.log("!! %s 拒绝未授权请求(%s), 累计 %d 次" % (self.name, why, self.rej))
+        if self.log and (self.rej in (1, 10, 100) or self.rej % 500 == 0):
+            msg = "!! %s 拒绝未授权请求(%s), 累计 %d 次" % (self.name, why, self.rej)
+            try:
+                self.log(msg, lvl="warn")
+            except TypeError:
+                # 文档签名允许 log=print(无 lvl 形参) —— 降级为裸文本,
+                # 绝不能让告警日志把接收线程炸死(10-31 测试桩实抓)
+                self.log(msg)
         return False
 
     def stats(self):
         return {"guard_rej": self.rej}
 
     def assert_configured(self, log, hint=""):
-        if self.open:
-            log("!! %s 未设鉴权(源 IP 白名单/令牌都为空): 同网段任何设备都可操作 —— %s"
-                % (self.name, hint or "建议在 config.py 配 allow 或 token"))
+        # 10-31 用户定案不再打"未设鉴权"告警: 遥控器(SBUS)是最高优先级控制源,
+        # 网页/App 任何指令都越不过它, 开放端口不构成实际风险; 门禁本体不变,
+        # 配了 allow/token 照常生效(languard 拦截逻辑零改动)。
+        return
