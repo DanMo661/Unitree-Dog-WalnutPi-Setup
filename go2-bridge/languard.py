@@ -8,8 +8,8 @@
   - allow 空 = 不限来源；非空 = 只接受这些网段/IP（"192.168.8.0/24" 或 "192.168.8.8"）
   - token 空 = 不校验；非空 = 请求必须带同一串（UDP 用 "tok" 字段，网页用 ?tok=）
 
-调用方应调用 assert_configured(log, name)：两项都没配时打一条告警，避免"以为关了
-其实全开"。校验失败只计数不抛异常，控制循环照常跑。
+调用方可调用 assert_configured(log, name)——1c030c7 起为 no-op（遥控器物理在环即授权,
+"未设鉴权"告警删除, 依据见 docs/adr/0005）。校验失败只计数不抛异常，控制循环照常跑。
 """
 import hmac
 import ipaddress

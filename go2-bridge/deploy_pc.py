@@ -16,6 +16,7 @@
   服务非 active / /state 不可达 / /state.ver != 本次 VERSION = 硬失败,
   link/sbus/audio 异常只打 WARN 不失败(P1-1)
 """
+import atexit
 import hashlib
 import json
 import os
@@ -103,11 +104,12 @@ def git_dirty(src):
 
 def dog_eee_guard(c, robot_ip, dog_pw):
     """部署尾部顺带保障: 狗侧 EEE 必须关(2026-10-21 dog2 定案: RTL8168 与百兆对端协商
-    EEE 会链路瞬断; 10-24 dog3 漏网教训: 只装一台, 换狗/重置就回enabled)。
-    经板子 invoke_shell 二级跳 SSH 到狗(板上零安装), 开着就关+补 if-up.d 持久化。
+    EEE 会链路瞬断; 10-24 dog3 漏网教训: 只装一台, 换狗/重置就回enabled; 2026-11-02
+    新狗首部署又漏网 —— 旧实现 pty 二级跳在新狗上等不到密码提示超时, best-effort
+    静默跳过没人看见)。改用 paramiko 直连隧道: 板子作 jump host(direct-tcpip 通道)
+    + 第二个 Transport 直接 auth, 非交互无 pty, 不受狗端回显/横幅速度影响。
     best-effort: 狗不可达/无凭据/任何异常只提示不失败, 不影响部署门禁。"""
     import base64 as _b64
-    import re as _re
     # 持久化钩子内容(ASCII 注释, 避免交互回显乱码): 开机自动关 EEE, 删文件即回退
     hook = ("#!/bin/sh\n"
             "# EEE off: RTL8168 EEE with 100M partner causes link flaps (2026-10-21)\n"
@@ -120,47 +122,21 @@ def dog_eee_guard(c, robot_ip, dog_pw):
              "&& echo EEE_PERSIST_INSTALLED; }; "
              "ethtool --show-eee eth0 2>/dev/null | grep -q 'EEE status: enabled' "
              "&& echo EEE_STILL_ENABLED || echo EEE_DISABLED_OK" % hook_b64)
+    td = None
     try:
-        sh = c.invoke_shell(width=200)
-        time.sleep(1.0)
-        if sh.recv_ready():
-            sh.recv(65536)                      # 丢登录 banner
-        sh.send("stty -echo\n")                 # 关回显: 标记词判断不被命令文本污染
-        time.sleep(0.5)
-        if sh.recv_ready():
-            sh.recv(65536)
-        sh.send("ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=5 root@%s\n" % robot_ip)
-        buf, dl = "", time.time() + 12
-        while time.time() < dl:                 # 等密码提示(狗可达)或超时(没开机)
-            time.sleep(0.4)
-            if sh.recv_ready():
-                buf += sh.recv(65536).decode("utf-8", "replace")
-            if _re.search(r"[Pp]assword", buf):
-                break
-        if not _re.search(r"[Pp]assword", buf):
-            print("EEE 自检: 狗 %s SSH 不可达(没开机/不在网), 跳过 —— 换狗/重置后记得确认 EEE 已关"
-                  % robot_ip)
-            sh.close()
+        tb = c.get_transport()
+        if tb is None:
+            print("EEE 自检: 板子连接已断, 跳过")
             return
-        sh.send(dog_pw + "\n")
-        time.sleep(2.5)
-        if sh.recv_ready():
-            sh.recv(65536)
-        sh.send("stty -echo\n")                 # 狗端 pty 同样关回显
-        time.sleep(0.5)
-        if sh.recv_ready():
-            sh.recv(65536)
-        sh.send(probe + " ; echo EEE_PROBE_END\n")
-        out, dl = "", time.time() + 25
-        while time.time() < dl:
-            time.sleep(0.4)
-            if sh.recv_ready():
-                out += sh.recv(65536).decode("utf-8", "replace")
-            if "EEE_PROBE_END" in out:
-                break
-        sh.send("exit\nexit\n")
-        time.sleep(0.3)
-        sh.close()
+        chan = tb.open_channel("direct-tcpip", (robot_ip, 22), ("127.0.0.1", 0), timeout=8)
+        td = paramiko.Transport(chan)
+        td.start_client(timeout=10)
+        td.auth_password("root", dog_pw)
+        s = td.open_session()
+        s.settimeout(20)
+        s.exec_command(probe)
+        out = s.makefile("rb", 8192).read().decode("utf-8", "replace")
+        s.close()
         if "EEE_FIX_APPLIED" in out:
             print("EEE 自检: 狗侧 EEE 原来开着, 已关闭")
         if "EEE_PERSIST_INSTALLED" in out:
@@ -172,7 +148,11 @@ def dog_eee_guard(c, robot_ip, dog_pw):
         else:
             print("EEE 自检: 输出异常(狗上缺 ethtool?), 人工确认. 输出片段: %r" % out[-200:])
     except Exception as e:
-        print("EEE 自检异常(不影响部署): %r" % e)
+        print("EEE 自检: 狗 %s 不可达(没开机/不在网)或认证失败, 跳过(%r) —— 换狗/重置后记得确认 EEE 已关"
+              % (robot_ip, e))
+    finally:
+        if td is not None:
+            td.close()
 
 
 def main():
@@ -262,6 +242,19 @@ def main():
         print("check-only 结束: %s" % ("全部一致" if not diff else "待更新 %d 个文件" % len(diff)))
         c.close()
         return
+
+    # ---- EEE 守卫注册(2026-11-02): 必须 atexit, 任何出口都要跑 ----
+    # 教训: 守卫原先排在硬失败 exit 之后, 新狗首部署 /logs 误判硬失败 -> exit 跳过守卫
+    # -> EEE 漏网 -> 链路闪断。守卫与部署成败无关, 失败的部署恰恰也需要兜底检查。
+    def _eee_on_exit():
+        try:
+            _dog_eee_tail(c, src)
+        finally:
+            try:
+                c.close()
+            except Exception:
+                pass
+    atexit.register(_eee_on_exit)
 
     # ---- 上传 + 校验 ----
     # core/ 与 static/ 子目录: sftp.put 不会自动建目录(全新板子首次部署会裸炸)
@@ -404,7 +397,19 @@ def main():
     if au.get("ready") is not True:
         warns.append("audio.ready=%r (看 journalctl -u go2-audio)" % au.get("ready"))
 
-    # ---- 狗 EEE 自检(2026-10-24): 部署时顺带确保狗侧 EEE 关闭(经板子二级跳, best-effort) ----
+    if "Traceback" in out:
+        sys.exit("启动日志有异常, 人工确认!")
+    print("烧录完成 ✓  (App 侧: 对应版本的 PaSend APK 装上 G12 即可)")
+    if warns:   # 醒目 WARN 放最后: 子系统异常不判失败, 但不能被"完成"字样盖过去
+        print("!" * 64)
+        for w in warns:
+            print("!! WARN " + w)
+        print("!" * 64 + "  代码已部署, 但上述子系统异常, 需人工确认")
+    # EEE 守卫与 c.close() 由 atexit 注册的 _eee_on_exit 收尾(见前文注册处)
+
+
+def _dog_eee_tail(c, src):
+    """部署尾部 EEE 守卫(由 main 里注册的 atexit 触发, 部署成败任何出口都跑)。"""
     # 狗密码: 环境变量 DOG_PW 优先, 否则读本机 credentials.md 的"狗 SSH"条目(需要时读取, 不外传)
     robot_ip = "192.168.123.161"
     try:
@@ -425,16 +430,6 @@ def main():
         dog_eee_guard(c, robot_ip, dog_pw)
     else:
         print("EEE 自检: 无狗密码(DOG_PW 未设且读不到 credentials.md), 跳过")
-
-    c.close()
-    if "Traceback" in out:
-        sys.exit("启动日志有异常, 人工确认!")
-    print("烧录完成 ✓  (App 侧: 对应版本的 PaSend APK 装上 G12 即可)")
-    if warns:   # 醒目 WARN 放最后: 子系统异常不判失败, 但不能被"完成"字样盖过去
-        print("!" * 64)
-        for w in warns:
-            print("!! WARN " + w)
-        print("!" * 64 + "  代码已部署, 但上述子系统异常, 需人工确认")
 
 
 if __name__ == "__main__":

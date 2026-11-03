@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-"""全链路软件仿真(无需硬件): 合成遥控时序 -> rc_loop 状态机 -> Dog 指令桩
+"""全链路软件仿真(无需硬件): 合成遥控时序 -> rc_loop -> FsmActive/DogFsm(现役路径) -> 指令桩
 覆盖: 边沿解锁/重锁、站趴模式、三档步态+分挡限速、Move 流、B 键动作、失控保护、恢复再解锁
+(旧 Dog 路径已删, ADR-0004; 断言语义与旧版逐条等价)
 用法: .venv/bin/python test_link_sim.py   (不碰真实串口, 不向狗发指令)
 """
 import threading
@@ -19,7 +20,7 @@ SCRIPT = [
     (1.0, {'A': 1722}),            # 翻上 -> 此刻才允许解锁(此时 C 在趴位)
     (5.5, {'C': 1722}),            # C 站 -> 起立(过了 5s 起立保护期)
     (6.1, {'G': 1722}),            # 挡3 -> TrotRun
-    (6.7, {'P': 1722}),            # 前后杆推满(挡3 限速 2.5; BalanceStand 后生效)
+    (6.7, {'P': 1722}),            # 前后杆推满(挡3 限速 x=-3.0; BalanceStand 后生效)
     (9.1, {'P': 1002}),            # 回中 -> StopMove
     (9.7, 'STOP'),                 # 信号中断 -> 失控保护
     (11.7, {'A': 1002}),           # 信号恢复, A 在下位
@@ -32,11 +33,10 @@ SCRIPT = [
 
 
 class StubLink:
-    """Dog 发送桩: 只记录, 不出门"""
+    """FSM 指令桩(send 注入 FsmActive): 只记录, 不出门"""
 
     def __init__(self):
         self.cmds = []
-        self.loop = True   # 探针判据同 DogLink(loop+state.link): 缺了影子恒判链路断
 
     def submit(self, name, **p):
         self.cmds.append((name, dict(p)))
@@ -102,10 +102,11 @@ def wait_until(fn, timeout, what):
 
 def main():
     stub = StubLink()
-    dog = bridge.Dog(stub, now=time.monotonic())   # 传锚点: 启用互锁+起立保护期(10-20)
     state = bridge.state
     state.link = 'up'
     state.link_gen = 0
+    dog = bridge.FsmActive(stub, now=time.monotonic())   # 传锚点: 启用互锁+起立保护期(10-20)
+    bridge._ACTIVE = dog                       # 现役唯一执行句柄(main 同款接线)
     bridge.config.FS_DAMP_S = 1.5              # 仿真缩短真失联判定(真机30s), 代码路径相同
     bridge.config.STAND_TIMEOUT_S = 1.0        # 仿真缩短无遥测兜底(真机6s), 代码路径相同
     bridge.Sbus = FakeSbus                     # 注入仿真串口

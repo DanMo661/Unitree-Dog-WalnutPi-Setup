@@ -20,15 +20,7 @@ G12遥控器 ──2.4G──► G12接收机 ──SBUS──► [反相] ─�
 | 接收机供电 | 先确认型号：R12 类(4.5–5.5V) 从板子 5V 取电；GR01 类(7.2–72V XT30) 需 5V→12V 升压模块 |
 | USB-TTL（备选） | 必须支持非标 100000 波特率：CP2102/FT232 稳；接 24pin 扩展板的 USB-A |
 
-> 文档分工：使用=本文件；部署流程总览=仓库根 README；分阶段技术坑=SOP.md。
-
-## 目录里什么是什么
-
-- **板上运行集**（`go2-bridge.service`/`go2-audio.service` 实际加载）：`bridge.py` `config.py` `sbus.py` `servo.py` `pa.py` `pa_recv.py` `netrc.py` `journal.py` `languard.py` + `core/` `static/`
-- **装机/部署工具**（PC 上跑，把上面那排送上板子）：`setup3_dog3.py`（全新装机）→ `setup2_extras.py`（SDK 库/音频/权限）→ `deploy_page.py`（App 安装页）；日常改代码用 `deploy_pc.py`
-- **标定/诊断**：`calibrate.py`（通道标定采样，SOP §5.1）、`sbus_monitor.py`（SBUS 实时帧流）、`board_wifi_setup.py`（WiFi 双档案）
-- **离线测试**：`test_*.py`（PC 上 `python run_test_shim.py test_xxx.py`；`test_pa_v3.py` 需板子在线，离线跑必然 FAIL，不算回归）
-- **历史归档**：`legacy/`（不参与运行，仅存档）
+> 文档分工：使用=本文件；约定/基线=CLAUDE.md；架构=ARCHITECTURE.md；改造清单=OPTIMIZATION.md；台账=TODO.md。
 
 ## 接线
 
@@ -62,7 +54,7 @@ BRIDGE_USER=pi BRIDGE_PW=<板子密码> python deploy_page.py
    注意手机 App 一次只允许一个客户端，测试时 App 要退掉。
 3. **联调**：架空或空旷平地；RC 解锁 → 三段开关试 趴/站/走 → 摇杆（限速 0.5 内）。方向反了改
    `config.py` 通道号取负思路见 CLAUDE.md。
-4. **失控测试**：运动中关遥控器 → SBUS 线 0.25s 停走站定（App 网络源 ≈0.55s），30s 真失联上锁保持姿态不趴下（仅 A 键主动上锁/网页退出才趴）。**每次改代码后必测。**
+4. **失控测试**：运动中关遥控器 → SBUS 线 0.25s 停走站定（App 网络源 ≈0.55s），30s 真失联上锁保持姿态不趴下；仅 A 键主动上锁才趴，网页退出=解除控制+停走保持姿态。**每次改代码后必测。**
 5. **自启**：见下。
 
 ## systemd 自启（懒启动设计，无狗无接收机也不影响开机）
@@ -83,4 +75,5 @@ journalctl -u go2-bridge -f        # 看日志
 - `TRICK <名>`：App 动作面板 → 狗做花样动作。回包 `OK TRICK <名> <秒>` / `ERR LINKDOWN`(狗离线) / `ERR NOTSTAND`(未解锁/非行走/动作占用中) / `ERR BADTRICK`(白名单外) / `ERR NOTREADY`。
   配乐由**板端**联动（config.TRICK_AUDIO，动作成功才播、换动作自动切、对讲中自动跳过）；App 只发 TRICK 一条。
 - `BIRD ULTRA|STROBE 0|1`：驱鸟占位协议，回包 `OK BIRD <子> <0|1>` / `ERR BADBIRD`（硬件待接）。
+- `RC`：App 手动页/探活轮询 → 回 `RC <arm 0|1> <mode 0-3> <gear|None> [电量%|-1] [新鲜 0|1]`（10-31 起追加最后两字段，老客户端自动忽略；电量未知 = `-1`；`新鲜=0` 表示离狗数据已停更，客户端须按未知处理）。
 - 动作白名单与时长在 config.TRICKS（时长=占用锁，宁长勿短）；App 面板的显示表须与之一致——**改时长需板端+App 同步升版**。

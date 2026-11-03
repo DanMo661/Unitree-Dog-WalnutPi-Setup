@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-"""test_fsm_mode.py —— FSM 执行开关(T3.4)三用例的仿真验证(shadow/active/webface 调用面契约)
+"""test_fsm_mode.py —— FSM 执行面(active/webface 调用面契约)的仿真验证
 
-验证目标: 同一段遥控时序下, 指令到底由哪条路径产生(下发来源), 且两路互斥:
-  shadow  : 旧 rc_loop/Dog 真实下发; DogFsm 影子只比对(FSM 独有的指令不得出现在链路上)
-  active  : DogFsm 真实下发; 旧 Dog/rc_loop 一次都不执行
-做法: 给两条路径各埋一个对方不可能产生的哨兵 —— 旧路径 set_gear 发 LEGACY_MARK,
-FSM set_gear 发 FSM_ONLY_MARK, 再看桩链路收到了谁。
+验证目标(ADR-0004 删旧路径后): DogFsm 经 FsmActive 是唯一指令源 ——
+  active  : FSM 真实下发且不重复; state.mode/rc_armed/继电器镜像正确
+  webface : web_server 对 d 的全部调用面(hold/set_mode/web_cmd/trick/...)在 FsmActive 上成立
+做法: 给 FSM set_gear 埋一个 FSM_ONLY_MARK 哨兵, 哨兵到桩链路即证明 FSM 在下发,
+且只出现一次(无双路重复下发)。
 
-两个模式各起一个子进程(各自一个 rc_loop 线程), 避免同一进程里两条 20Hz 循环互相踩。
+两个用例各起一个子进程(各自一个 rc_loop 线程), 避免同一进程里两条 20Hz 循环互相踩。
 用法: python run_test_shim.py test_fsm_mode.py   (或 python test_fsm_mode.py)
 """
 import os
@@ -87,74 +87,31 @@ def names(stub):
 
 
 def install_sentinels():
-    """给两条路径各埋哨兵: 谁的哨兵到桩链路, 就是谁在下发"""
-    import bridge
+    """给 FSM 步态出口埋哨兵: 哨兵到桩链路即证明 FSM 在下发(且可数次数)"""
     import core.fsm
-
-    orig_gear = bridge.Dog.set_gear
-
-    def legacy_gear(self, g):
-        self.link.submit("LEGACY_MARK")
-        return orig_gear(self, g)
 
     def fsm_gear(self, g):
         return [("submit", "FSM_ONLY_MARK", {})]
 
-    bridge.Dog.set_gear = legacy_gear
     core.fsm.DogFsm.set_gear = fsm_gear
 
-    # 仿真缩短时间常数(两侧同用一套 config, 等价路径)
+    # 仿真缩短时间常数(读同一套 config, 等价路径)
+    import bridge
     bridge.config.STAND_GUARD_S = 0.05
     bridge.config.MODE_DWELL_S = 0.05
     bridge.config.STAND_TIMEOUT_S = 0.5
 
 
-def run_shadow():
-    import bridge
-    print("== shadow: 旧路径执行 + FSM 影子只比不发 ==")
-    bridge.config.FSM_MODE = "shadow"
-    bridge.config.FSM_SHADOW = True
-    bridge._SHADOW = bridge._ACTIVE = None
-    install_sentinels()
-
-    stub = StubLink()
-    dog = bridge.Dog(stub, now=time.monotonic())
-    bridge.state.link = "up"
-    bridge.state.link_gen = 1
-    dog.reset()                       # 模拟 DogLink 首连回调: 无遥测回落 mode=1
-    ok(dog.mode == 1, "旧 Dog 首连回落站立")
-
-    bridge.Sbus = FakeSbus
-    threading.Thread(target=bridge.rc_loop, args=(dog, None), daemon=True).start()
-
-    wait_until(lambda: bridge._SHADOW is not None, 2, "影子对象创建")
-    ok(isinstance(bridge._SHADOW, bridge.FsmShadow), "shadow 模式建的是 FsmShadow")
-    ok(bridge._ACTIVE is None, "shadow 模式无 FsmActive")
-    wait_until(lambda: "LEGACY_MARK" in names(stub), 5, "旧路径真实下发")
-    wait_until(lambda: bridge._SHADOW.fsm.gear_sent == 1, 2, "影子吃到同样事件")
-    time.sleep(0.2)
-
-    got = names(stub)
-    ok("FSM_ONLY_MARK" not in got, "影子 FSM 的指令没有下发(只比不发)")
-    ok(got.count("LEGACY_MARK") == 1, "旧路径只下发一次(无双路重复)")
-    ok("FreeWalk" in got, "旧路径按挡位1 真实发步态(10-21 起挡1=FreeWalk)")
-    ok(bridge.state.mode == 2, "state.mode 镜像到走模式")
-    ok(bridge.state.rc_armed is True, "state.rc_armed 镜像已解锁")
-    ok(bridge._SHADOW.fsm.mode == 2, "影子 FSM 同步到走模式")
-
-
 def run_active():
     import bridge
-    print("== active: FSM 执行, 旧路径停用 ==")
-    bridge.config.FSM_MODE = "active"
-    bridge.config.FSM_SHADOW = True   # 故意开着: active 必须压过影子开关, 不建影子
-    bridge._SHADOW = bridge._ACTIVE = None
+    print("== active: FSM 执行(唯一指令源) ==")
+    bridge.config.FSM_MODE = "active"   # 留档字段: 生产零读取方(旧路径已删, ADR-0004)
+    bridge._ACTIVE = None
     install_sentinels()
 
     stub = StubLink()
-    dog, sh = bridge._make_controller(stub, time.monotonic())
+    dog = bridge._make_controller(stub, time.monotonic())
     ok(isinstance(dog, bridge.FsmActive), "active 模式构造的是 FsmActive")
-    ok(sh is None, "active 模式不建影子(与 FSM_SHADOW=True 互斥)")
     bridge._ACTIVE = dog
     bridge.state.link = "up"
     bridge.state.link_gen = 1
@@ -169,14 +126,12 @@ def run_active():
     time.sleep(0.2)
 
     got = names(stub)
-    ok("LEGACY_MARK" not in got, "旧 Dog 路径未执行(旧路径已停用)")
     ok(got.count("FSM_ONLY_MARK") == 1, "FSM 指令只下发一次(无双路重复)")
-    ok(bridge._SHADOW is None, "active 模式没有影子对象")
+    ok(bridge._ACTIVE is dog, "唯一执行句柄是 FsmActive")
     ok(bridge.state.mode == 2, "state.mode 镜像到走模式")
     ok(bridge.state.rc_armed is True, "state.rc_armed 镜像已解锁")
     ok(bridge.state.relay_us == 1050 and bridge.state.relay_on is False,
        "FSM 继电器安全位落地(state 镜像)")
-    ok(bridge._SHADOW is None and bridge._ACTIVE is dog, "唯一执行句柄是 FsmActive")
 
 
 def run_web_interface():
@@ -185,9 +140,9 @@ def run_web_interface():
     hold 正漏在这条缝里(关网页钩子半途夭折, FSM 收不到 closed, 残留杆量被 tick 持续下发)。"""
     import bridge
     print("== active: web_server 调用面契约 ==")
-    bridge.config.FSM_MODE = "active"
-    bridge._SHADOW = bridge._ACTIVE = None
-    dog, _ = bridge._make_controller(StubLink(), time.monotonic())
+    bridge.config.FSM_MODE = "active"   # 留档字段: 生产零读取方(旧路径已删, ADR-0004)
+    bridge._ACTIVE = None
+    dog = bridge._make_controller(StubLink(), time.monotonic())
     for name in ("hold", "set_mode", "web_cmd", "trick", "rising", "rise_t",
                  "reset", "link_poll", "frame", "tick", "safety",
                  "serial_reopened", "serial_offline"):
@@ -204,9 +159,7 @@ def run_web_interface():
 
 
 def run_case(case):
-    if case == "shadow":
-        run_shadow()
-    elif case == "active":
+    if case == "active":
         run_active()
     elif case == "webface":
         run_web_interface()
@@ -218,20 +171,11 @@ def run_case(case):
     print("用例通过:", case)
 
 
-def check_switch_helper():
-    """_fsm_mode 的取值/回落(默认 active, 10-31 shadow 零差异过门后翻转;
-    旧名 live/拼错一律回落旧路径=安全方向)"""
+def check_default():
+    """仓库默认 FSM_MODE=active(10-31 shadow 零差异过门后翻转; 旧路径已删 ADR-0004)"""
     import bridge
-    print("== FSM_MODE 取值与回落 ==")
+    print("== FSM_MODE 默认值 ==")
     ok(bridge.config.FSM_MODE == "active", "仓库默认 FSM_MODE=active(10-31 翻转)")
-    ok(bridge._fsm_mode() == "active", "默认解析为 active")
-    bridge.config.FSM_MODE = "ACTIVE"
-    ok(bridge._fsm_mode() == "active", "大小写不敏感")
-    bridge.config.FSM_MODE = "live"
-    ok(bridge._fsm_mode() == "shadow", "旧名 live 回落 shadow(失败方向=旧路径)")
-    bridge.config.FSM_MODE = "shadow"
-    ok(bridge._fsm_mode() == "shadow", "shadow 原样识别")
-    bridge.config.FSM_MODE = "active"
 
 
 def main():
@@ -239,9 +183,9 @@ def main():
     if case:
         run_case(case)
         return
-    check_switch_helper()
+    check_default()
     rc_all = 0
-    for c in ("shadow", "active", "webface"):
+    for c in ("active", "webface"):
         env = dict(os.environ, FSM_MODE_CASE=c)
         r = subprocess.run([sys.executable,
                             os.path.join(HERE, "run_test_shim.py"),
@@ -252,7 +196,7 @@ def main():
     if FAILS or rc_all:
         print("test_fsm_mode: FAIL")
         raise SystemExit(1)
-    print("test_fsm_mode: 三用例(shadow/active/webface)全部通过")
+    print("test_fsm_mode: 两用例(active/webface)全部通过")
 
 
 if __name__ == "__main__":

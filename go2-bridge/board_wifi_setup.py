@@ -81,8 +81,8 @@ def run(cli, pw, cmd, timeout=60, check=False):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--hotspot-ssid", required=True)
-    ap.add_argument("--hotspot-psk", required=True)
+    ap.add_argument("--hotspot-ssid", default="", help="手机热点名(兜底档案, 可省)")
+    ap.add_argument("--hotspot-psk", default="", help="手机热点密码(兜底档案, 可省)")
     ap.add_argument("--home-ssid", default=HOME_SSID,
                     help="现场主WiFi名(公司/家里), 也可用环境变量 HOME_SSID")
     ap.add_argument("--home-ip", default="192.168.8.51",
@@ -90,8 +90,7 @@ def main():
     ap.add_argument("--host", default=os.environ.get("BRIDGE_HOST", "192.168.123.50"))
     ap.add_argument("--pw", default=os.environ.get("BRIDGE_PW", "pi"))
     a = ap.parse_args()
-    HOME_SSID = a.home_ssid
-    if not HOME_SSID or not HOME_PSK:
+    if not a.home_ssid or not HOME_PSK:
         sys.exit("缺 --home-ssid / HOME_PSK(主WiFi密码): 主WiFi档案没法建")
     cli = paramiko.SSHClient()
     cli.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -124,19 +123,22 @@ def main():
 
     print("== 3. 建两个连接档案 ==")
     P("sudo -S nmcli connection delete home 2>/dev/null; sudo -S nmcli connection delete hotspot 2>/dev/null; true")
-    P(f"sudo -S nmcli connection add type wifi ifname wlan0 con-name home ssid '{HOME_SSID}' "
+    P(f"sudo -S nmcli connection add type wifi ifname wlan0 con-name home ssid '{a.home_ssid}' "
       f"wifi-sec.key-mgmt wpa-psk wifi-sec.psk '{HOME_PSK}' "
       f"ipv4.method manual ipv4.addresses {a.home_ip}/24 "
       f"ipv4.gateway 192.168.8.1 ipv4.dns '192.168.8.1 223.5.5.5' "
       f"ipv6.method auto connection.autoconnect yes connection.autoconnect-priority 10 "
       f"connection.autoconnect-retries 0 "
       f"wifi.powersave 2", check=True)
-    P(f"sudo -S nmcli connection add type wifi ifname wlan0 con-name hotspot ssid '{a.hotspot_ssid}' "
-      f"wifi-sec.key-mgmt wpa-psk wifi-sec.psk '{a.hotspot_psk}' "
-      f"ipv4.method auto ipv6.method auto "
-      f"connection.autoconnect yes connection.autoconnect-priority 5 "
-      f"connection.autoconnect-retries 0 "
-      f"wifi.powersave 2", check=True)
+    if a.hotspot_ssid and a.hotspot_psk:   # 兜底档案: 没给凭据就跳过(主 WiFi 独立可用)
+        P(f"sudo -S nmcli connection add type wifi ifname wlan0 con-name hotspot ssid '{a.hotspot_ssid}' "
+          f"wifi-sec.key-mgmt wpa-psk wifi-sec.psk '{a.hotspot_psk}' "
+          f"ipv4.method auto ipv6.method auto "
+          f"connection.autoconnect yes connection.autoconnect-priority 5 "
+          f"connection.autoconnect-retries 0 "
+          f"wifi.powersave 2", check=True)
+    else:
+        print("    未给热点凭据, 兜底档案跳过")
 
     print("== 4. 装看门狗 ==")
     sftp = cli.open_sftp()

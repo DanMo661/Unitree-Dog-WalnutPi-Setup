@@ -3,6 +3,7 @@
   1) _guarded_consume 的两种拆会话路径(看门狗/接收循环退出)
   2) P0-4 重连对账: 每次 reset 用新鲜高度 + 滞回对账本地 mode, 不对已站立的狗
      发 StandUp; 中间区不臆测; 未完成的起立流程取消且不补 BalanceStand
+     (现役控制器 FsmActive/DogFsm; 旧 Dog 已删, ADR-0004)
 用法: python test_reconnect_sim.py
 """
 import asyncio
@@ -12,7 +13,7 @@ import bridge
 
 
 class StubLink:
-    """Dog 发送桩: 只记录是否入队成功"""
+    """FSM 指令桩(send 注入 FsmActive): 只记录是否入队成功"""
 
     def __init__(self):
         self.cmds = []
@@ -37,65 +38,65 @@ def reconcile_cases():
 
     # 1) 本地 mode=2(陈旧)但狗重连后趴着(h=0.10) -> 对账回 0
     stub = StubLink()
-    d = bridge.Dog(stub, now=0.0)
-    d.mode = 2
+    d = bridge.FsmActive(stub, now=0.0)
+    d.fsm.mode = 2
     state.link_gen = 2
     fresh(0.10)
     d.reset()
-    assert d.mode == 0, "重连后狗趴着, 本地 mode 必须对账回 0(否则摇杆发给趴狗)"
+    assert d.fsm.mode == 0, "重连后狗趴着, 本地 mode 必须对账回 0(否则摇杆发给趴狗)"
     assert names(stub) == ["StopMove"], names(stub)
     assert state.mode == 0
 
     # 2) 本地 mode=0 但狗站着(h=0.30) -> 对账到 1, 且不补 StandUp;
     #    C 上位补同步 1->2 也只发 StopMove, 绝不对已站立的狗发 StandUp
     stub = StubLink()
-    d = bridge.Dog(stub, now=0.0)
-    d.mode = 0
+    d = bridge.FsmActive(stub, now=0.0)
+    d.fsm.mode = 0
     state.link_gen = 3
     fresh(0.30)
     d.reset()
-    assert d.mode == 1, "重连后狗站着, 本地 mode 必须对账为 1"
+    assert d.fsm.mode == 1, "重连后狗站着, 本地 mode 必须对账为 1"
     assert "StandUp" not in names(stub), "重连不得对已站立的狗发 StandUp"
-    assert d.set_mode(2, now=time.monotonic()) is True
+    assert d.set_mode(2) is True
     assert names(stub) == ["StopMove", "StopMove"], names(stub)
     assert "StandUp" not in names(stub) and "BalanceStand" not in names(stub)
 
     # 3) 滞回中间区(h=0.20)不臆测: mode 保持, 等下一包; 下一包 0.32 -> 1
     stub = StubLink()
-    d = bridge.Dog(stub, now=0.0)
-    d.mode = 2
+    d = bridge.FsmActive(stub, now=0.0)
+    d.fsm.mode = 2
     state.link_gen = 4
     fresh(0.20)
     d.reset()
-    assert d.mode == 2, "中间区不得臆测改写本地 mode"
-    assert d._sync_pending is True, "中间区应保留对账未决, 等下一包"
+    assert d.fsm.mode == 2, "中间区不得臆测改写本地 mode"
+    assert d.fsm._sync_pending is True, "中间区应保留对账未决, 等下一包"
     fresh(0.32)
-    d.tick()
-    assert d.mode == 1, "下一包高度决定性后才对账"
-    assert d._sync_pending is False
+    d.tick(time.monotonic())
+    assert d.fsm.mode == 1, "下一包高度决定性后才对账"
+    assert d.fsm._sync_pending is False
 
     # 4) reset 取消未完成的起立(rising)且不补 BalanceStand
     stub = StubLink()
-    d = bridge.Dog(stub, now=0.0)
-    d.mode = 2
-    d.rising = True
-    d.rise_t = time.monotonic() - 1.0
-    d.rise_deadline = time.monotonic() + 5.0
+    d = bridge.FsmActive(stub, now=0.0)
+    d.fsm.mode = 2
+    d.fsm.rising = True
+    d.fsm.rise_t = time.monotonic() - 1.0
+    d.fsm.rise_deadline = time.monotonic() + 5.0
     state.link_gen = 5
     fresh(0.30)
     d.reset()
-    assert d.rising is False, "重连必须取消未完成的起立流程"
+    assert d.fsm.rising is False, "重连必须取消未完成的起立流程"
     assert "BalanceStand" not in names(stub), "重连不得补发 BalanceStand(会把半起的狗弹起)"
 
     # 5) 无有效高度: 重连保持原 mode, 对账挂起等遥测(不假定, 不发 StandUp)
     stub = StubLink()
-    d = bridge.Dog(stub, now=0.0)
-    d.mode = 2
+    d = bridge.FsmActive(stub, now=0.0)
+    d.fsm.mode = 2
     state.link_gen = 6
     bridge.state.dog_height = None
     bridge.state.dog_state_t = None
     d.reset()
-    assert d.mode == 2 and d._sync_pending is True
+    assert d.fsm.mode == 2 and d.fsm._sync_pending is True
     assert "StandUp" not in names(stub)
 
     # 6) 有效高度范围校验: 超出 0.05~0.5 的离谱值不采信

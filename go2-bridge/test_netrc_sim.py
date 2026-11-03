@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-"""网络遥控全链路仿真(无需硬件): App UDP 通道流 -> netrc -> rc_loop 状态机 -> Dog 指令桩
+"""网络遥控全链路仿真(无需硬件): App UDP 通道流 -> netrc -> rc_loop -> FsmActive/DogFsm(现役路径) -> 指令桩
 覆盖: 网络流优先于SBUS线 / App停发300ms后回退SBUS线 / 回退后实体遥控可重新接管 /
       全网断走失控保护 / 挡位同步 / net_ok 链路灯数据
+(旧 Dog 路径已删, ADR-0004; 断言语义与旧版逐条等价)
 用法: python run_test_shim.py test_netrc_sim.py   (不碰真实串口, 不向狗发指令)
 """
 import json
@@ -54,9 +55,10 @@ def chans(script, t, default_c_down=True):
 
 
 class StubLink:
+    """FSM 指令桩(send 注入 FsmActive): 只记录, 不出门"""
+
     def __init__(self):
         self.cmds = []
-        self.loop = True   # 探针判据同 DogLink(loop+state.link): 缺了影子恒判链路断
 
     def submit(self, name, **p):
         self.cmds.append((time.monotonic(), name, dict(p)))
@@ -119,10 +121,11 @@ def wait_until(fn, timeout, what):
 
 def main():
     stub = StubLink()
-    dog = bridge.Dog(stub, now=time.monotonic())   # 传锚点: 启用互锁+起立保护期(10-20)
     state = bridge.state
     state.link = 'up'
     state.link_gen = 0
+    dog = bridge.FsmActive(stub, now=time.monotonic())   # 传锚点: 启用互锁+起立保护期(10-20)
+    bridge._ACTIVE = dog                       # 现役唯一执行句柄(main 同款接线)
     bridge.config.FS_DAMP_S = 1.5              # 仿真缩短真失联判定(真机30s), 代码路径相同
     bridge.config.STAND_TIMEOUT_S = 1.0        # 仿真缩短无遥测兜底(真机6s), 代码路径相同
     bridge.Sbus = FakeSbus                     # 注入物理线桩

@@ -164,21 +164,18 @@ MOVE_TTL_S    = 1.0       # Move 入队后超过此秒数未发出即丢弃(摇�
 NONMOVE_TTL_S = 3.0       # 非 Move 入队后超过此秒数未发出即丢弃(防迟到大动作)
 
 # ---- FSM 状态机接线(P0-3 / T1.3 影子模式 / T3.4 执行开关) ----
-# FSM_MODE 是执行开关, 两条路径互斥, 同一时刻只有一条会向狗下发指令:
-#   "shadow" = 现行为: 旧 rc_loop/Dog 执行, DogFsm(core/fsm.py) 影子比对(只比不发);
-#   "active" = 新状态机: DogFsm 产生实际指令, 旧 Dog/rc_loop 控制路径停用。
-# 真机验证由主代理按用户节奏执行; 2026-10-31 下午 shadow 零差异 34min 过门, 翻 active。
+# 旧控制路径(旧 rc_loop/Dog/FsmShadow)2026-10-31 已删(ADR-0004): DogFsm active 是唯一
+# 执行路径。以下两个字段暂留防板上旧 config_local 报 AttributeError, 已无读取方; 下版本移除。
 FSM_MODE   = "active"
-FSM_SHADOW = True     # 仅 shadow 模式生效: True = 建影子逐帧对照(输出只比不发, 差异记
-                      # "FSM 差异" + journal); False = 完全不建影子(零行为零开销)。
-                      # active 模式忽略本开关(active 自身就是执行路径, 不会另建影子)
+FSM_SHADOW = True     # 旧路径 2026-10-31 已删(ADR-0004), 字段暂留防板上旧 config_local
+                      # 报 AttributeError, 无读取方; 下版本移除。
 
 # ---- 板级差异覆盖(config_local.py 不进 git) ----
 # 板上按需放 config_local.py: OVERRIDES = {"PA_STEREO": False, ...}
 # 只允许覆盖本文件已定义的白名单键(全部大写常量), 未定义键忽略, 防手滑拼错静默生效。
 _BASE_KEYS = frozenset(k for k in globals() if k.isupper())
-_DENY_KEYS = frozenset({"FSM_MODE"})   # 执行开关不进板级差异: 切 active 必须走
-                                       # 主仓 config + 影子零差异 -> 真机验证流程(CLAUDE.md)
+_DENY_KEYS = frozenset({"FSM_MODE"})   # 执行开关不进板级差异(旧路径已删后字段无读取方,
+                                       # 随条目一并暂留, 下版本移除)
 try:
     import config_local
 except ImportError as _e:

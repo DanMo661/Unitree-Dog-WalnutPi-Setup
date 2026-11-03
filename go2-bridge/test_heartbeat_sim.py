@@ -6,6 +6,7 @@ import asyncio
 import time
 
 import bridge
+import link as _link   # 别名导入: fresh_link 内局部变量 link 会遮蔽模块名
 
 
 class FakePubSub:
@@ -29,8 +30,9 @@ def fresh_link(delay):
     bridge.config.HEARTBEAT_TIMEOUT = 0.1  # 真机 4s
     bridge.config.HEARTBEAT_MISS = 2
     # 本地没装 unitree_webrtc_connect 时这两个常量不存在(板上由真库导入), 测试注入桩值
-    bridge.SPORT_CMD_MCF = {"GetSpeedLevel": 1026}
-    bridge.RTC_TOPIC = {"SPORT_MOD": "lf/test"}
+    # (拆分后 DogLink 在 link.py, 桩必须打到定义处才生效)
+    _link.SPORT_CMD_MCF = {"GetSpeedLevel": 1026}
+    _link.RTC_TOPIC = {"SPORT_MOD": "lf/test"}
     link = bridge.DogLink()
     link.conn = FakeConn(FakePubSub(delay))
     return link

@@ -15,7 +15,7 @@ IDX = {'A': 4, 'B': 5, 'C': 6, 'D': 8, 'G': 9, 'P': 1, 'R': 3, 'Y': 0}
 # 10-20 安全互锁: 起立放保护期(STAND_GUARD_S=5s)外, C 上沿距上次 StandDown >= 2s
 SCRIPT = [
     (0.0, {'A': 1002}),   # 上锁
-    (0.5, {'A': 1722}),   # 解锁#1: 狗站着(模拟开机首连 mode=1) -> 只补 BalanceStand, 不 StandUp
+    (0.5, {'A': 1722}),   # 解锁#1: 狗站着(模拟开机首连 mode=1) -> 同步不 StandUp(mode1→2 走 set_mode, 无补起立)
     (3.0, {'A': 1002}),   # 上锁: 狗趴下(StandDown)
     (3.5, {'A': 1722}),   # 解锁#2: C 还在上, 狗趴着 -> 不许弹起!(本次修复的核心断言)
     (3.8, {'G': 282}),    # 趴着切挡1 -> 只记账, 不发 FreeWalk
@@ -25,11 +25,10 @@ SCRIPT = [
 
 
 class StubLink:
-    """Dog 发送桩: 只记录, 不出门"""
+    """FSM 指令桩(send 注入 FsmActive): 只记录, 不出门"""
 
     def __init__(self):
         self.cmds = []
-        self.loop = True   # 探针判据同 DogLink(loop+state.link): 缺了影子恒判链路断
 
     def submit(self, name, **p):
         self.cmds.append((name, dict(p)))
@@ -78,11 +77,12 @@ def wait_until(fn, timeout, what):
 
 def main():
     stub = StubLink()
-    dog = bridge.Dog(stub, now=time.monotonic())   # 传锚点: 启用互锁+起立保护期(10-20)
-    dog.mode = 1                 # 模拟开机首连: 狗自己站着, 锁定等解锁(bridge reset() 行为)
     state = bridge.state
     state.link = 'up'
     state.link_gen = 0
+    dog = bridge.FsmActive(stub, now=time.monotonic())   # 传锚点: 启用互锁+起立保护期(10-20)
+    dog.fsm.mode = 1             # 模拟开机首连: 狗自己站着, 锁定等解锁(bridge reset() 行为)
+    bridge._ACTIVE = dog         # 现役唯一执行句柄(main 同款接线)
     bridge.config.STAND_TIMEOUT_S = 1.0   # 仿真缩短无遥测兜底(真机6s), 代码路径相同
     bridge.Sbus = FakeSbus        # 注入仿真串口
     pa = bridge.Pa(30, print)

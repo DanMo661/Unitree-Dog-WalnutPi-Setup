@@ -17,6 +17,7 @@ import json
 import time
 
 import bridge
+import link
 
 NAMES = {"StandUp": 1001, "StandDown": 1002, "BalanceStand": 1003,
          "StopMove": 1004, "Move": 1005, "Hello": 1006}
@@ -201,10 +202,10 @@ async def case_urgent_lock():
         assert ps.inflight == 1, ps.inflight
         put(link, "StandUp")                   # 队列里待发: 上锁后必须撤销
         put(link, "BalanceStand")              # 同上
-        d = bridge.Dog(link, now=0.0)
-        d.mode = 1                             # 本地站立
+        d = bridge.FsmActive(link, now=0.0)    # 现役控制器(旧 Dog 已删, ADR-0004)
+        d.fsm.mode = 1                         # 本地站立
         t0 = time.monotonic()
-        assert d.set_mode(0, now=t0) is True
+        assert d.set_mode(0) is True
         while time.monotonic() - t0 < 0.1:
             ns = [n for n, _ in ps.sent]
             if "StopMove" in ns and "StandDown" in ns:
@@ -238,8 +239,9 @@ async def _main_async():
 
 
 def main():
-    bridge.RTC_TOPIC = {"SPORT_MOD": "lf/test"}
-    bridge.SPORT_CMD_MCF = dict(NAMES)
+    # 本地没装 unitree_webrtc_connect, 注入桩值(拆分后 DogLink 在 link.py, 桩必须打到定义处)
+    link.RTC_TOPIC = {"SPORT_MOD": "lf/test"}
+    link.SPORT_CMD_MCF = dict(NAMES)
     case_submit_down()
     asyncio.run(_main_async())
     print("test_queue: 6 组断言全部通过")
