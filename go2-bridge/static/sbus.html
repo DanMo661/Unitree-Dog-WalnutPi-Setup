@@ -212,6 +212,32 @@ canvas{display:block;width:100%;max-width:100%;height:36px}
 /* 低电量警告条(仪表盘 SBUS状态上方, <20% 出现) */
 .lowbatt{font-size:13px;font-weight:600;color:#fff;background:var(--color-danger);
   border-radius:12px;padding:10px 14px;margin-bottom:14px;text-align:center}
+
+/* ==== 气体传感器页(2026-11-04): 槽位复用 chk-grid ==== */
+.chip.st-ok{background:#ECFDF5;color:#059669;border-color:#A7F3D0}
+.chip.st-warn{background:#FFFBEB;color:#D97706;border-color:#FDE68A}
+.chip.st-bad{background:#FEF2F2;color:#DC2626;border-color:#FECACA}
+.chip.st-dim{background:var(--bg-tertiary);color:var(--text-tertiary);border-color:var(--border-light)}
+.gbar{position:relative;height:14px;border-radius:999px;background:var(--bg-tertiary);
+  border:1px solid var(--border-light);margin:6px 0 4px;overflow:visible}
+.gbar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;
+  background:linear-gradient(90deg,#93C5FD,var(--color-primary));min-width:0;transition:width .6s}
+.gbar .mk{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--color-warning);border-radius:2px}
+.gbar .mk.hi{background:var(--color-danger)}
+.gbar-lab{display:flex;justify-content:space-between;font-size:11px;color:var(--text-tertiary);margin-bottom:10px}
+/* 控制源卡两列重排 */
+.kv-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
+.kv-grid2 .kvi{border:1px solid var(--border-light);border-radius:8px;
+  background:var(--bg-tertiary);padding:8px 10px;min-width:0}
+.kv-grid2 .kvi .k{font-size:11px;color:var(--text-secondary);margin-bottom:3px;white-space:nowrap}
+.kv-grid2 .kvi .v{font-size:13.5px;color:var(--text-primary);overflow-wrap:break-word}
+@media (max-width:640px){.kv-grid2{grid-template-columns:1fr}}
+/* 自检清单(设置页) */
+.chk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.chk-grid .ci{display:flex;align-items:center;gap:8px;font-size:12.5px;
+  border:1px solid var(--border-light);border-radius:8px;padding:7px 10px;background:var(--bg-tertiary);min-width:0}
+.chk-grid .ci .d{font-size:11px;color:var(--text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 </style>
 </head>
 <body>
@@ -226,6 +252,10 @@ canvas{display:block;width:100%;max-width:100%;height:36px}
     <div class="nav-item" data-page="channels">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h2.6l2-5 3.6 9.5 2.3-7 1.5 2.5H21"/></svg>
       <div>通道</div>
+    </div>
+    <div class="nav-item" data-page="gas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h9.5a2.5 2.5 0 1 0-2.4-3.2"/><path d="M3 12h14.5a2.5 2.5 0 1 1-2.4 3.2"/><path d="M3 16h7.5a2 2 0 1 1-1.9 2.6"/></svg>
+      <div>气体</div>
     </div>
     <div class="nav-item" data-page="logs">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="3.8" width="13" height="16.4" rx="2"/><path d="M9 9h6M9 12.6h6M9 16.2h3.5"/></svg>
@@ -277,16 +307,31 @@ canvas{display:block;width:100%;max-width:100%;height:36px}
       </div>
 
       <div class="card">
-        <div class="card-title">控制源</div>
-        <div class="kv">
-          <div class="k">运行状态</div><div class="v" id="kvRun">—</div>
-          <div class="k">当前控制</div><div class="v num" id="kvSrc">—</div>
-          <div class="k">网络遥控</div><div class="v num" id="kvNet">—</div>
-          <div class="k">RC 解锁</div><div class="v num" id="kvRc">—</div>
-          <div class="k">狗链路代数</div><div class="v num" id="kvLink">—</div>
-          <div class="k">狗真实姿态</div><div class="v num" id="kvDog">—</div>
-          <div class="k">控制抑制</div><div class="v num" id="kvCtl">—</div>
-          <div class="k">最后命令</div><div class="v num" id="kvCmd">—</div>
+        <div class="card-title">控制源与状态</div>
+        <div class="kv-grid2">
+          <div class="kvi"><div class="k">运行状态</div><div class="v" id="kvRun">—</div></div>
+          <div class="kvi"><div class="k">当前控制</div><div class="v num" id="kvSrc">—</div></div>
+          <div class="kvi"><div class="k">网络遥控</div><div class="v num" id="kvNet">—</div></div>
+          <div class="kvi"><div class="k">RC 解锁</div><div class="v num" id="kvRc">—</div></div>
+          <div class="kvi"><div class="k">狗链路代数</div><div class="v num" id="kvLink">—</div></div>
+          <div class="kvi"><div class="k">狗真实姿态</div><div class="v num" id="kvDog">—</div></div>
+          <div class="kvi"><div class="k">控制抑制</div><div class="v num" id="kvCtl">—</div></div>
+          <div class="kvi"><div class="k">最后命令</div><div class="v num" id="kvCmd">—</div></div>
+          <div class="kvi"><div class="k">气体浓度</div><div class="v num" id="kvGas">—</div></div>
+          <div class="kvi"><div class="k">开机自检</div><div class="v num" id="kvChk">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 页面 2.5: 气体传感器(2026-11-04, 多路 Modbus 总线) -->
+    <div class="page" id="page-gas">
+      <div class="card">
+        <div class="card-title">气体检测 <span style="font-weight:400">QZKJ 总线 · 最多 6 路</span></div>
+        <div class="chk-grid" id="gGrid">
+          <div class="ci"><span class="mut">等待数据…</span></div>
+        </div>
+        <div class="mut" style="font-size:11.5px;margin-top:10px">
+          未接的地址显示「未接」；浓度单位随模组（ppm / %LEL / %VOL），低报高报阈值由模组内置。
         </div>
       </div>
     </div>
@@ -498,6 +543,13 @@ canvas{display:block;width:100%;max-width:100%;height:36px}
             <input type="checkbox" id="optChart" checked>
             <span>仪表盘显示统计图表</span>
           </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">开机自检 <span style="font-weight:400" id="chkTs">启动 25s 自动跑</span></div>
+        <div class="chk-grid" id="chkList">
+          <div class="ci"><span class="mut">等待自检数据…</span></div>
         </div>
       </div>
 
@@ -740,7 +792,73 @@ function evLevel(kind, ev){               /* 级别分色: 错误红 / 警告黄
   if (/act|cmd|trick|arm|gear|mode|play|talk|stand|reset/.test(k)) return "act";
   return "info";
 }
+/* ===== 气体传感器(多路) 与 开机自检: 数据源 /state 与 /gas 快照 ===== */
+const GAS_UNITS = {0: "ppm", 2: "%LEL", 4: "%VOL", 6: "mg/m3", 8: "ppb"};
+const gasStCls = s => s === 1 ? "st-ok"
+  : s === 0 ? "st-dim"
+  : [2, 3, 6, 7, 8, 9, 15].includes(s) ? "st-bad" : "st-warn";
+
+function renderGas(m){
+  const g = (m && m.gas) || {};
+  const list = Array.isArray(g.sensors) ? g.sensors : [];
+  const grid = $("gGrid");
+  if (!list.length){
+    grid.innerHTML = '<div class="ci"><span class="mut">'
+      + (g.enabled === false ? "传感器未启用(板上 config_local)" : "等待数据…") + '</span></div>';
+    $("kvGas").textContent = g.enabled === false ? "未启用" : "—";
+    return;
+  }
+  grid.innerHTML = list.map(x => {
+    const name = x.gas_name || ("地址" + x.addr);
+    const on = !!x.present;
+    const val = x.ok ? Number(x.conc).toFixed(x.dec || 0) : "—";
+    const unit = GAS_UNITS[x.unit] != null ? GAS_UNITS[x.unit] : "ppm";
+    const sub = x.ok ? (esc(x.status_txt || "") + (x.temp != null ? " · " + x.temp + "℃" : "")
+      + (x.age != null ? " · " + x.age + "s前" : "")) : esc(x.err || "未接");
+    const cls = x.ok ? gasStCls(x.status) : "st-dim";
+    return '<div class="ci" style="' + (on ? "" : "opacity:.45") + '">'
+      + '<div style="flex:1;min-width:0"><div style="font-weight:600">' + esc(name) + '</div>'
+      + '<div class="d">' + sub + '</div></div>'
+      + '<div style="font-size:22px;font-weight:700;line-height:1">' + val
+      + '<small style="font-size:11px;color:var(--text-tertiary);font-weight:400"> ' + unit + '</small></div>'
+      + '<span class="chip ' + cls + '" style="align-self:center">' + (on ? "在位" : "未接") + '</span></div>';
+  }).join("");
+  const on = list.filter(x => x.ok);
+  $("kvGas").innerHTML = on.length
+    ? on.map(x => '<span style="font-weight:600">' + esc(x.gas_name || ("地址" + x.addr))
+        + " " + Number(x.conc).toFixed(x.dec || 0) + "</span>").join(" · ")
+      + ' <span style="color:var(--ok)">' + esc(on[0].status_txt || "") + '</span>'
+    : '<span style="color:var(--text-tertiary)">0/' + list.length + ' 在线</span>';
+}
+
+function renderChk(m){
+  const c = (m && m.selfcheck) || {};
+  const items = (c.items && typeof c.items === "object") ? c.items : {};
+  const keys = Object.keys(items);
+  $("kvChk").innerHTML = keys.length
+    ? (c.bad_n ? '<span style="color:var(--bad)">' + c.bad_n + ' 异常</span>'
+               : '<span style="color:var(--ok)">全绿</span>')
+      + ' <span style="color:var(--text-tertiary)">' + keys.length + ' 项</span>'
+    : "—";
+  $("chkTs").textContent = c.ts ? (fmtTs(c.ts) + " 自检") : "启动 25s 自动跑";
+  const list = $("chkList");
+  if (!keys.length){
+    list.innerHTML = '<div class="ci"><span class="mut">等待自检数据…</span></div>';
+    return;
+  }
+  list.innerHTML = keys.map(k => {
+    const v = String(items[k]);
+    const bad = v.indexOf("bad") === 0, skip = v.indexOf("skip") === 0;
+    const mark = bad ? "✗" : skip ? "△" : "✓";
+    const col = bad ? "var(--bad)" : skip ? "var(--text-tertiary)" : "var(--ok)";
+    return '<div class="ci"><span style="color:' + col + ';font-weight:700">' + mark + '</span>'
+      + '<div style="flex:1;min-width:0"><div>' + esc(k) + '</div>'
+      + '<div class="d">' + esc(v.split(":").slice(1).join(":")) + '</div></div></div>';
+  }).join("");
+}
+
 function renderSys(m){
+
   try{
     if (!m || typeof m !== "object") m = {};
     const P = (m.pids && typeof m.pids === "object") ? m.pids : {};
@@ -805,6 +923,8 @@ function renderSys(m){
     if (da != null) dBits.push(da.toFixed(1) + "s 前");
     if (m.rising === true) dBits.push('<span style="color:var(--warn)">起立中</span>');
     $("kvDog").innerHTML = dBits.join(" · ");
+    renderGas(m);
+    renderChk(m);
     /* 系统负载 */
     const Y = (m.sys && typeof m.sys === "object") ? m.sys : {};
     const ld = numv(Y.load1), mp = numv(Y.mem_pct), ct = numv(Y.cpu_temp);

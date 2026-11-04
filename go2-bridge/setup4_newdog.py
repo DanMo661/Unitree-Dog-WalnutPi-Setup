@@ -110,7 +110,19 @@ out = run("%s/.venv/bin/python -c 'import aiortc, serial, fastapi, uvicorn; "
 if "IMPORTS_OK" not in out:
     raise SystemExit("!! 依赖导入失败: " + out[-300:])
 
+print("== 5. portaudio/jack deb (先于 fork 检查, 见上) ==")
+sftp = c.open_sftp()
+sftp.put(DEBS[0], "/tmp/libjack.deb")
+sftp.put(DEBS[1], "/tmp/libportaudio2.deb")
+sftp.close()
+run("echo pi | sudo -S dpkg -i /tmp/libjack.deb /tmp/libportaudio2.deb 2>&1 | tail -2")
+out = run("%s/.venv/bin/python -c 'import sounddevice; print(\"SD_OK\")'" % RDIR, 60)
+if "SD_OK" not in out:
+    raise SystemExit("!! sounddevice 仍不可用: " + out[-300:])
+
 print("== 4. fork 连狗库覆盖 + curl_cffi ==")
+# 2026-11-03 定案: deb(下一节)必须先于本节的导入检查 -- webrtc_driver 间接 import
+# sounddevice(webrtc_audio), 全新板无 PortAudio 必炸; 顺序对调后检查放 deb 之后
 sftp = c.open_sftp()
 sftp.put(str(FORK_TAR), "/tmp/uwc-fork-pkg.tar.gz")
 sftp.close()
@@ -126,16 +138,6 @@ out = run("%s/.venv/bin/python -c \"from unitree_webrtc_connect.webrtc_driver im
 # 注意: 此处不 import sounddevice -- PortAudio deb 在下一步才装(全新板必挂, 2026-11-02 实踩)
 if "FORK_LIBS_OK" not in out:
     raise SystemExit("!! fork 库导入失败: " + out[-300:])
-
-print("== 5. portaudio/jack deb ==")
-sftp = c.open_sftp()
-sftp.put(DEBS[0], "/tmp/libjack.deb")
-sftp.put(DEBS[1], "/tmp/libportaudio2.deb")
-sftp.close()
-run("echo pi | sudo -S dpkg -i /tmp/libjack.deb /tmp/libportaudio2.deb 2>&1 | tail -2")
-out = run("%s/.venv/bin/python -c 'import sounddevice; print(\"SD_OK\")'" % RDIR, 60)
-if "SD_OK" not in out:
-    raise SystemExit("!! sounddevice 仍不可用: " + out[-300:])
 
 print("== 6. pwm udev 规则 ==")
 sftp = c.open_sftp()

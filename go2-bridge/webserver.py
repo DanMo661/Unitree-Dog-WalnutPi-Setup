@@ -6,6 +6,7 @@ import os
 import time
 
 import config
+import selfcheck
 import journal
 import netrc
 from languard import NetGuard
@@ -133,6 +134,14 @@ def web_server(d):
         """黑匣子尾部只读端点: /journal?n=100(上限 500), 直接看最后几行 JSONL。"""
         return PlainTextResponse("\n".join(journal.tail(n)))
 
+    @app.get("/gas")
+    async def gas_json():
+        """气体传感器小快照(App 悬浮窗轮询用, 只含气体, 数百字节)。"""
+        import bridge
+        g = getattr(bridge, "_GAS", None)
+        return (g.snapshot(time.monotonic()) if g is not None
+                else {"enabled": False, "ok": False, "sensors": []})
+
     @app.get("/state")
     async def state_json():
         """只读 JSON 状态快照(P0-2): 部署冒烟/诊断的地基, curl 一次拿全量。
@@ -175,6 +184,10 @@ def web_server(d):
             "ctl": bridge._ctl_snapshot(now),
             "arm_blocked": round(max(0.0, state.arm_blocked_until - now), 2),
             "relay": {"on": state.relay_on, "us": state.relay_us},
+            "gas": (bridge._GAS.snapshot(now)
+                    if getattr(bridge, "_GAS", None) is not None
+                    else {"enabled": False, "ok": False}),
+            "selfcheck": selfcheck.last_snapshot(),
             "audio": audio,
             # 狗真实姿态(rt/sportmodestate): fresh=false 表示订阅没数据/已停更
             "dog": {"mode": state.dog_mode, "height": state.dog_height,

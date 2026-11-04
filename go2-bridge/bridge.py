@@ -19,6 +19,8 @@ import os
 import config
 import journal
 from sbus import Sbus
+from gas import GasBus   # 气体传感器(dog4 加装, 非安全件: 只读不碰控制)
+import selfcheck            # 开机自检(非安全件: 只读检查, 结果进日志+journal)
 from servo import Servo, GpioOut, RelayPwm
 from pa import Pa          # P0-1/T2.2 后 main 不再用 Pa, 但测试经 bridge.Pa 构造, 保留导出
 import netrc
@@ -77,6 +79,7 @@ def pos(raw, n=3):
 
 
 dog = None             # main() 里赋值; DogLink 连上狗后回调其 reset()
+_GAS = None           # GasSensor 实例(main() 按配置构造; webserver /state 读取)
 
 
 _ACTIVE = None        # FsmActive 单例(main() 赋值; webserver._fsm_feed 读取)
@@ -442,6 +445,26 @@ def main():
                 allow=getattr(config, "NETRC_ALLOW", []),
                 token=getattr(config, "NETRC_TOKEN", ""))
     threading.Thread(target=web_server, args=(dog,), daemon=True).start()
+    if float(getattr(config, "SELFCHECK_DELAY_S", 0) or 0) > 0:
+        threading.Thread(target=selfcheck.run_later, kwargs=dict(state=state),
+                         daemon=True).start()
+    if getattr(config, "GAS_ENABLED", False):
+        try:
+            def _gas_notify(addr, old, new, snap):
+                journal.record("event", ev="gas_status", addr=addr, prev=old,
+                               to=new, conc=snap["conc"], temp=snap["temp"])
+                _ev("gas", "status", "addr%d %s->%s conc=%g"
+                    % (addr, old, new, snap["conc"]))
+            _g = GasBus(config.GAS_PORT, addrs=getattr(config, "GAS_ADDRS",
+                                                        [1, 2, 3, 4, 5, 6]),
+                        period=getattr(config, "GAS_PERIOD_S", 1.5),
+                        log=log, notify=_gas_notify)
+            _g.start()
+            globals()["_GAS"] = _g
+            log("气体传感器线程已启动:", config.GAS_PORT,
+                "地址 %s" % getattr(config, "GAS_ADDRS", [1, 2, 3, 4, 5, 6]))
+        except Exception as e:
+            log("气体传感器启动失败(不影响运行):", repr(e), lvl="warn")
     log("go2-bridge 启动: 网页端口=%d, SBUS=%s, 连狗方式=%s"
         % (config.WEB_PORT, config.SBUS_PORT, config.METHOD))
     rc_loop(dog, None)

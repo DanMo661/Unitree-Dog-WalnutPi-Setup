@@ -137,6 +137,13 @@ def dog_eee_guard(c, robot_ip, dog_pw):
         s.exec_command(probe)
         out = s.makefile("rb", 8192).read().decode("utf-8", "replace")
         s.close()
+        if "EEE_DISABLED_OK" in out or "EEE_FIX_APPLIED" in out:
+            # 落板标记: 桥的开机自检(selfcheck)读它报告"部署时 EEE 已确认关闭"
+            try:
+                c.exec_command("date +%%s > %s/.eee_ok 2>/dev/null" % REMOTE_DIR,
+                               timeout=10)
+            except Exception:
+                pass
         if "EEE_FIX_APPLIED" in out:
             print("EEE 自检: 狗侧 EEE 原来开着, 已关闭")
         if "EEE_PERSIST_INSTALLED" in out:

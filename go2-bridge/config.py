@@ -102,8 +102,20 @@ PA_RATE      = 16000     # 默认采样率 Hz(S16LE 单声道; App 可用 RATE �
 # True = 左右声道同数据(接线未知或双声道完好都安全); False = L-only(右声道置零, 仅有左声道)
 # dog2 板上 config_local.py 写 OVERRIDES = {"PA_STEREO": False}, 本文件保持默认
 PA_STEREO    = True
+# ---- 气体传感器(2026-11-03 dog4 加装 QZKJ-NH3, UART Modbus; 详见 gas.py 头注) ----
+# 默认关: 其他板子不接传感器。接了的板子在 config_local.py 写
+#   OVERRIDES = {"GAS_ENABLED": True, "GAS_PORT": "/dev/ttyS3",
+#                                "GAS_ADDRS": [1, 2, 3, 4, 5, 6]}
+# dog4 实况: 传感器在 uart3(PI9/PI10, DTB 已启用 serial@5000c00), 串口0 留回控制台。
+# 铁律: 传感器不许接启动控制台(UART0) -- U-Boot autoboot 监听会被上电杂波打断(11-04 事故)。
+GAS_ENABLED  = False
+GAS_PORT     = "/dev/ttyS0"
+GAS_ADDRS    = [1, 2, 3, 4, 5, 6]   # 总线上各模组的 Modbus 地址(手册多气体轮询拓扑)
+GAS_PERIOD_S = 1.5      # 整轮之间最小间隔(单轮=逐地址问询, 每地址间隔 0.5s)
 # ---- App 动作转发(P0-1/T2.2: 音频拆独立服务后的本地口) ----
 TRICK_PORT   = 15011     # go2-audio(pa_recv) -> bridge 的 TRICK 动作请求口(UDP 127.0.0.1 单播)
+# ---- 开机自检(2026-11-04, selfcheck.py): 启动后延迟秒数, 0=关 ----
+SELFCHECK_DELAY_S = 25.0   # 给 WiFi 关联/狗链路留稳定时间
 # ---- 日志 ----
 LOG_CMDS = True       # 记录每条发往狗的指令(连续相同的 Move 自动去重防刷屏)
 # ---- 飞行记录仪(journal.py 黑匣子, JSONL 落盘) ----
