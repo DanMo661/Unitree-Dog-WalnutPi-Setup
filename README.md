@@ -37,24 +37,25 @@ GR01 接收机(2.4G 收包)    核桃派只是其中一种
 ## 一步一步配置流程（首页直读，每步详细技术坑见 [SOP.md](SOP.md) 对应章节）
 
 ### 第 0 步 · 备料
-系统镜像（核桃派官方镜像 + 烙好网络配置的部署镜像）、离线依赖包（52 个 wheel + 2 个 deb）、烧录脚本。
+系统镜像（golden 黄金镜像，官方镜像为备用底包）、离线依赖包（52 个 wheel + 2 个 deb）、烧录脚本。全程不需要装额外软件。
 全部获取方式与清单：**[assets/MANIFEST.md](assets/MANIFEST.md)**
 
 ### 第 1 步 · 烧 TF 卡
-读卡器插机箱后面板（TF 卡最低 8GB，推荐 16GB 及以上）：
+读卡器插机箱后面板（TF 卡最低 8GB，推荐 16GB 及以上），管理员 PowerShell：
 ```powershell
-powershell -ExecutionPolicy Bypass -File provisioning\flash_sd4.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File provisioning\flash_sd.ps1 -Image D:\path\to\walnutpi-1b-golden.img
 ```
-自动识别目标卡 → 写镜像 → **全卡 SHA256 回读校验**，`RESULT: PASS` 才算成。
+默认烧 **golden 黄金镜像**（已烙 netplan 双地址 + SSH + 依赖，上电即可 SSH）。纯 PowerShell + diskpart，**不需要装任何烧录软件**。自动锁定目标卡（拒绝系统盘）→ clean → 写数据区 → 逐字节校验 → **最后写 MBR**。
 
-### 第 2 步 · 板子装机（三条命令）
+### 第 2 步 · 板子装机（首板四条命令）
 卡进板子、板子进狗（eth0 网线接狗内交换机）、PC 也插交换机并设静态 `192.168.123.99/24`，`ping 192.168.123.50` 通后（PC 需 Python3+paramiko，命令在 Git Bash 执行）：
 ```bash
 cd go2-bridge
-python setup3_dog3.py     # 代码 + 离线依赖 + venv + root 版 systemd 服务
-python setup2_extras.py   # 官方 SDK 库(fork 修正版) + 音频 deb + PWM 权限
-BRIDGE_USER=pi BRIDGE_PW=<板子密码> BRIDGE_HOST=192.168.123.50 python deploy_page.py   # 遥控器 App 安装/更新页
+python setup4_newdog.py        # 首板一条龙: 代码 + 离线依赖 + venv + 双 systemd 服务 + fork 库 + 音频 deb
+BRIDGE_USER=pi BRIDGE_PW=<板子密码> BRIDGE_HOST=<板子IP> python deploy_pc.py     # 写 VERSION + EEE 守卫 + 冒烟
+BRIDGE_USER=pi BRIDGE_PW=<板子密码> BRIDGE_HOST=<板子IP> python deploy_page.py   # 遥控器 App 安装/更新页
 ```
+`BRIDGE_HOST` 必须显式写（防裸跑烧错板）；之后滚动更新一律 `deploy_pc.py`。素材路径在脚本顶部，换机器先改。完整 runbook（含烧卡重装后必做清单）：[go2-bridge/docs/NEW-DOG-ONBOARD.md](go2-bridge/docs/NEW-DOG-ONBOARD.md)
 
 ### 第 3 步 · WiFi 双档案 = 无线调试根基
 **主 WiFi（公司/家里/现场网络）= 静态 IP + 高优先级；手机热点 = DHCP + 低优先级兜底**，切换全自动：
@@ -87,10 +88,12 @@ curl http://192.168.123.50:8000/sbus    # 浏览器调试台(16通道实时/帧�
 
 | 路径 | 内容 |
 |---|---|
-| `SOP.md` | 主文档：每阶段的详细步骤与技术坑（venv 缺件/SDK 库差异/root 服务/热点上限/驱动僵死/日志分锅…） |
+| `SOP.md` | 主文档：每阶段的详细步骤与技术坑（写卡顺序/venv 缺件/SDK 库差异/root 服务/热点上限/驱动僵死/日志分锅…） |
+| `go2-bridge/docs/NEW-DOG-ONBOARD.md` | 新狗上门 runbook：分工表、素材位置、EEE 语义、验收清单、烧卡重装后必做清单、实踩坑全集 |
+| `provisioning/flash_sd.ps1` | 唯一烧录脚本（先数据区后 MBR，逐字节校验，拒绝系统盘） |
+| `provisioning/SD-BURN.md` | TF 卡烧录权威流程：写卡顺序原理、脚本硬性要求、三个脚本坑、验收、废弃方案 |
 | `go2-bridge/` | 板端全套源码（bridge.py 转发层 + 部署脚本 + systemd 服务 + 测试） |
-| `go2-bridge/core/` | 遥控状态机纯逻辑（fsm.py，表驱动可测；经 `config.FSM_MODE` 与旧路径双轨） |
-| `go2-bridge/legacy/` | 历史归档脚本（旧网络配置/旧调试页，不参与运行，仅存档） |
+| `go2-bridge/core/` | 遥控状态机纯逻辑（fsm.py，表驱动可测） |
 | `assets/MANIFEST.md` | TF 卡镜像、离线依赖等大文件素材的获取方式 |
 
 > `go2-bridge/` 里与运行/装机直接相关的文件集合以 `tools/make_release.py` 白名单为准；

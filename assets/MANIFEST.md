@@ -4,12 +4,14 @@
 
 ## §1 官方系统镜像
 
+**日常装机不需要本节**：直接烧 §2 的 golden 即可；本节是 golden 的底包，仅在从零重做时用。
 核桃派 1B 官方发布（官网 walnutpi.com 或官方群）：`V2.4_07-23_server_WalnutPi-1b_6.1.31_ubuntu22.img`（server 版 Ubuntu 22.04，内核 6.1.31）。
 用其他版本镜像原则上也可，但以下路径/依赖均以该版本实测。
 
-## §2 netplan 部署镜像自制（烙 eth0 双地址，一次制作反复烧）
+## §2 netplan 烙入（golden 的前身；当前默认直接烧 golden，本节仅作从零重做时留档）
 
-官方镜像上把网络配置写死进去，这样板子一上电就有 123.50 + 144.10，不用接串口配网。
+当前默认烧的 **golden 黄金镜像**（`walnutpi-1b-golden.img`）= 官方镜像 + 本节 netplan 烙入 + SSH + 预装依赖，上电即可 SSH 装机；镜像不进 git，随交接包 `01-烧卡/` 提供。
+若 golden 不可用要从零重做：先按本节在官方镜像上把网络配置写死进去，这样板子一上电就有 123.50 + 144.10，不用接串口配网。
 在 WSL（或任何 Linux）里：
 
 ```bash
@@ -87,14 +89,15 @@ Windows 中文环境编码崩溃、大文件分块传输（对应上游 legion15
 
 ## §7 遥控器 App 安装包（PaSend.apk / GO2控制台）
 
-App 源码在仓库 `go2-bridge/android-app/`（单 Activity Java，无第三方依赖）。
+App 源码**不在公开仓**（`make_release.py` 排除 `android-app/`；Java，无第三方依赖，`aapt+d8+apksigner` 或 Android Studio 构建），随交接包 `Go2控制台/android-app/` 提供。
 成品 APK 不入 git（.gitignore 排除二进制），两个来路：
 - 部署时用环境变量指定本地成品：`BRIDGE_APK=<APK路径> python deploy_page.py`（缺省找脚本同目录 `PaSend-v35-网络遥控.apk`）
 - 或自行构建：任意 Android 工程套入该 Java 源码 + `AndroidManifest.xml`（权限/组件声明都在），`aapt+d8+apksigner` 或 Android Studio 皆可
 
 ## §8 烧录脚本
 
-`provisioning/flash_sd4.ps1`（本仓库已带）。使用前改脚本开头的 `$img = ...` 一行：
+`provisioning/flash_sd.ps1`（本仓库已带，纯 PowerShell + diskpart，无需额外软件）。镜像路径用参数指定：
 ```powershell
-$img = 'D:\你的路径\walnutpi-1b-netplan.img'
+powershell -NoProfile -ExecutionPolicy Bypass -File provisioning\flash_sd.ps1 -Image 'D:\你的路径\walnutpi-1b-golden.img'
 ```
+原理与坑见 `provisioning/SD-BURN.md`。

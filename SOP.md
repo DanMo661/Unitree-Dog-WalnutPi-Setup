@@ -1,7 +1,7 @@
 # 宇树 Go2 × 核桃派 1B × G12 遥控链路配置 SOP
 
 > 从一张空 TF 卡到"遥控器直控机器狗"的完整流程。每一步内嵌实战踩过的技术坑。
-> 实战背景：同型三套（dog1/2/3）全流程验证，dog3 为本 SOP 定稿基准（2026-10-16）。
+> 实战背景：同型四套（dog1/2/3/4）全流程验证；2026-10-16 以 dog3 定稿，2026-11-24 按 dog4 实跑（11-02）更新烧卡与装机流程，以本文 + [go2-bridge/docs/NEW-DOG-ONBOARD.md](go2-bridge/docs/NEW-DOG-ONBOARD.md) 为准。
 > 本文档**自包含**：照着做不需要再查别的资料；大文件素材的获取/自制方法在 [assets/MANIFEST.md](assets/MANIFEST.md)，每处用到都有链接。
 
 ---
@@ -58,26 +58,27 @@ GR01 供电：按接收机型号 5V 供电（GR01 类是 7.2~72V XT30 供电，�
 
 ### 1.1 先备齐三样东西
 
-| 素材 | 没有怎么办（自制方法全在 [assets/MANIFEST.md](assets/MANIFEST.md)） |
+| 素材 | 说明（自制方法见 [assets/MANIFEST.md](assets/MANIFEST.md)） |
 |---|---|
-| 官方系统镜像 | 核桃派官方发布（官网/官方群），server 版 Ubuntu 22.04 |
-| **netplan 部署镜像**（烙好 eth0 双地址） | 拿官方镜像自制：WSL 里 `losetup -Pf --show 官方.img` → 挂载第 2 分区 → 把 §0.2 表里 eth0 那两行地址写进 `/etc/netplan/01-network-manager-all.yaml` → 卸载。完整可复制命令在 MANIFEST §2 |
-| 烧录脚本 | 本仓库 `provisioning/flash_sd4.ps1`，**用前改脚本开头的 `$img = '...'` 一行指向你的镜像路径** |
+| **golden 黄金镜像**（当前默认烧这张） | 官方镜像 + 烙好 eth0 双地址(123.50/144.10) + SSH + 预装依赖，上电即可 SSH，**不需要串口配网**。镜像不进 git，随交接包 `01-烧卡/` 提供 |
+| 官方系统镜像（备用底包） | 核桃派官方发布 `V2.4_07-23_server_WalnutPi-1b_6.1.31_ubuntu22.img`（server 版 Ubuntu 22.04），golden 损坏/要从零重做时用；netplan 烙入法见 MANIFEST §2 |
+| 烧录脚本 | 本仓库 `provisioning/flash_sd.ps1`，纯 PowerShell + diskpart **不需要装任何烧录软件**；镜像路径用 `-Image` 参数指定（或改脚本开头默认值） |
 
 ### 1.2 烧
 
-读卡器插机箱后面板 USB（前置口实测有兼容问题）。TF 卡**最低 8GB**（只装系统够用），**推荐 16GB 及以上**（留足音频库/日志/缓存空间）：
+读卡器插机箱后面板 USB（前置口实测有兼容问题）。TF 卡**最低 8GB**（只装系统够用），**推荐 16GB 及以上**（留足音频库/日志/缓存空间）。管理员 PowerShell：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File flash_sd4.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File provisioning\flash_sd.ps1 -Image D:\path\to\walnutpi-1b-golden.img
 ```
 
-脚本自动：识别唯一 8-64GB USB 盘 → diskpart clean → 写镜像 → **全卡 SHA256 回读校验** → 输出 `RESULT: PASS` 才算成（PASS 以外一律重烧）。
+脚本自动：锁定唯一一块 USB 总线 8–64GB 的盘（**显式拒绝 Disk 0 系统盘**）→ `diskpart clean` → 写 1MB..文件末尾 → 逐字节回读校验 → **最后才写前 1MB（MBR+引导区）** 并校验 → 恢复 automount。2.7GB 约 15 分钟（卡写速 ~3MB/s 是正常的）。完整原理与脚本硬性要求见 [provisioning/SD-BURN.md](provisioning/SD-BURN.md)。
 
 **坑 1.1**：镜像里**只烙 eth0，不烙 WiFi**。WiFi 故意留给 NetworkManager 双档案（§3），netplan 不支持"不同 SSID 不同 IP"，烙进去反而死板。
-**坑 1.2**：多合一读卡器会枚举多个 0GB 空 USB 盘，脚本按"USB + 8~64GB + 恰好一张"判定目标；读卡器名不含 Mass Storage 时打警告继续；别用会弹 GUI 的 Rufus CLI。
-**坑 1.3**：`Access denied` 报错 = Windows 句柄残留，**直接重跑一遍就好**。
-**坑 1.4**：烧完脚本已把盘脱机，直接拔卡；重插才会挂盘符（看到两个分区属正常）。
+**坑 1.2**：**写卡顺序决定成败**——必须"先数据区后 MBR"。MBR 一落盘 Windows 立刻识别分区并挂载，之后对物理盘的裸写全部「拒绝访问」（表现：写到 143MB/256MB 附近必挂）。旧 `flash_sd[1-5].ps1`、Rufus、AiBurn 均已废弃，别再走。
+**坑 1.3**：烧录脚本**必须纯 ASCII 注释**：Windows PowerShell 5.1 用 GBK 读无 BOM 的 UTF-8，中文注释末字节若是 0x60（反引号）会吞掉下一行代码。
+**坑 1.4**：`diskpart` 在中文系统输出中文，别用英文关键词判成败（看分区数是否归零）；Git Bash 调 `diskpart /s` 会被 MSYS 把 `/s` 转成路径而空转——**烧卡用 PowerShell 跑，别用 Git Bash**。
+**坑 1.5**：烧完首次上电会**自动把根分区扩到整卡**，首启比平时慢属正常。验收：`Get-Partition` 看到 143MB FAT + 2440MB ext4；上电后 `ping 192.168.123.50` 通、`ssh pi@192.168.123.50`（pi/pi）通。
 
 ---
 
@@ -95,23 +96,31 @@ netsh interface ip set address name="以太网" static 192.168.123.99 255.255.25
 （`name=` 按你网卡实际名改，`ipconfig` 里看。不用设网关/DNS——这个网段只通板子。）
 3. 验证前置成立：`ping 192.168.123.50` 通（板子默认账号 `pi/pi`，SSH 端口 22）
 
-### 2.2 三条命令
+### 2.2 四条命令（首板）
 
 ```bash
 cd go2-bridge
-python setup3_dog3.py     # 代码+离线wheels+venv+root版systemd服务
-python setup2_extras.py   # fork版SDK库+portaudio deb+pwm udev
-BRIDGE_USER=pi BRIDGE_PW=<板子密码> BRIDGE_HOST=192.168.123.50 python deploy_page.py   # App安装/更新页
+python setup4_newdog.py        # 首板一条龙: 代码+离线wheels+venv+双systemd服务(bridge/audio)+fork库+音频deb
+HOME_PSK=<主WiFi密码> python board_wifi_setup.py --home-ssid "<主WiFi名>" --home-ip 192.168.X.5X   # WiFi双档案(--home-ip 每板不同, 见§3)
+BRIDGE_USER=pi BRIDGE_PW=<板子密码> BRIDGE_HOST=<板子IP> python deploy_pc.py     # 写VERSION + EEE守卫(自动关狗侧EEE并持久化) + 冒烟
+BRIDGE_USER=pi BRIDGE_PW=<板子密码> BRIDGE_HOST=<板子IP> python deploy_page.py   # App安装/更新页(:15080)
 ```
 
-三条命令的输入素材（wheels 包/deb/fork 库包）都从 [assets/MANIFEST.md](assets/MANIFEST.md) 按 §3/§4/§5 自备，脚本里写的路径按你实际存放位置改。
+- `BRIDGE_HOST` **必须显式写**（脚本默认列表不含新板，防裸跑烧错板），可逗号分隔"狗内网IP,家里IP"。
+- 之后滚动更新一律 `deploy_pc.py`（上传+md5+板上语法门+重启+验活+`/state`冒烟），不要再跑 setup4。
+- 输入素材（`wheels2.tar.gz` / 两个 deb / `uwc-fork-pkg.tar.gz`）按 [assets/MANIFEST.md](assets/MANIFEST.md) §3/§4/§5 自备；**脚本里写的是作者机器的绝对路径，换机器先改 `setup4_newdog.py` 顶部的 `LOCAL` / `FORK_TAR` / `DEBS`**。
+- 旧脚本 `setup3_dog3.py` + `setup2_extras.py` 两步装机仍可用（功能已被 setup4 合并），仅在需要分步排障时使用。
+
+### 2.2b 烧卡重装后的必做清单（2026-11-04 教训：漏一步静默残废）
+
+重烧卡 = 回到出厂，按序全跑（缺一步缺一块）：`setup4_newdog.py` → `board_wifi_setup.py`（漏跑则 WiFi 无档案静默失联）→ （接了气体传感器的板子）DTB 启用 uart3 → `deploy_pc.py`（写 VERSION + EEE 守卫 + `.eee_ok`）→ 板上 `config_local.py` 开传感器 → 看 `/logs` 开机自检 11 项全绿。逐步命令见 [NEW-DOG-ONBOARD.md §7b](go2-bridge/docs/NEW-DOG-ONBOARD.md)。
 
 ### 2.3 遥控器 App（GO2控制台）怎么进 G12
 
 App 安装包已由 `deploy_page.py` 放到板子 `http://192.168.144.10:15080`（或 `192.168.123.50:15080`）。两条路任选：
 - **遥控器浏览器**（推荐，一次搞定以后免线）：G12 打开浏览器访问上面临页 → 下载 PaSend.apk → 点开安装（若点开没反应：这台安卓缺系统安装链路，装一次 [AppManager](https://github.com/MuntashirAkon/AppManager) 即可，以后点 APK 就能装）
 - **adb**（USB 连接后）：`adb install PaSend-vXX.apk`
-装好后 App 检查更新自动走 15080 页，无需再管。
+装好后 App 检查更新自动走 15080 页，无需再管。成品 APK 不进 git（`.gitignore` 排除二进制），随交接包 `Go2控制台/` 取最新版；上架哪个版本由 `deploy_page.py` 里 **APP 路径 / `VERSION_JSON` 版本号 / 页面文案 v 号**三处硬编码决定，三处必须同步改（曾漂移 11 版未被发现）。
 
 **坑 2.1**：镜像缺 `python3.10-venv`（ensurepip 被拆包）——`python3 -m venv --without-pip` 建环境 + 系统 `pip3 --target` 定向灌入，脚本已处理，手工装时别直接 `pip install`。
 **坑 2.2**：`sounddevice` 运行时需要 `libportaudio2`（镜像没有，需离线传 deb，`setup2_extras.py` 已带）。缺它时 `setup2_extras.py` 最后的 `FORK_OK` 自检会报 `OSError: PortAudio library not found`——这不是部署坏了，是第二步的 deb 没到位。
@@ -213,6 +222,6 @@ curl http://192.168.123.50:8000/sbus        # SBUS/网络遥控调试台（浏�
 ## 附：新板子 60 秒速查（前三条命令 + 一个标定）
 
 ```
-烧卡 flash_sd4.ps1 → setup3_dog3.py → setup2_extras.py + deploy_page.py
-→ board_wifi_setup.py（--home-ip 递增）→ §5 遥控器标定 → §6 清单
+烧卡 flash_sd.ps1(-Image golden) → setup4_newdog.py → board_wifi_setup.py(--home-ip 递增)
+→ deploy_pc.py + deploy_page.py → §5 遥控器标定 → §6 清单
 ```
