@@ -1,6 +1,6 @@
 # TF 卡烧录（权威流程）
 
-适用：核桃派 1B / 香橙派 Zero 2W 这类「裸盘 .img」镜像，Windows 侧从读卡器写卡。
+适用：核桃派 ZeroW（与 1B 同方案、镜像通用，文件名带 1b 属正常）/ 香橙派 Zero 2W 这类「裸盘 .img」镜像，Windows 侧从读卡器写卡。
 一键脚本：`provisioning/flash_sd.ps1`（本文所有结论它的注释里都有对应）。
 
 ```powershell
@@ -56,7 +56,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File provisioning\flash_sd.ps1
 - **不要用 `flash_sd[1-5].ps1` 系列**：旧版先写 MBR 再写数据，必然在分区边界失败；
   且用管道调 diskpart，在中文系统下全部空转。已全部删除。
 - **AiBurn 不能烧这类镜像**：AiBurn 是匠芯创（ArtInChip）专用工具，只认 `AIC.FW` 头。
-  核桃派 1B 是全志 **H616** 方案，golden/官方 img 都是**裸盘镜像**（`upgcmd -i` 会报
+  核桃派 ZeroW（与 1B 同方案）是全志 **H616** 方案，golden/官方 img 都是**裸盘镜像**（`upgcmd -i` 会报
   `not supportted image file`）。D12P 那张 `*_nor.img` 是 SPI NOR 固件、走 USB 烧芯片，与 SD 卡无关。
 - **卡写速 ~3MB/s 是正常的**（读 ~19MB/s）：2.7GB 镜像写一次约 15 分钟，别以为卡坏了。
 

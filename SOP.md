@@ -1,6 +1,7 @@
-# 宇树 Go2 × 核桃派 1B × G12 遥控链路配置 SOP
+# 宇树 Go2 × 核桃派 ZeroW × G12 遥控链路配置 SOP
 
 > 从一张空 TF 卡到"遥控器直控机器狗"的完整流程。每一步内嵌实战踩过的技术坑。
+> 板子是**核桃派 ZeroW**。官方公告：ZeroW 与 1B 采用相同方案、镜像系统完全兼容，所以镜像 / DTB / 资料包文件名里的 `WalnutPi-1b`、`walnutpi-1b.dtb`、`WalnutPi_1_Resources` 都是正常的，**不要改名**。
 > 实战背景：同型四套（dog1/2/3/4）全流程验证；2026-10-16 以 dog3 定稿，2026-11-24 按 dog4 实跑（11-02）更新烧卡与装机流程，以本文 + [go2-bridge/docs/NEW-DOG-ONBOARD.md](go2-bridge/docs/NEW-DOG-ONBOARD.md) 为准。
 > 本文档**自包含**：照着做不需要再查别的资料；大文件素材的获取/自制方法在 [assets/MANIFEST.md](assets/MANIFEST.md)，每处用到都有链接。
 
@@ -11,7 +12,7 @@
 ### 0.1 架构
 
 ```
-G12 遥控器 ──2.4G──► GR01 接收机 ──SBUS(反相后)──► 核桃派1B /dev/ttyS2
+G12 遥控器 ──2.4G──► GR01 接收机 ──SBUS(反相后)──► 核桃派ZeroW /dev/ttyS2
                         │                            ├─ bridge.py 解码/状态机/失控保护
                         ├──网口(144段)──┐             └─ WebRTC ──► 狗主控 :9991
                         │              ├── 成品交换机 ──┤

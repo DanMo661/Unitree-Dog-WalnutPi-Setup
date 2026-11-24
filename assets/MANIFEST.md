@@ -5,7 +5,7 @@
 ## §1 官方系统镜像
 
 **日常装机不需要本节**：直接烧 §2 的 golden 即可；本节是 golden 的底包，仅在从零重做时用。
-核桃派 1B 官方发布（官网 walnutpi.com 或官方群）：`V2.4_07-23_server_WalnutPi-1b_6.1.31_ubuntu22.img`（server 版 Ubuntu 22.04，内核 6.1.31）。
+核桃派官方发布（官网 walnutpi.com 或官方群）：`V2.4_07-23_server_WalnutPi-1b_6.1.31_ubuntu22.img`（server 版 Ubuntu 22.04，内核 6.1.31）。ZeroW 与 1B 镜像通用，文件名带 `1b` 即官方命名，照用。
 用其他版本镜像原则上也可，但以下路径/依赖均以该版本实测。
 
 ## §2 netplan 烙入（golden 的前身；当前默认直接烧 golden，本节仅作从零重做时留档）
