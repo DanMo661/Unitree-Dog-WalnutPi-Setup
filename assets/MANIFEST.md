@@ -10,7 +10,9 @@
 
 ## §2 netplan 烙入（golden 的前身；当前默认直接烧 golden，本节仅作从零重做时留档）
 
-当前默认烧的 **golden 黄金镜像**（`walnutpi-1b-golden.img`）= 官方镜像 + 本节 netplan 烙入 + SSH + 预装依赖，上电即可 SSH 装机；镜像不进 git，随交接包 `01-烧卡/` 提供。
+当前默认烧的 **golden 黄金镜像**（`walnutpi-1b-golden.img`，2.58GB）= 官方镜像 + 本节 netplan 烙入 + SSH + 预装依赖，上电即可 SSH 装机。镜像超出 git 与 GitHub 单资产上限，以 **Release 分卷资产**提供：[releases/tag/golden-img](../../releases/tag/golden-img)（part1+part2）。
+- 合并：Windows `copy /b walnutpi-1b-golden.img.part1+walnutpi-1b-golden.img.part2 walnutpi-1b-golden.img`；Linux/macOS `cat .part* > walnutpi-1b-golden.img`
+- 完整性：SHA256 = `8A208B179376DC0C7D46C548ED259A6A87F125258AE38B4266C02521CBD03B5C`，合并后核对一致再烧（烧录见 §8）
 若 golden 不可用要从零重做：先按本节在官方镜像上把网络配置写死进去，这样板子一上电就有 123.50 + 144.10，不用接串口配网。
 在 WSL（或任何 Linux）里：
 
@@ -89,10 +91,8 @@ Windows 中文环境编码崩溃、大文件分块传输（对应上游 legion15
 
 ## §7 遥控器 App 安装包（PaSend.apk / GO2控制台）
 
-App 源码**不在公开仓**（`make_release.py` 排除 `android-app/`；Java，无第三方依赖，`aapt+d8+apksigner` 或 Android Studio 构建），随交接包 `Go2控制台/android-app/` 提供。
-成品 APK 不入 git（.gitignore 排除二进制），两个来路：
-- 部署时用环境变量指定本地成品：`BRIDGE_APK=<APK路径> python deploy_page.py`（缺省找脚本同目录 `PaSend-v35-网络遥控.apk`）
-- 或自行构建：任意 Android 工程套入该 Java 源码 + `AndroidManifest.xml`（权限/组件声明都在），`aapt+d8+apksigner` 或 Android Studio 皆可
+App 源码 **2026-11-26 起已在本仓**（`go2-bridge/android-app/`；Java，无第三方依赖，`aapt+d8+apksigner` 或 Android Studio 构建）。
+成品 APK v36~v55 全版本也已入库（`go2-bridge/*.apk` 与 `go2-bridge/android-app/*.apk`，.gitignore 白名单放行）；部署时仍可指定本地成品：`BRIDGE_APK=<APK路径> python deploy_page.py`（缺省找脚本同目录）。
 
 ## §8 烧录脚本
 
