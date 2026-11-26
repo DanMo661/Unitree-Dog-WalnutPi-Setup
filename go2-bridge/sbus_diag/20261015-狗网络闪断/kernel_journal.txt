@@ -1,0 +1,42 @@
+Oct 14 11:41:22 WalnutPi kernel: bluetooth_set_power: start_block=0
+Oct 14 11:41:22 WalnutPi kernel: WCN: start_marlin [MARLIN_BLUETOOTH]
+Oct 14 11:41:22 WalnutPi kernel: WCN: marlin power state:5, subsys: [MARLIN_BLUETOOTH] power 1
+Oct 14 11:41:22 WalnutPi kernel: WCN: marlin have open, GNSS is closed
+Oct 14 11:41:22 WalnutPi kernel: bluetooth_set_power: end_block=0
+Oct 14 11:41:22 WalnutPi kernel: mtty_open device success!
+Oct 14 11:41:22 WalnutPi kernel: Bluetooth: Core ver 2.22
+Oct 14 11:41:22 WalnutPi kernel: NET: Registered PF_BLUETOOTH protocol family
+Oct 14 11:41:22 WalnutPi kernel: Bluetooth: HCI device and connection manager initialized
+Oct 14 11:41:22 WalnutPi kernel: Bluetooth: HCI socket layer initialized
+Oct 14 11:41:22 WalnutPi kernel: Bluetooth: L2CAP socket layer initialized
+Oct 14 11:41:22 WalnutPi kernel: Bluetooth: SCO socket layer initialized
+Oct 14 11:41:22 WalnutPi kernel: panfrost 1800000.gpu: clock rate = 432000000
+Oct 14 11:41:22 WalnutPi kernel: panfrost 1800000.gpu: bus_clock rate = 200000000
+Oct 14 11:41:22 WalnutPi kernel: sunxi-gmac 5030000.ethernet eth0: No PHY found!
+Oct 14 11:41:23 WalnutPi kernel: sunxi-gmac 5030000.ethernet eth0: phy init again...
+Oct 14 11:41:23 WalnutPi kernel: Bluetooth: HCI UART driver ver 2.3
+Oct 14 11:41:23 WalnutPi kernel: Bluetooth: HCI UART protocol H4 registered
+Oct 14 11:41:23 WalnutPi kernel: Bluetooth: HCI UART protocol BCSP registered
+Oct 14 11:41:23 WalnutPi kernel: Bluetooth: HCI UART protocol LL registered
+Oct 14 11:41:23 WalnutPi kernel: Bluetooth: HCI UART protocol ATH3K registered
+Oct 14 11:41:23 WalnutPi kernel: Bluetooth: HCI UART protocol Three-wire (H5) registered
+Oct 14 11:41:23 WalnutPi kernel: Bluetooth: HCI UART protocol Intel registered
+Oct 14 11:41:23 WalnutPi kernel: Bluetooth: HCI UART protocol Broadcom registered
+Oct 14 11:41:23 WalnutPi kernel: Bluetooth: HCI UART protocol QCA registered
+Oct 14 11:41:23 WalnutPi kernel: Bluetooth: HCI UART protocol AG6XX registered
+Oct 14 11:41:23 WalnutPi kernel: Bluetooth: HCI UART protocol Marvell registered
+Oct 14 11:41:23 WalnutPi kernel: panfrost 1800000.gpu: clock rate = 432000000
+Oct 14 11:41:23 WalnutPi kernel: panfrost 1800000.gpu: bus_clock rate = 200000000
+Oct 14 11:41:23 WalnutPi kernel: Bluetooth: BNEP (Ethernet Emulation) ver 1.3
+Oct 14 11:41:23 WalnutPi kernel: Bluetooth: BNEP filters: protocol multicast
+Oct 14 11:41:23 WalnutPi kernel: Bluetooth: BNEP socket layer initialized
+Oct 14 11:41:23 WalnutPi kernel: Bluetooth: MGMT ver 1.22
+Oct 14 11:41:23 WalnutPi kernel: NET: Registered PF_ALG protocol family
+Oct 14 11:41:24 WalnutPi kernel: panfrost 1800000.gpu: clock rate = 432000000
+Oct 14 11:41:24 WalnutPi kernel: panfrost 1800000.gpu: bus_clock rate = 200000000
+Oct 14 11:41:24 WalnutPi kernel: sunxi-gmac 5030000.ethernet eth0: eth0: Type(7) PHY ID 00441400 at 0 IRQ poll (5030000.ethernet-0:00)
+Oct 14 11:41:26 WalnutPi kernel: sunxi-gmac 5030000.ethernet eth0: Link is Up - 100Mbps/Full - flow control off
+Oct 14 11:41:33 WalnutPi kernel: panfrost 1800000.gpu: clock rate = 432000000
+Oct 14 11:41:33 WalnutPi kernel: panfrost 1800000.gpu: bus_clock rate = 200000000
+Oct 14 11:41:33 WalnutPi kernel: platform cpufreq-dt: deferred probe pending
+Oct 14 11:41:33 WalnutPi kernel: platform 1800000.gpu: deferred probe pending

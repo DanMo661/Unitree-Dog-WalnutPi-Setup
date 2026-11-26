@@ -1,0 +1,64 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="tokens.css">
+<style>
+/* 喊话台悬浮窗 240dp 宽 → 480px, 居中放在画布上 */
+body { width: 560px; height: 1000px; display: flex; align-items: center; justify-content: center; }
+#panel { width: 480px; background: rgba(37,38,40,.96); border-radius: 32px; padding: 8px 28px 24px;
+         box-shadow: var(--shadow); }
+.row { display: flex; align-items: center; }
+/* 标题行 */
+#top { padding: 16px 0 12px; }
+#top .tt { font-size: 30px; font-weight: 600; color: var(--txt); flex: 1; }
+#top .st { font-size: 26px; color: var(--txt2); margin-right: 20px; }
+.ghost { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center;
+         justify-content: center; font-size: 28px; color: var(--txt2); }
+/* hint: 次要文字, 状态色只上字 */
+#hint { font-size: 22px; color: var(--txt2); height: 56px; }
+/* 音量行: 大数字 + 交互井按钮 */
+#vol { gap: 16px; margin-top: 6px; }
+.vbtn { width: 64px; height: 56px; border-radius: 24px; background: var(--well);
+        color: var(--txt); font-size: 30px; font-weight: 600;
+        display: flex; align-items: center; justify-content: center; }
+#voln { flex: 1; text-align: center; font-size: 56px; font-weight: 700; color: var(--txt); }
+#voln small { font-size: 26px; font-weight: 400; color: var(--txt2); }
+/* 电平条: 交互井轨 + 强调蓝实心填充 */
+#lv { height: 10px; border-radius: 999px; background: var(--well); margin-top: 16px; }
+#lvf { width: 45%; height: 100%; border-radius: 999px; background: var(--blue); }
+/* 按钮行 */
+.brow { display: flex; gap: 16px; margin-top: 20px; }
+.btn { flex: 1; height: 84px; font-size: 28px; }
+/* 芯片排 */
+#chips { display: flex; gap: 12px; margin-top: 24px; overflow: hidden; }
+.chip { padding: 12px 26px; border-radius: 999px; background: var(--sub);
+        font-size: 24px; color: var(--txt2); white-space: nowrap; }
+.chip.on { background: var(--blue); color: #fff; font-weight: 600; }
+/* 底行小字 */
+#foot { display: flex; margin-top: 22px; }
+#foot .l { flex: 1; font-size: 22px; color: var(--txt2); }
+#foot .r { font-size: 22px; color: var(--txt2); }
+</style></head><body>
+  <div id="panel">
+    <div class="row" id="top">
+      <div class="tt"><svg width="26" height="26" viewBox="0 0 24 24" style="vertical-align:middle"><path d="M12,14c1.66,0 3,-1.34 3,-3V5c0,-1.66 -1.34,-3 -3,-3S9,3.34 9,5v6C9,12.66 10.34,14 12,14z M17,11c0,2.76 -2.24,5 -5,5s-5,-2.24 -5,-5H5c0,3.53 2.61,6.43 6,6.92V21h2v-3.08c3.39,-0.49 6,-3.39 6,-6.92H17z" fill="#F5F6FF"/></svg> 喊话台</div><div class="st" style="color:var(--green)">●</div>
+      <div class="ghost">—</div><div class="ghost">✕</div>
+    </div>
+    <div id="hint">○ 未在喊话</div>
+    <div class="row" id="vol">
+      <div class="vbtn">−</div>
+      <div id="voln" class="num">45<small>%</small></div>
+      <div class="vbtn">+</div>
+    </div>
+    <div id="lv"><div id="lvf"></div></div>
+    <div class="brow">
+      <div class="btn pill pill-blue">开始喊话</div>
+      <div class="btn pill pill-well">开始录音</div>
+    </div>
+    <div class="brow">
+      <div class="btn pill pill-sub">录音库</div>
+      <div class="btn pill pill-sub">控制台</div>
+    </div>
+    <div id="chips">
+      <div class="chip on">▶ 欢迎词</div><div class="chip">基米斗</div><div class="chip">基米斗地主</div>
+    </div>
+    <div id="foot"><div class="l">16k 高清 ⇄</div><div class="r">检查更新</div></div>
+  </div>
+</body></html>

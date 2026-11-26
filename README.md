@@ -92,12 +92,15 @@ curl http://192.168.123.50:8000/sbus    # 浏览器调试台(16通道实时/帧�
 | `go2-bridge/docs/NEW-DOG-ONBOARD.md` | 新狗上门 runbook：分工表、素材位置、EEE 语义、验收清单、烧卡重装后必做清单、实踩坑全集 |
 | `provisioning/flash_sd.ps1` | 唯一烧录脚本（先数据区后 MBR，逐字节校验，拒绝系统盘） |
 | `provisioning/SD-BURN.md` | TF 卡烧录权威流程：写卡顺序原理、脚本硬性要求、三个脚本坑、验收、废弃方案 |
-| `go2-bridge/` | 板端全套源码（bridge.py 转发层 + 部署脚本 + systemd 服务 + 测试） |
+| `go2-bridge/` | 板端全套源码 + 开发全量归档（bridge.py 转发层 + 部署脚本 + systemd 服务 + 测试 + **android-app 遥控 App 源码** + research 诊断 + tools + sbus_diag + archive + 离线依赖 **wheels2.tar.gz**） |
 | `go2-bridge/core/` | 遥控状态机纯逻辑（fsm.py，表驱动可测） |
 | `assets/MANIFEST.md` | TF 卡镜像、离线依赖等大文件素材的获取方式 |
+| `go2rc/` | G12 SBUS → Go2 Air 遥控桥新手完整指南版（文档级） |
+| `go2-bridge-原版SBUS/` | go2-bridge 存档变体（原版 SBUS 接线方案快照） |
+| `go2-bridge-板上可用版-20260929/` | 2026-09-29 板上可用快照版 |
 
 > `go2-bridge/` 里与运行/装机直接相关的文件集合以 `tools/make_release.py` 白名单为准；
-> 标定用 `calibrate.py` 与 `sbus_monitor.py`，遥控器 App 以 releases/安装页的成品 APK 为准（源码不在本仓）。
+> 标定用 `calibrate.py` 与 `sbus_monitor.py`；遥控器 App 成品 APK 在安装页/releases，**App 源码已随 2026-11-26 全量归档入库（go2-bridge/android-app/）**。
 
 ## 已知边界
 

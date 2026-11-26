@@ -1,0 +1,120 @@
+[Wed Oct 14 11:41:18 2026] WCN: then marlin start to download
+[Wed Oct 14 11:41:18 2026] WCN: marlin_request_firmware from /lib/firmware/wcnmodem.bin start!
+[Wed Oct 14 11:41:20 2026] mc: Linux media interface: v0.10
+[Wed Oct 14 11:41:20 2026] videodev: Linux video capture interface: v2.00
+[Wed Oct 14 11:41:20 2026] panfrost 1800000.gpu: clock rate = 432000000
+[Wed Oct 14 11:41:20 2026] panfrost 1800000.gpu: bus_clock rate = 200000000
+[Wed Oct 14 11:41:20 2026] sunxi_cedrus: module is from the staging directory, the quality is unknown, you have been warned.
+[Wed Oct 14 11:41:20 2026] cedrus 1c0e000.video-codec: Device registered as /dev/video0
+[Wed Oct 14 11:41:20 2026] panfrost 1800000.gpu: clock rate = 432000000
+[Wed Oct 14 11:41:20 2026] panfrost 1800000.gpu: bus_clock rate = 200000000
+[Wed Oct 14 11:41:20 2026] WCN: combin_img 0 marlin_firmware_write finish and successful
+[Wed Oct 14 11:41:20 2026] WCN: marlin_start_run read reset reg val:0x1
+[Wed Oct 14 11:41:20 2026] WCN: after do marlin_start_run reset reg val:0x0
+[Wed Oct 14 11:41:20 2026] WCN: s_marlin_bootup_time=7199969430
+[Wed Oct 14 11:41:20 2026] WCN: clock mode: TSX
+[Wed Oct 14 11:41:20 2026] WCN: marlin_write_cali_data sync init_state:0xffffffff
+[Wed Oct 14 11:41:20 2026] WCN: marlin_write_cali_data sync init_state:0xffffffff
+[Wed Oct 14 11:41:20 2026] panfrost 1800000.gpu: clock rate = 432000000
+[Wed Oct 14 11:41:20 2026] panfrost 1800000.gpu: bus_clock rate = 200000000
+[Wed Oct 14 11:41:20 2026] WCN: marlin_write_cali_data sync init_state:0xf0f0f0f1
+[Wed Oct 14 11:41:20 2026] WCN: sdio_config bt_wake_host trigger:[high]
+[Wed Oct 14 11:41:20 2026] WCN: sdio_config irq:[inband]
+[Wed Oct 14 11:41:20 2026] WCN: sdio_config wake_host_level_duration_time:[20ms]
+[Wed Oct 14 11:41:20 2026] WCN: sdio_config wake_host_data_separation:[bt/wifi reuse]
+[Wed Oct 14 11:41:20 2026] WCN: marlin_send_sdio_config_to_cp sdio_config:0x80f01 (enable config)
+[Wed Oct 14 11:41:20 2026] WCN: marlin_write_cali_data finish
+[Wed Oct 14 11:41:20 2026] WCN: check_cp_ready sync val:0xf0f0f0f2, prj_type val:0x0
+[Wed Oct 14 11:41:20 2026] WCN: check_cp_ready sync val:0xf0f0f0f2, prj_type val:0x0
+[Wed Oct 14 11:41:20 2026] WCN: check_cp_ready sync val:0xf0f0f0f2, prj_type val:0x0
+[Wed Oct 14 11:41:20 2026] WCN: check_cp_ready sync val:0xf0f0f0f2, prj_type val:0x0
+[Wed Oct 14 11:41:20 2026] panfrost 1800000.gpu: clock rate = 432000000
+[Wed Oct 14 11:41:20 2026] panfrost 1800000.gpu: bus_clock rate = 200000000
+[Wed Oct 14 11:41:20 2026] WCN: check_cp_ready sync val:0xf0f0f0ff, prj_type val:0x0
+[Wed Oct 14 11:41:20 2026] sdiohal:sdiohal_runtime_get entry
+[Wed Oct 14 11:41:20 2026] WCN: get_cp2_version entry!
+[Wed Oct 14 11:41:20 2026] WCN: WCND at cmd read:WCN_VER:Platform Version:MARLIN3_19B_W21.05.3~Project Version:sc2355_marlin3_lite_ott~12-15-2021 11:26:33~
+[Wed Oct 14 11:41:20 2026] WCN: switch_cp2_log - close entry!
+[Wed Oct 14 11:41:20 2026] WCN: WCND at cmd read:OK
+[Wed Oct 14 11:41:20 2026] WCN: then marlin download finished and run ok
+[Wed Oct 14 11:41:20 2026] WCN: start_loopcheck
+[Wed Oct 14 11:41:20 2026] WCN: get_board_ant_num [one_ant]
+[Wed Oct 14 11:41:20 2026] wifi ini path = /lib/firmware/wifi_2355b001_1ant.ini
+[Wed Oct 14 11:41:20 2026] sprdwl:sprdwl_get_fw_info length mismatch: len_count=83, r_len=89
+[Wed Oct 14 11:41:20 2026] sprdwl:sprdwl_get_fw_info, drv_version=1, fw_version=2, compat_ver=0
+[Wed Oct 14 11:41:20 2026] sprdwl:chip_model:0x2355, chip_ver:0x0
+[Wed Oct 14 11:41:20 2026] sprdwl:fw_ver:0, fw_std:0x7f, fw_capa:0x120f7f
+[Wed Oct 14 11:41:20 2026] sprdwl:mac_addr:ec:b5:0a:e6:1b:03
+[Wed Oct 14 11:41:20 2026] sprdwl:credit_capa:TX_WITH_CREDIT
+[Wed Oct 14 11:41:20 2026] sprdwl:ott support:0
+[Wed Oct 14 11:41:20 2026] Registered IR keymap rc-empty
+[Wed Oct 14 11:41:20 2026] rc rc0: sunxi-ir as /devices/platform/soc/7040000.ir/rc/rc0
+[Wed Oct 14 11:41:20 2026] rc rc0: lirc_dev: driver sunxi-ir registered at minor = 0, raw IR receiver, no transmitter
+[Wed Oct 14 11:41:20 2026] input: sunxi-ir as /devices/platform/soc/7040000.ir/rc/rc0/input0
+[Wed Oct 14 11:41:20 2026] sunxi-ir 7040000.ir: initialized sunXi IR driver
+[Wed Oct 14 11:41:20 2026] panfrost 1800000.gpu: clock rate = 432000000
+[Wed Oct 14 11:41:20 2026] panfrost 1800000.gpu: bus_clock rate = 200000000
+[Wed Oct 14 11:41:20 2026] unisoc_wifi unisoc_wifi wlan0: mixed HW and IP checksum settings.
+[Wed Oct 14 11:41:20 2026] panfrost 1800000.gpu: clock rate = 432000000
+[Wed Oct 14 11:41:20 2026] panfrost 1800000.gpu: bus_clock rate = 200000000
+[Wed Oct 14 11:41:20 2026] mtty_probe init device addr: 0x00000000cf793317
+[Wed Oct 14 11:41:20 2026] -->rfkill_bluetooth_init
+[Wed Oct 14 11:41:20 2026] bluetooth_set_power: start_block=1
+[Wed Oct 14 11:41:20 2026] WCN: marlin power state:4, subsys: [MARLIN_BLUETOOTH] power 0
+[Wed Oct 14 11:41:20 2026] WCN: can not power off, other module is on
+[Wed Oct 14 11:41:20 2026] bluetooth_set_power: end_block=1
+[Wed Oct 14 11:41:20 2026] <--rfkill_bluetooth_init
+[Wed Oct 14 11:41:20 2026] panfrost 1800000.gpu: clock rate = 432000000
+[Wed Oct 14 11:41:20 2026] panfrost 1800000.gpu: bus_clock rate = 200000000
+[Wed Oct 14 11:41:20 2026] FAT-fs (mmcblk1p1): Volume was not properly unmounted. Some data may be corrupt. Please run fsck.
+[Wed Oct 14 11:41:20 2026] bluetooth_set_power: start_block=0
+[Wed Oct 14 11:41:20 2026] WCN: start_marlin [MARLIN_BLUETOOTH]
+[Wed Oct 14 11:41:20 2026] WCN: marlin power state:4, subsys: [MARLIN_BLUETOOTH] power 1
+[Wed Oct 14 11:41:20 2026] WCN: marlin have open, GNSS is closed
+[Wed Oct 14 11:41:20 2026] bluetooth_set_power: end_block=0
+[Wed Oct 14 11:41:20 2026] RPC: Registered named UNIX socket transport module.
+[Wed Oct 14 11:41:20 2026] RPC: Registered udp transport module.
+[Wed Oct 14 11:41:20 2026] RPC: Registered tcp transport module.
+[Wed Oct 14 11:41:20 2026] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[Wed Oct 14 11:41:21 2026] bluetooth_set_power: start_block=0
+[Wed Oct 14 11:41:21 2026] WCN: start_marlin [MARLIN_BLUETOOTH]
+[Wed Oct 14 11:41:21 2026] WCN: marlin power state:5, subsys: [MARLIN_BLUETOOTH] power 1
+[Wed Oct 14 11:41:21 2026] WCN: marlin have open, GNSS is closed
+[Wed Oct 14 11:41:21 2026] bluetooth_set_power: end_block=0
+[Wed Oct 14 11:41:21 2026] mtty_open device success!
+[Wed Oct 14 11:41:22 2026] Bluetooth: Core ver 2.22
+[Wed Oct 14 11:41:22 2026] NET: Registered PF_BLUETOOTH protocol family
+[Wed Oct 14 11:41:22 2026] Bluetooth: HCI device and connection manager initialized
+[Wed Oct 14 11:41:22 2026] Bluetooth: HCI socket layer initialized
+[Wed Oct 14 11:41:22 2026] Bluetooth: L2CAP socket layer initialized
+[Wed Oct 14 11:41:22 2026] Bluetooth: SCO socket layer initialized
+[Wed Oct 14 11:41:22 2026] panfrost 1800000.gpu: clock rate = 432000000
+[Wed Oct 14 11:41:22 2026] panfrost 1800000.gpu: bus_clock rate = 200000000
+[Wed Oct 14 11:41:22 2026] sunxi-gmac 5030000.ethernet eth0: No PHY found!
+[Wed Oct 14 11:41:22 2026] sunxi-gmac 5030000.ethernet eth0: phy init again...
+[Wed Oct 14 11:41:22 2026] Bluetooth: HCI UART driver ver 2.3
+[Wed Oct 14 11:41:22 2026] Bluetooth: HCI UART protocol H4 registered
+[Wed Oct 14 11:41:22 2026] Bluetooth: HCI UART protocol BCSP registered
+[Wed Oct 14 11:41:22 2026] Bluetooth: HCI UART protocol LL registered
+[Wed Oct 14 11:41:22 2026] Bluetooth: HCI UART protocol ATH3K registered
+[Wed Oct 14 11:41:22 2026] Bluetooth: HCI UART protocol Three-wire (H5) registered
+[Wed Oct 14 11:41:22 2026] Bluetooth: HCI UART protocol Intel registered
+[Wed Oct 14 11:41:22 2026] Bluetooth: HCI UART protocol Broadcom registered
+[Wed Oct 14 11:41:22 2026] Bluetooth: HCI UART protocol QCA registered
+[Wed Oct 14 11:41:22 2026] Bluetooth: HCI UART protocol AG6XX registered
+[Wed Oct 14 11:41:22 2026] Bluetooth: HCI UART protocol Marvell registered
+[Wed Oct 14 11:41:22 2026] panfrost 1800000.gpu: clock rate = 432000000
+[Wed Oct 14 11:41:22 2026] panfrost 1800000.gpu: bus_clock rate = 200000000
+[Wed Oct 14 11:41:23 2026] Bluetooth: BNEP (Ethernet Emulation) ver 1.3
+[Wed Oct 14 11:41:23 2026] Bluetooth: BNEP filters: protocol multicast
+[Wed Oct 14 11:41:23 2026] Bluetooth: BNEP socket layer initialized
+[Wed Oct 14 11:41:23 2026] Bluetooth: MGMT ver 1.22
+[Wed Oct 14 11:41:23 2026] NET: Registered PF_ALG protocol family
+[Wed Oct 14 11:41:23 2026] panfrost 1800000.gpu: clock rate = 432000000
+[Wed Oct 14 11:41:23 2026] panfrost 1800000.gpu: bus_clock rate = 200000000
+[Wed Oct 14 11:41:23 2026] sunxi-gmac 5030000.ethernet eth0: eth0: Type(7) PHY ID 00441400 at 0 IRQ poll (5030000.ethernet-0:00)
+[Wed Oct 14 11:41:25 2026] sunxi-gmac 5030000.ethernet eth0: Link is Up - 100Mbps/Full - flow control off
+[Wed Oct 14 11:41:32 2026] panfrost 1800000.gpu: clock rate = 432000000
+[Wed Oct 14 11:41:32 2026] panfrost 1800000.gpu: bus_clock rate = 200000000
+[Wed Oct 14 11:41:32 2026] platform cpufreq-dt: deferred probe pending
+[Wed Oct 14 11:41:32 2026] platform 1800000.gpu: deferred probe pending

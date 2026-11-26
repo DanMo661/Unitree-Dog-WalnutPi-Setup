@@ -1,0 +1,1707 @@
+Oct 14 03:43:24 WalnutPi systemd[1]: Stopping Go2 SBUS RC bridge (SBUS -> WebRTC MCF)...
+Oct 14 03:43:24 WalnutPi systemd[1]: go2-bridge.service: Deactivated successfully.
+Oct 14 03:43:24 WalnutPi systemd[1]: Stopped Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+Oct 14 03:43:24 WalnutPi systemd[1]: go2-bridge.service: Consumed 11.205s CPU time.
+-- Boot 59e1bb5d54f04bf699377a94407573c4 --
+Oct 14 03:43:54 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+Oct 14 03:44:06 WalnutPi python[867]: 🕒 WebRTC connection        : 🟡 started       (03:44:06)
+Oct 14 03:44:06 WalnutPi python[867]: [03:44:06] 喊话音量 25%, 混音控件: LINEOUT volume
+Oct 14 03:44:06 WalnutPi python[867]: [03:44:06] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)[03:44:06] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)
+Oct 14 03:44:06 WalnutPi python[867]: [03:44:06] 上传就绪: UDP :15003 (预设文件 -> /home/pi/pa-files)
+Oct 14 03:44:06 WalnutPi python[867]: [03:44:06] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+Oct 14 03:44:06 WalnutPi python[867]: [03:44:06] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+Oct 14 03:44:06 WalnutPi python[867]: [03:44:06] GPIO 不可用, 已降级空转: PermissionError(13, 'Permission denied')
+Oct 14 03:44:06 WalnutPi python[867]: [03:44:06] GPIO 不可用, 已降级空转: PermissionError(13, 'Permission denied')
+Oct 14 03:44:06 WalnutPi python[867]: [03:44:06] GPIO 不可用, 已降级空转: PermissionError(13, 'Permission denied')
+Oct 14 03:44:06 WalnutPi python[867]: [03:44:06] GPIO 不可用, 已降级空转: PermissionError(13, 'Permission denied')
+Oct 14 03:44:07 WalnutPi python[867]: [03:44:07] 舵机就绪: /sys/class/pwm/pwmchip0/pwm1 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+Oct 14 03:44:07 WalnutPi python[867]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (03:44:07)
+Oct 14 03:44:07 WalnutPi python[867]: 🕒 Signaling State          : 🟡 have-local-offer (03:44:07)
+Oct 14 03:44:07 WalnutPi python[867]: 🕒 ICE Gathering State      : 🟡 gathering     (03:44:07)
+Oct 14 03:44:07 WalnutPi python[867]: 🕒 ICE Gathering State      : 🟢 complete      (03:44:07)
+Oct 14 03:44:07 WalnutPi python[867]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (03:44:07)
+Oct 14 03:44:07 WalnutPi python[867]: [03:44:07] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+Oct 14 03:44:07 WalnutPi python[867]: [03:44:07] SBUS 串口已打开: /dev/ttyS2
+Oct 14 03:44:07 WalnutPi python[867]: [03:44:07] pwm1: 脉宽 -> 1050us
+Oct 14 03:44:07 WalnutPi python[867]: [03:44:07] pwm2: 脉宽 -> 1050us
+Oct 14 03:44:08 WalnutPi python[867]: 🕒 ICE Connection State     : 🔵 checking      (03:44:08)
+Oct 14 03:44:08 WalnutPi python[867]: 🕒 Peer Connection State    : 🔵 connecting    (03:44:08)
+Oct 14 03:44:09 WalnutPi python[867]: 🕒 ICE Connection State     : 🟢 completed     (03:44:09)
+Oct 14 03:44:09 WalnutPi python[867]: 🕒 Signaling State          : 🟢 stable        (03:44:09)
+Oct 14 03:44:09 WalnutPi python[867]: 🕒 Peer Connection State    : 🟢 connected     (03:44:09)
+Oct 14 03:44:10 WalnutPi python[867]: 🕒 Data Channel Verification: ✅ OK            (03:44:10)
+Oct 14 03:44:10 WalnutPi python[867]: [03:44:10] WebRTC 已连接
+Oct 14 03:44:10 WalnutPi python[867]: [03:44:10] 开机首连: 狗自行起立, 已锁定等待解锁
+Oct 14 03:44:13 WalnutPi python[867]: 🕒 Robot Connection Mode    : 📡 4G            (03:44:13)
+Oct 14 03:44:15 WalnutPi python[867]: [03:44:15] 心跳回读挡位: {"data":1}
+Oct 14 03:46:19 WalnutPi systemd[1]: Stopping Go2 SBUS RC bridge (SBUS -> WebRTC MCF)...
+Oct 14 03:46:19 WalnutPi systemd[1]: go2-bridge.service: Deactivated successfully.
+Oct 14 03:46:19 WalnutPi systemd[1]: Stopped Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+Oct 14 03:46:19 WalnutPi systemd[1]: go2-bridge.service: Consumed 12.792s CPU time.
+Oct 14 03:46:19 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+Oct 14 03:46:23 WalnutPi python[1281]: 🕒 WebRTC connection        : 🟡 started       (03:46:23)
+Oct 14 03:46:23 WalnutPi python[1281]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (03:46:23)
+Oct 14 03:46:23 WalnutPi python[1281]: 🕒 Signaling State          : 🟡 have-local-offer (03:46:23)
+Oct 14 03:46:23 WalnutPi python[1281]: 🕒 ICE Gathering State      : 🟡 gathering     (03:46:23)
+Oct 14 03:46:23 WalnutPi python[1281]: 🕒 ICE Gathering State      : 🟢 complete      (03:46:23)
+Oct 14 03:46:23 WalnutPi python[1281]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (03:46:23)
+Oct 14 03:46:23 WalnutPi python[1281]: [03:46:23] 喊话音量 25%, 混音控件: LINEOUT volume
+Oct 14 03:46:23 WalnutPi python[1281]: [03:46:23] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)
+Oct 14 03:46:23 WalnutPi python[1281]: [03:46:23] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)
+Oct 14 03:46:23 WalnutPi python[1281]: [03:46:23] 上传就绪: UDP :15003 (预设文件 -> /home/pi/pa-files)
+Oct 14 03:46:23 WalnutPi python[1281]: [03:46:23] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+Oct 14 03:46:23 WalnutPi python[1281]: [03:46:23] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+Oct 14 03:46:23 WalnutPi python[1281]: [03:46:23] GPIO 不可用, 已降级空转: PermissionError(13, 'Permission denied')
+Oct 14 03:46:23 WalnutPi python[1281]: [03:46:23] GPIO 不可用, 已降级空转: PermissionError(13, 'Permission denied')
+Oct 14 03:46:23 WalnutPi python[1281]: [03:46:23] GPIO 不可用, 已降级空转: PermissionError(13, 'Permission denied')
+Oct 14 03:46:23 WalnutPi python[1281]: [03:46:23] GPIO 不可用, 已降级空转: PermissionError(13, 'Permission denied')
+Oct 14 03:46:23 WalnutPi python[1281]: [03:46:23] 舵机就绪: /sys/class/pwm/pwmchip0/pwm1 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+Oct 14 03:46:23 WalnutPi python[1281]: [03:46:23] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+Oct 14 03:46:23 WalnutPi python[1281]: [03:46:23] SBUS 串口已打开: /dev/ttyS2
+Oct 14 03:46:23 WalnutPi python[1281]: [03:46:23] pwm1: 脉宽 -> 1050us
+Oct 14 03:46:23 WalnutPi python[1281]: [03:46:23] pwm2: 脉宽 -> 1050us
+Oct 14 03:46:24 WalnutPi python[1281]: 🕒 ICE Connection State     : 🔵 checking      (03:46:24)
+Oct 14 03:46:24 WalnutPi python[1281]: 🕒 Peer Connection State    : 🔵 connecting    (03:46:24)
+Oct 14 03:46:25 WalnutPi python[1281]: ERROR:asyncio:Task exception was never retrieved
+Oct 14 03:46:25 WalnutPi python[1281]: future: <Task finished name='Task-13' coro=<RTCPeerConnection.__connect() done, defined at /home/pi/go2-bridge/.venv/lib/python3.10/site-packages/aiortc/rtcpeerconnection.py:1072> exception=AttributeError("'NoneType' object has no attribute 'media'")>
+Oct 14 03:46:25 WalnutPi python[1281]: Traceback (most recent call last):
+Oct 14 03:46:25 WalnutPi python[1281]:   File "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages/aiortc/rtcpeerconnection.py", line 1088, in __connect
+Oct 14 03:46:25 WalnutPi python[1281]:     self.__remoteRtp(transceiver)
+Oct 14 03:46:25 WalnutPi python[1281]:   File "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages/aiortc/rtcpeerconnection.py", line 1237, in __remoteRtp
+Oct 14 03:46:25 WalnutPi python[1281]:     media = self.__remoteDescription().media[transceiver._get_mline_index()]
+Oct 14 03:46:25 WalnutPi python[1281]: AttributeError: 'NoneType' object has no attribute 'media'
+Oct 14 03:46:25 WalnutPi python[1281]: 🕒 ICE Connection State     : 🟢 completed     (03:46:25)
+Oct 14 03:46:25 WalnutPi python[1281]: 🕒 Peer Connection State    : 🟢 connected     (03:46:25)
+Oct 14 03:46:25 WalnutPi python[1281]: 🕒 Signaling State          : 🟢 stable        (03:46:25)
+Oct 14 03:46:25 WalnutPi python[1281]: 🕒 Data Channel Verification: ✅ OK            (03:46:25)
+Oct 14 03:46:25 WalnutPi python[1281]: [03:46:25] WebRTC 已连接
+Oct 14 03:46:25 WalnutPi python[1281]: [03:46:25] 开机首连: 狗自行起立, 已锁定等待解锁
+Oct 14 03:46:28 WalnutPi python[1281]: 🕒 Robot Connection Mode    : 📡 4G            (03:46:28)
+Oct 14 03:46:30 WalnutPi python[1281]: [03:46:30] 心跳回读挡位: {"data":1}
+Oct 14 03:46:53 WalnutPi systemd[1]: Stopping Go2 SBUS RC bridge (SBUS -> WebRTC MCF)...
+Oct 14 03:46:53 WalnutPi systemd[1]: go2-bridge.service: Deactivated successfully.
+Oct 14 03:46:53 WalnutPi systemd[1]: Stopped Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+Oct 14 03:46:53 WalnutPi systemd[1]: go2-bridge.service: Consumed 8.553s CPU time.
+Oct 14 03:46:53 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+Oct 14 03:46:57 WalnutPi python[1455]: 🕒 WebRTC connection        : 🟡 started       (03:46:57)
+Oct 14 03:46:57 WalnutPi python[1455]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (03:46:57)
+Oct 14 03:46:57 WalnutPi python[1455]: 🕒 Signaling State          : 🟡 have-local-offer (03:46:57)
+Oct 14 03:46:57 WalnutPi python[1455]: 🕒 ICE Gathering State      : 🟡 gathering     (03:46:57)
+Oct 14 03:46:57 WalnutPi python[1455]: 🕒 ICE Gathering State      : 🟢 complete      (03:46:57)
+Oct 14 03:46:57 WalnutPi python[1455]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (03:46:57)
+Oct 14 03:46:57 WalnutPi python[1455]: [03:46:57] 喊话音量 25%, 混音控件: LINEOUT volume
+Oct 14 03:46:57 WalnutPi python[1455]: [03:46:57] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)
+Oct 14 03:46:57 WalnutPi python[1455]: [03:46:57] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)
+Oct 14 03:46:57 WalnutPi python[1455]: [03:46:57] 上传就绪: UDP :15003 (预设文件 -> /root/pa-files)
+Oct 14 03:46:57 WalnutPi python[1455]: [03:46:57] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+Oct 14 03:46:57 WalnutPi python[1455]: [03:46:57] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+Oct 14 03:46:57 WalnutPi python[1455]: [03:46:57] GPIO 就绪: /sys/class/gpio/gpio269 (上电=低/继电器关)
+Oct 14 03:46:57 WalnutPi python[1455]: [03:46:57] GPIO 就绪: /sys/class/gpio/gpio270 (上电=低/继电器关)
+Oct 14 03:46:57 WalnutPi python[1455]: [03:46:57] GPIO 就绪: /sys/class/gpio/gpio260 (上电=低/继电器关)
+Oct 14 03:46:57 WalnutPi python[1455]: [03:46:57] GPIO 就绪: /sys/class/gpio/gpio259 (上电=低/继电器关)
+Oct 14 03:46:57 WalnutPi python[1455]: [03:46:57] 舵机就绪: /sys/class/pwm/pwmchip0/pwm1 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+Oct 14 03:46:57 WalnutPi python[1455]: [03:46:57] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+Oct 14 03:46:57 WalnutPi python[1455]: [03:46:57] SBUS 串口已打开: /dev/ttyS2
+Oct 14 03:46:57 WalnutPi python[1455]: [03:46:57] pwm1: 脉宽 -> 1050us
+Oct 14 03:46:57 WalnutPi python[1455]: [03:46:57] pwm2: 脉宽 -> 1050us
+Oct 14 03:46:58 WalnutPi python[1455]: 🕒 ICE Connection State     : 🔵 checking      (03:46:58)
+Oct 14 03:46:58 WalnutPi python[1455]: 🕒 Peer Connection State    : 🔵 connecting    (03:46:58)
+Oct 14 03:47:00 WalnutPi python[1455]: 🕒 Signaling State          : 🟢 stable        (03:47:00)
+Oct 14 03:47:00 WalnutPi python[1455]: 🕒 ICE Connection State     : 🟢 completed     (03:47:00)
+Oct 14 03:47:00 WalnutPi python[1455]: 🕒 Peer Connection State    : 🟢 connected     (03:47:00)
+Oct 14 03:47:00 WalnutPi python[1455]: 🕒 Data Channel Verification: ✅ OK            (03:47:00)
+Oct 14 03:47:00 WalnutPi python[1455]: [03:47:00] WebRTC 已连接
+Oct 14 03:47:00 WalnutPi python[1455]: [03:47:00] 开机首连: 狗自行起立, 已锁定等待解锁
+Oct 14 03:47:04 WalnutPi python[1455]: 🕒 Robot Connection Mode    : 📡 4G            (03:47:04)
+Oct 14 03:47:05 WalnutPi python[1455]: [03:47:05] 心跳回读挡位: {"data":1}
+-- Boot 900e9ed8f5cd4628aedbd9cd7dcbcf31 --
+Oct 14 03:48:00 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+Oct 14 06:28:13 WalnutPi python[903]: [06:28:13] 到狗链路不通(网线/狗未开机), 等待恢复...
+Oct 14 06:28:13 WalnutPi python[903]: [06:28:13] 喊话音量 25%, 混音控件: LINEOUT volume
+Oct 14 06:28:13 WalnutPi python[903]: [06:28:13] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)
+Oct 14 06:28:13 WalnutPi python[903]: [06:28:13] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)
+Oct 14 06:28:13 WalnutPi python[903]: [06:28:13] 上传就绪: UDP :15003 (预设文件 -> /root/pa-files)
+Oct 14 06:28:13 WalnutPi python[903]: [06:28:13] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+Oct 14 06:28:13 WalnutPi python[903]: [06:28:13] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+Oct 14 06:28:13 WalnutPi python[903]: [06:28:13] GPIO 就绪: /sys/class/gpio/gpio269 (上电=低/继电器关)
+Oct 14 06:28:13 WalnutPi python[903]: [06:28:13] GPIO 就绪: /sys/class/gpio/gpio270 (上电=低/继电器关)
+Oct 14 06:28:13 WalnutPi python[903]: [06:28:13] GPIO 就绪: /sys/class/gpio/gpio260 (上电=低/继电器关)
+Oct 14 06:28:13 WalnutPi python[903]: [06:28:13] GPIO 就绪: /sys/class/gpio/gpio259 (上电=低/继电器关)
+Oct 14 06:28:13 WalnutPi python[903]: [06:28:13] 舵机就绪: /sys/class/pwm/pwmchip0/pwm1 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+Oct 14 06:28:13 WalnutPi python[903]: [06:28:13] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+Oct 14 06:28:13 WalnutPi python[903]: [06:28:13] SBUS 串口已打开: /dev/ttyS2
+Oct 14 06:28:13 WalnutPi python[903]: [06:28:13] pwm1: 脉宽 -> 1050us
+Oct 14 06:28:13 WalnutPi python[903]: [06:28:13] pwm2: 脉宽 -> 1050us
+Oct 14 06:28:19 WalnutPi python[903]: 🕒 WebRTC connection        : 🟡 started       (06:28:19)
+Oct 14 06:28:20 WalnutPi python[903]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (06:28:20)
+Oct 14 06:28:20 WalnutPi python[903]: 🕒 Signaling State          : 🟡 have-local-offer (06:28:20)
+Oct 14 06:28:20 WalnutPi python[903]: 🕒 ICE Gathering State      : 🟡 gathering     (06:28:20)
+Oct 14 06:28:20 WalnutPi python[903]: 🕒 ICE Gathering State      : 🟢 complete      (06:28:20)
+Oct 14 06:28:20 WalnutPi python[903]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (06:28:20)
+Oct 14 06:28:20 WalnutPi python[903]: 🕒 ICE Connection State     : 🔵 checking      (06:28:20)
+Oct 14 06:28:20 WalnutPi python[903]: 🕒 Peer Connection State    : 🔵 connecting    (06:28:20)
+Oct 14 06:28:20 WalnutPi python[903]: 🕒 ICE Connection State     : 🟢 completed     (06:28:20)
+Oct 14 06:28:20 WalnutPi python[903]: 🕒 Signaling State          : 🟢 stable        (06:28:20)
+Oct 14 06:28:20 WalnutPi python[903]: 🕒 Peer Connection State    : 🟢 connected     (06:28:20)
+Oct 14 06:28:20 WalnutPi python[903]: 🕒 Data Channel Verification: ✅ OK            (06:28:20)
+Oct 14 06:28:21 WalnutPi python[903]: [06:28:21] WebRTC 已连接
+Oct 14 06:28:21 WalnutPi python[903]: [06:28:21] 开机首连: 狗自行起立, 已锁定等待解锁
+Oct 14 06:28:24 WalnutPi python[903]: 🕒 Robot Connection Mode    : 📡 4G            (06:28:24)
+Oct 14 06:28:26 WalnutPi python[903]: [06:28:26] 心跳回读挡位: {"data":1}
+Oct 14 06:28:26 WalnutPi python[903]: [06:28:26] 已解锁(RC)
+Oct 14 06:28:26 WalnutPi python[903]: [06:28:26] 指令 -> StopMove
+Oct 14 06:28:26 WalnutPi python[903]: [06:28:26] 指令 -> StandDown
+Oct 14 06:28:26 WalnutPi python[903]: [06:28:26] 模式 -> 趴
+Oct 14 06:28:28 WalnutPi python[903]: [06:28:28] 指令 -> StopMove
+Oct 14 06:28:28 WalnutPi python[903]: [06:28:28] 指令 -> StandUp
+Oct 14 06:28:28 WalnutPi python[903]: [06:28:28] 模式 -> 走
+Oct 14 06:28:28 WalnutPi python[903]: [06:28:28] 指令 -> EconomicGait
+Oct 14 06:28:28 WalnutPi python[903]: [06:28:28] 挡位 -> 1 (EconomicGait)
+Oct 14 06:28:28 WalnutPi python[903]: [06:28:28] StopMove 被狗拒绝 code = -1
+Oct 14 06:28:31 WalnutPi python[903]: [06:28:31] 指令 -> BalanceStand
+Oct 14 06:28:31 WalnutPi python[903]: [06:28:31] 指令 -> StopMove
+Oct 14 06:28:40 WalnutPi python[903]: [06:28:40] 指令 -> StandDown
+Oct 14 06:28:40 WalnutPi python[903]: [06:28:40] 模式 -> 趴
+Oct 14 06:28:41 WalnutPi python[903]: [06:28:41] 心跳回读挡位: {"data":-1}
+Oct 14 06:29:52 WalnutPi systemd[1]: Stopping Go2 SBUS RC bridge (SBUS -> WebRTC MCF)...
+Oct 14 06:29:52 WalnutPi systemd[1]: go2-bridge.service: Deactivated successfully.
+Oct 14 06:29:52 WalnutPi systemd[1]: Stopped Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+Oct 14 06:29:52 WalnutPi systemd[1]: go2-bridge.service: Consumed 11.491s CPU time.
+Oct 14 06:29:52 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+Oct 14 06:29:57 WalnutPi python[1064]: 🕒 WebRTC connection        : 🟡 started       (06:29:57)
+Oct 14 06:29:57 WalnutPi python[1064]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (06:29:57)
+Oct 14 06:29:57 WalnutPi python[1064]: 🕒 Signaling State          : 🟡 have-local-offer (06:29:57)
+Oct 14 06:29:57 WalnutPi python[1064]: 🕒 ICE Gathering State      : 🟡 gathering     (06:29:57)
+Oct 14 06:29:57 WalnutPi python[1064]: 🕒 ICE Gathering State      : 🟢 complete      (06:29:57)
+Oct 14 06:29:57 WalnutPi python[1064]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (06:29:57)
+Oct 14 06:29:57 WalnutPi python[1064]: [06:29:57] 喊话音量 25%, 混音控件: LINEOUT volume
+Oct 14 06:29:57 WalnutPi python[1064]: [06:29:57] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)
+Oct 14 06:29:57 WalnutPi python[1064]: [06:29:57] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)
+Oct 14 06:29:57 WalnutPi python[1064]: [06:29:57] 上传就绪: UDP :15003 (预设文件 -> /root/pa-files)
+Oct 14 06:29:57 WalnutPi python[1064]: [06:29:57] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+Oct 14 06:29:57 WalnutPi python[1064]: [06:29:57] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+Oct 14 06:29:57 WalnutPi python[1064]: [06:29:57] GPIO 就绪: /sys/class/gpio/gpio269 (上电=低/继电器关)
+Oct 14 06:29:57 WalnutPi python[1064]: [06:29:57] GPIO 就绪: /sys/class/gpio/gpio270 (上电=低/继电器关)
+Oct 14 06:29:57 WalnutPi python[1064]: [06:29:57] GPIO 就绪: /sys/class/gpio/gpio260 (上电=低/继电器关)
+Oct 14 06:29:57 WalnutPi python[1064]: [06:29:57] GPIO 就绪: /sys/class/gpio/gpio259 (上电=低/继电器关)
+Oct 14 06:29:57 WalnutPi python[1064]: [06:29:57] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+Oct 14 06:29:57 WalnutPi python[1064]: [06:29:57] SBUS 串口已打开: /dev/ttyS2
+Oct 14 06:29:57 WalnutPi python[1064]: [06:29:57] pwm2: 脉宽 -> 1050us
+Oct 14 06:29:58 WalnutPi python[1064]: 🕒 ICE Connection State     : 🔵 checking      (06:29:58)
+Oct 14 06:29:58 WalnutPi python[1064]: 🕒 Peer Connection State    : 🔵 connecting    (06:29:58)
+Oct 14 06:29:59 WalnutPi python[1064]: 🕒 Signaling State          : 🟢 stable        (06:29:59)
+Oct 14 06:30:00 WalnutPi python[1064]: 🕒 ICE Connection State     : 🟢 completed     (06:30:00)
+Oct 14 06:30:00 WalnutPi python[1064]: 🕒 Peer Connection State    : 🟢 connected     (06:30:00)
+Oct 14 06:30:00 WalnutPi python[1064]: 🕒 Data Channel Verification: ✅ OK            (06:30:00)
+Oct 14 06:30:00 WalnutPi python[1064]: [06:30:00] WebRTC 已连接
+Oct 14 06:30:00 WalnutPi python[1064]: [06:30:00] 开机首连: 狗自行起立, 已锁定等待解锁
+Oct 14 06:30:03 WalnutPi python[1064]: 🕒 Robot Connection Mode    : 📡 4G            (06:30:03)
+Oct 14 06:30:05 WalnutPi python[1064]: [06:30:05] 心跳回读挡位: {"data":-1}
+Oct 14 06:32:07 WalnutPi python[1064]: [06:32:07] 已解锁(RC)
+Oct 14 06:32:07 WalnutPi python[1064]: [06:32:07] 指令 -> StopMove
+Oct 14 06:32:07 WalnutPi python[1064]: [06:32:07] 模式 -> 走
+Oct 14 06:32:07 WalnutPi python[1064]: [06:32:07] 指令 -> EconomicGait
+Oct 14 06:32:07 WalnutPi python[1064]: [06:32:07] 挡位 -> 1 (EconomicGait)
+Oct 14 06:32:07 WalnutPi python[1064]: [06:32:07] StopMove 被狗拒绝 code = -1
+Oct 14 06:32:07 WalnutPi python[1064]: [06:32:07] EconomicGait 被狗拒绝 code = -1
+Oct 14 06:32:14 WalnutPi python[1064]: [06:32:14] 指令 -> StopMove
+Oct 14 06:32:14 WalnutPi python[1064]: [06:32:14] 指令 -> StandDown
+Oct 14 06:32:14 WalnutPi python[1064]: [06:32:14] 模式 -> 趴
+Oct 14 06:32:17 WalnutPi python[1064]: [06:32:17] 指令 -> StopMove
+Oct 14 06:32:17 WalnutPi python[1064]: [06:32:17] 指令 -> StandUp
+Oct 14 06:32:17 WalnutPi python[1064]: [06:32:17] 模式 -> 走
+Oct 14 06:32:17 WalnutPi python[1064]: [06:32:17] StopMove 被狗拒绝 code = -1
+Oct 14 06:32:19 WalnutPi python[1064]: [06:32:19] 指令 -> StopMove
+Oct 14 06:32:19 WalnutPi python[1064]: [06:32:19] 指令 -> StandDown
+Oct 14 06:32:19 WalnutPi python[1064]: [06:32:19] 模式 -> 趴
+Oct 14 06:32:19 WalnutPi python[1064]: [06:32:19] 已上锁(RC)
+Oct 14 06:32:20 WalnutPi python[1064]: [06:32:20] 指令 -> BalanceStand
+Oct 14 06:32:20 WalnutPi python[1064]: [06:32:20] BalanceStand 被狗拒绝 code = -1
+Oct 14 06:32:22 WalnutPi python[1064]: [06:32:22] 已解锁(RC)
+Oct 14 06:32:24 WalnutPi python[1064]: [06:32:24] 已上锁(RC)
+Oct 14 06:32:25 WalnutPi python[1064]: [06:32:25] 已解锁(RC)
+Oct 14 06:32:25 WalnutPi python[1064]: [06:32:25] 指令 -> StopMove
+Oct 14 06:32:25 WalnutPi python[1064]: [06:32:25] 指令 -> StandUp
+Oct 14 06:32:25 WalnutPi python[1064]: [06:32:25] 模式 -> 走
+Oct 14 06:32:25 WalnutPi python[1064]: [06:32:25] StopMove 被狗拒绝 code = -1
+Oct 14 06:32:28 WalnutPi python[1064]: [06:32:28] 指令 -> BalanceStand
+Oct 14 06:32:29 WalnutPi python[1064]: [06:32:29] 指令 -> StopMove
+Oct 14 06:32:30 WalnutPi python[1064]: [06:32:30] 心跳回读挡位: {"data":1}
+Oct 14 06:32:41 WalnutPi python[1064]: [06:32:41] 指令 -> StandDown
+Oct 14 06:32:41 WalnutPi python[1064]: [06:32:41] 模式 -> 趴
+Oct 14 06:32:44 WalnutPi python[1064]: [06:32:44] 已上锁(RC)
+Oct 14 06:32:45 WalnutPi python[1064]: [06:32:45] 心跳回读挡位: {"data":-1}
+Oct 14 06:59:56 WalnutPi python[1064]: [06:59:56] 心跳无回包 1/2
+Oct 14 06:59:56 WalnutPi python[1064]: ERROR:root:Error processing WebRTC data
+Oct 14 06:59:56 WalnutPi python[1064]: Traceback (most recent call last):
+Oct 14 06:59:56 WalnutPi python[1064]:   File "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages/unitree_webrtc_connect/webrtc_datachannel.py", line 76, in on_message
+Oct 14 06:59:56 WalnutPi python[1064]:     self.pub_sub.run_resolve(parsed_data)
+Oct 14 06:59:56 WalnutPi python[1064]:   File "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages/unitree_webrtc_connect/msgs/pub_sub.py", line 19, in run_resolve
+Oct 14 06:59:56 WalnutPi python[1064]:     self.future_resolver.run_resolve_for_topic(message)
+Oct 14 06:59:56 WalnutPi python[1064]:   File "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages/unitree_webrtc_connect/msgs/future_resolver.py", line 63, in run_resolve_for_topic
+Oct 14 06:59:56 WalnutPi python[1064]:     future.set_result(message)  # Resolve the future with the message
+Oct 14 06:59:56 WalnutPi python[1064]: asyncio.exceptions.InvalidStateError: invalid state
+Oct 14 07:06:38 WalnutPi python[1064]: [07:06:38] 网页端接入
+Oct 14 07:06:40 WalnutPi python[1064]: [07:06:40] 播放请求: 7Years
+Oct 14 07:06:43 WalnutPi python[1064]: [07:06:43] 播放请求: 7Years
+Oct 14 07:06:46 WalnutPi python[1064]: [07:06:46] 播放请求: 7Years
+Oct 14 07:07:04 WalnutPi python[1064]: [07:07:04] 播放请求: 7Years
+Oct 14 07:13:58 WalnutPi python[1064]: [07:13:58] 网页端断开, 解除网页控制并趴下
+-- Boot 89c68c9fff224c0bbfe6047f3b37f9b1 --
+Oct 14 07:17:31 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+-- Boot 90748b3a451f4eb5a0bb3eda1557022b --
+Oct 14 07:19:16 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+Oct 14 07:19:25 WalnutPi python[903]: 🕒 WebRTC connection        : 🟡 started       (07:19:25)
+Oct 14 07:19:25 WalnutPi python[903]: [07:19:25] 喊话音量 25%, 混音控件: LINEOUT volume
+Oct 14 07:19:25 WalnutPi python[903]: [07:19:25] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)
+Oct 14 07:19:25 WalnutPi python[903]: [07:19:25] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)
+Oct 14 07:19:25 WalnutPi python[903]: [07:19:25] 上传就绪: UDP :15003 (预设文件 -> /root/pa-files)
+Oct 14 07:19:25 WalnutPi python[903]: [07:19:25] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+Oct 14 07:19:25 WalnutPi python[903]: [07:19:25] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+Oct 14 07:19:25 WalnutPi python[903]: [07:19:25] GPIO 就绪: /sys/class/gpio/gpio269 (上电=低/继电器关)
+Oct 14 07:19:25 WalnutPi python[903]: [07:19:25] GPIO 就绪: /sys/class/gpio/gpio270 (上电=低/继电器关)
+Oct 14 07:19:25 WalnutPi python[903]: [07:19:25] GPIO 就绪: /sys/class/gpio/gpio260 (上电=低/继电器关)
+Oct 14 07:19:25 WalnutPi python[903]: [07:19:25] GPIO 就绪: /sys/class/gpio/gpio259 (上电=低/继电器关)
+Oct 14 07:19:25 WalnutPi python[903]: [07:19:25] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+Oct 14 07:19:25 WalnutPi python[903]: [07:19:25] SBUS 串口已打开: /dev/ttyS2
+Oct 14 07:19:25 WalnutPi python[903]: [07:19:25] pwm2: 脉宽 -> 1050us
+Oct 14 07:19:26 WalnutPi python[903]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (07:19:26)
+Oct 14 07:19:26 WalnutPi python[903]: 🕒 Signaling State          : 🟡 have-local-offer (07:19:26)
+Oct 14 07:19:26 WalnutPi python[903]: 🕒 ICE Gathering State      : 🟡 gathering     (07:19:26)
+Oct 14 07:19:26 WalnutPi python[903]: 🕒 ICE Gathering State      : 🟢 complete      (07:19:26)
+Oct 14 07:19:26 WalnutPi python[903]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (07:19:26)
+Oct 14 07:19:27 WalnutPi python[903]: 🕒 ICE Connection State     : 🔵 checking      (07:19:27)
+Oct 14 07:19:27 WalnutPi python[903]: 🕒 Peer Connection State    : 🔵 connecting    (07:19:27)
+Oct 14 07:19:27 WalnutPi python[903]: 🕒 Signaling State          : 🟢 stable        (07:19:27)
+Oct 14 07:19:27 WalnutPi python[903]: 🕒 ICE Connection State     : 🟢 completed     (07:19:27)
+Oct 14 07:19:27 WalnutPi python[903]: 🕒 Peer Connection State    : 🟢 connected     (07:19:27)
+Oct 14 07:19:27 WalnutPi python[903]: 🕒 Data Channel Verification: ✅ OK            (07:19:27)
+Oct 14 07:19:27 WalnutPi python[903]: [07:19:27] WebRTC 已连接
+Oct 14 07:19:27 WalnutPi python[903]: [07:19:27] 开机首连: 狗自行起立, 已锁定等待解锁
+Oct 14 07:19:30 WalnutPi python[903]: 🕒 Robot Connection Mode    : 📡 4G            (07:19:30)
+Oct 14 07:19:31 WalnutPi python[903]: [07:19:31] 网页端接入
+Oct 14 07:19:32 WalnutPi python[903]: [07:19:32] 心跳回读挡位: {"data":1}
+Oct 14 07:19:34 WalnutPi python[903]: [07:19:34] 已解锁(RC)
+Oct 14 07:19:34 WalnutPi python[903]: [07:19:34] 指令 -> StopMove
+Oct 14 07:19:34 WalnutPi python[903]: [07:19:34] 指令 -> StandDown
+Oct 14 07:19:34 WalnutPi python[903]: [07:19:34] 模式 -> 趴
+Oct 14 07:19:37 WalnutPi python[903]: [07:19:37] 心跳回读挡位: {"data":-1}
+Oct 14 07:19:39 WalnutPi python[903]: [07:19:39] 已上锁(RC)
+Oct 14 07:19:42 WalnutPi python[903]: [07:19:42] 已解锁(RC)
+Oct 14 07:19:45 WalnutPi python[903]: [07:19:45] 指令 -> StopMove
+Oct 14 07:19:45 WalnutPi python[903]: [07:19:45] 指令 -> StandUp
+Oct 14 07:19:45 WalnutPi python[903]: [07:19:45] 模式 -> 走
+Oct 14 07:19:45 WalnutPi python[903]: [07:19:45] 指令 -> EconomicGait
+Oct 14 07:19:45 WalnutPi python[903]: [07:19:45] 挡位 -> 1 (EconomicGait)
+Oct 14 07:19:45 WalnutPi python[903]: [07:19:45] StopMove 被狗拒绝 code = -1
+Oct 14 07:19:47 WalnutPi python[903]: [07:19:47] 心跳回读挡位: {"data":1}
+Oct 14 07:19:48 WalnutPi python[903]: [07:19:48] 指令 -> BalanceStand
+Oct 14 07:19:48 WalnutPi python[903]: [07:19:48] 指令 -> StopMove
+Oct 14 07:19:59 WalnutPi python[903]: [07:19:59] 指令 -> StandDown
+Oct 14 07:19:59 WalnutPi python[903]: [07:19:59] 模式 -> 趴
+Oct 14 07:20:01 WalnutPi python[903]: [07:20:01] 指令 -> StopMove
+Oct 14 07:20:01 WalnutPi python[903]: [07:20:01] 指令 -> StandUp
+Oct 14 07:20:01 WalnutPi python[903]: [07:20:01] 模式 -> 走
+Oct 14 07:20:01 WalnutPi python[903]: [07:20:01] StopMove 被狗拒绝 code = -1
+Oct 14 07:20:02 WalnutPi python[903]: [07:20:02] 心跳回读挡位: {"data":-1}
+Oct 14 07:20:04 WalnutPi python[903]: [07:20:04] 指令 -> BalanceStand
+Oct 14 07:20:05 WalnutPi python[903]: [07:20:05] 指令 -> StopMove
+Oct 14 07:20:07 WalnutPi python[903]: [07:20:07] 心跳回读挡位: {"data":1}
+Oct 14 07:20:10 WalnutPi python[903]: [07:20:10] 指令 -> TrotRun
+Oct 14 07:20:10 WalnutPi python[903]: [07:20:10] 挡位 -> 3 (TrotRun)
+Oct 14 07:20:11 WalnutPi python[903]: [07:20:11] 指令 -> FreeWalk
+Oct 14 07:20:11 WalnutPi python[903]: [07:20:11] 挡位 -> 2 (FreeWalk)
+Oct 14 07:20:11 WalnutPi python[903]: [07:20:11] 指令 -> StopMove
+Oct 14 07:20:24 WalnutPi python[903]: [07:20:24] 指令 -> TrotRun
+Oct 14 07:20:24 WalnutPi python[903]: [07:20:24] 挡位 -> 3 (TrotRun)
+Oct 14 07:20:26 WalnutPi python[903]: [07:20:26] 指令 -> StopMove
+Oct 14 07:20:34 WalnutPi python[903]: [07:20:34] 指令 -> FreeWalk
+Oct 14 07:20:34 WalnutPi python[903]: [07:20:34] 挡位 -> 2 (FreeWalk)
+Oct 14 07:20:34 WalnutPi python[903]: [07:20:34] 指令 -> EconomicGait
+Oct 14 07:20:34 WalnutPi python[903]: [07:20:34] 挡位 -> 1 (EconomicGait)
+Oct 14 07:20:35 WalnutPi python[903]: [07:20:35] 指令 -> StopMove
+Oct 14 07:21:40 WalnutPi python[903]: [07:21:40] 指令 -> StandDown
+Oct 14 07:21:40 WalnutPi python[903]: [07:21:40] 模式 -> 趴
+Oct 14 07:21:42 WalnutPi python[903]: [07:21:42] 指令 -> StopMove
+Oct 14 07:21:42 WalnutPi python[903]: [07:21:42] 指令 -> StandUp
+Oct 14 07:21:42 WalnutPi python[903]: [07:21:42] 模式 -> 走
+Oct 14 07:21:42 WalnutPi python[903]: [07:21:42] StopMove 被狗拒绝 code = -1
+Oct 14 07:21:42 WalnutPi python[903]: [07:21:42] 心跳回读挡位: {"data":-1}
+Oct 14 07:21:45 WalnutPi python[903]: [07:21:45] 指令 -> BalanceStand
+Oct 14 07:21:45 WalnutPi python[903]: [07:21:45] 指令 -> StopMove
+Oct 14 07:21:47 WalnutPi python[903]: [07:21:47] 心跳回读挡位: {"data":1}
+-- Boot 89c68c9fff224c0bbfe6047f3b37f9b1 --
+Oct 14 11:39:53 WalnutPi python[901]: [11:39:53] 到狗链路不通(网线/狗未开机), 等待恢复...
+Oct 14 11:39:53 WalnutPi python[901]: [11:39:53] 喊话音量 25%, 混音控件: LINEOUT volume
+Oct 14 11:39:53 WalnutPi python[901]: [11:39:53] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)
+Oct 14 11:39:53 WalnutPi python[901]: [11:39:53] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)
+Oct 14 11:39:53 WalnutPi python[901]: [11:39:53] 上传就绪: UDP :15003 (预设文件 -> /root/pa-files)
+Oct 14 11:39:53 WalnutPi python[901]: [11:39:53] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+Oct 14 11:39:53 WalnutPi python[901]: [11:39:53] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+Oct 14 11:39:53 WalnutPi python[901]: [11:39:53] GPIO 就绪: /sys/class/gpio/gpio269 (上电=低/继电器关)
+Oct 14 11:39:53 WalnutPi python[901]: [11:39:53] GPIO 就绪: /sys/class/gpio/gpio270 (上电=低/继电器关)
+Oct 14 11:39:53 WalnutPi python[901]: [11:39:53] GPIO 就绪: /sys/class/gpio/gpio260 (上电=低/继电器关)
+Oct 14 11:39:53 WalnutPi python[901]: [11:39:53] GPIO 就绪: /sys/class/gpio/gpio259 (上电=低/继电器关)
+Oct 14 11:39:53 WalnutPi python[901]: [11:39:53] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+Oct 14 11:39:53 WalnutPi python[901]: [11:39:53] SBUS 串口已打开: /dev/ttyS2
+Oct 14 11:39:53 WalnutPi python[901]: [11:39:53] pwm2: 脉宽 -> 1050us
+Oct 14 11:40:05 WalnutPi python[901]: [11:40:05] 网页端接入
+Oct 14 11:40:07 WalnutPi python[901]: 🕒 WebRTC connection        : 🟡 started       (11:40:07)
+Oct 14 11:40:07 WalnutPi python[901]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (11:40:07)
+Oct 14 11:40:07 WalnutPi python[901]: 🕒 Signaling State          : 🟡 have-local-offer (11:40:07)
+Oct 14 11:40:07 WalnutPi python[901]: 🕒 ICE Gathering State      : 🟡 gathering     (11:40:07)
+Oct 14 11:40:07 WalnutPi python[901]: 🕒 ICE Gathering State      : 🟢 complete      (11:40:07)
+Oct 14 11:40:07 WalnutPi python[901]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (11:40:07)
+Oct 14 11:40:08 WalnutPi python[901]: 🕒 ICE Connection State     : 🔵 checking      (11:40:08)
+Oct 14 11:40:08 WalnutPi python[901]: 🕒 Peer Connection State    : 🔵 connecting    (11:40:08)
+Oct 14 11:40:08 WalnutPi python[901]: 🕒 Signaling State          : 🟢 stable        (11:40:08)
+Oct 14 11:40:08 WalnutPi python[901]: 🕒 ICE Connection State     : 🟢 completed     (11:40:08)
+Oct 14 11:40:08 WalnutPi python[901]: 🕒 Peer Connection State    : 🟢 connected     (11:40:08)
+Oct 14 11:40:08 WalnutPi python[901]: 🕒 Data Channel Verification: ✅ OK            (11:40:08)
+Oct 14 11:40:08 WalnutPi python[901]: [11:40:08] WebRTC 已连接
+Oct 14 11:40:08 WalnutPi python[901]: [11:40:08] 开机首连: 狗自行起立, 已锁定等待解锁
+Oct 14 11:40:12 WalnutPi python[901]: 🕒 Robot Connection Mode    : 📡 4G            (11:40:12)
+Oct 14 11:40:12 WalnutPi python[901]: [11:40:12] 已解锁(RC)
+Oct 14 11:40:12 WalnutPi python[901]: [11:40:12] 指令 -> StopMove
+Oct 14 11:40:12 WalnutPi python[901]: [11:40:12] 模式 -> 走
+Oct 14 11:40:12 WalnutPi python[901]: [11:40:12] 指令 -> EconomicGait
+Oct 14 11:40:12 WalnutPi python[901]: [11:40:12] 挡位 -> 1 (EconomicGait)
+Oct 14 11:40:12 WalnutPi python[901]: [11:40:12] 指令 -> StopMove
+Oct 14 11:40:12 WalnutPi python[901]: [11:40:12] 指令 -> StandDown
+Oct 14 11:40:12 WalnutPi python[901]: [11:40:12] 模式 -> 趴
+Oct 14 11:40:12 WalnutPi python[901]: [11:40:12] 已上锁(RC)
+Oct 14 11:40:13 WalnutPi python[901]: [11:40:13] 心跳回读挡位: {"data":-1}
+Oct 14 11:40:19 WalnutPi python[901]: [11:40:19] 已解锁(RC)
+Oct 14 11:40:20 WalnutPi python[901]: [11:40:20] 已上锁(RC)
+Oct 14 11:40:21 WalnutPi python[901]: [11:40:21] 已解锁(RC)
+Oct 14 11:40:23 WalnutPi python[901]: [11:40:23] 指令 -> StopMove
+Oct 14 11:40:23 WalnutPi python[901]: [11:40:23] 指令 -> StandUp
+Oct 14 11:40:23 WalnutPi python[901]: [11:40:23] 模式 -> 走
+Oct 14 11:40:23 WalnutPi python[901]: [11:40:23] StopMove 被狗拒绝 code = -1
+Oct 14 11:40:26 WalnutPi python[901]: [11:40:26] 指令 -> BalanceStand
+Oct 14 11:40:28 WalnutPi python[901]: [11:40:28] 心跳回读挡位: {"data":1}
+Oct 14 11:40:35 WalnutPi python[901]: [11:40:35] 指令 -> StopMove
+Oct 14 11:41:30 WalnutPi python[901]: [11:41:30] 指令 -> FreeWalk
+Oct 14 11:41:30 WalnutPi python[901]: [11:41:30] 挡位 -> 2 (FreeWalk)
+-- Boot e2502b9a6e24487c90268aba4fc60479 --
+Oct 14 11:41:37 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:41:38 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:41:38 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:41:38 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:41:38 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:41:38 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:41:38 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:41:38 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:41:38 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:41:39 WalnutPi systemd[1]: Started Go2 SBUS RC bridge (SBUS -> WebRTC MCF).
+-- Boot 89c68c9fff224c0bbfe6047f3b37f9b1 --
+Oct 14 11:41:41 WalnutPi python[901]: [11:41:41] 指令 -> StopMove
+-- Boot e2502b9a6e24487c90268aba4fc60479 --
+Oct 14 11:41:46 WalnutPi python[899]: [11:41:46] 到狗链路不通(网线/狗未开机), 等待恢复...
+Oct 14 11:41:46 WalnutPi python[899]: [11:41:46] 喊话音量 25%, 混音控件: LINEOUT volume
+Oct 14 11:41:46 WalnutPi python[899]: [11:41:46] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)
+Oct 14 11:41:46 WalnutPi python[899]: [11:41:46] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)
+Oct 14 11:41:46 WalnutPi python[899]: [11:41:46] 上传就绪: UDP :15003 (预设文件 -> /root/pa-files)
+Oct 14 11:41:46 WalnutPi python[899]: [11:41:46] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+Oct 14 11:41:46 WalnutPi python[899]: [11:41:46] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+Oct 14 11:41:46 WalnutPi python[899]: [11:41:46] GPIO 就绪: /sys/class/gpio/gpio269 (上电=低/继电器关)
+Oct 14 11:41:46 WalnutPi python[899]: [11:41:46] GPIO 就绪: /sys/class/gpio/gpio270 (上电=低/继电器关)
+Oct 14 11:41:46 WalnutPi python[899]: [11:41:46] GPIO 就绪: /sys/class/gpio/gpio260 (上电=低/继电器关)
+Oct 14 11:41:46 WalnutPi python[899]: [11:41:46] GPIO 就绪: /sys/class/gpio/gpio259 (上电=低/继电器关)
+Oct 14 11:41:46 WalnutPi python[899]: [11:41:46] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+Oct 14 11:41:46 WalnutPi python[899]: [11:41:46] SBUS 串口已打开: /dev/ttyS2
+Oct 14 11:41:46 WalnutPi python[899]: [11:41:46] pwm2: 脉宽 -> 1050us
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 到狗链路不通(网线/狗未开机), 等待恢复...
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:41:47 WalnutPi python[899]: [11:41:47] 到狗链路不通(网线/狗未开机), 等待恢复...
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 到狗链路不通(网线/狗未开机), 等待恢复...
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] 到狗链路不通(网线/狗未开机), 等待恢复...
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 到狗链路不通(网线/狗未开机), 等待恢复...
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] 到狗链路不通(网线/狗未开机), 等待恢复...
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 喊话音量 25%, 混音控件: LINEOUT volume
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 到狗链路不通(网线/狗未开机), 等待恢复...
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] 到狗链路不通(网线/狗未开机), 等待恢复...
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 上传就绪: UDP :15003 (预设文件 -> /root/pa-files)
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio269 (上电=低/继电器关)
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio270 (上电=低/继电器关)
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio260 (上电=低/继电器关)
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio259 (上电=低/继电器关)
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] SBUS 串口已打开: /dev/ttyS2
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] pwm2: 脉宽 -> 1050us
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:41:47 WalnutPi python[899]: [11:41:47] 喊话音量 25%, 混音控件: LINEOUT volume
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 喊话音量 25%, 混音控件: LINEOUT volume
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:41:47 WalnutPi python[899]: [11:41:47] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)[11:41:47] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)
+Oct 14 11:41:47 WalnutPi python[899]: [11:41:47] 上传就绪: UDP :15003 (预设文件 -> /root/pa-files)
+Oct 14 11:41:47 WalnutPi python[899]: [11:41:47] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] 喊话音量 25%, 混音控件: LINEOUT volume
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:41:47 WalnutPi python[899]: [11:41:47] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 喊话音量 25%, 混音控件: LINEOUT volume
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:41:47 WalnutPi python[899]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio269 (上电=低/继电器关)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 上传就绪: UDP :15003 (预设文件 -> /root/pa-files)
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:41:47 WalnutPi python[899]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio270 (上电=低/继电器关)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] 上传就绪: UDP :15003 (预设文件 -> /root/pa-files)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)[11:41:47] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 上传就绪: UDP :15003 (预设文件 -> /root/pa-files)
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio269 (上电=低/继电器关)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio270 (上电=低/继电器关)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:41:47 WalnutPi python[899]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio260 (上电=低/继电器关)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio269 (上电=低/继电器关)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio269 (上电=低/继电器关)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio270 (上电=低/继电器关)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:41:47 WalnutPi python[899]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio259 (上电=低/继电器关)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio270 (上电=低/继电器关)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio260 (上电=低/继电器关)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio260 (上电=低/继电器关)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:41:47 WalnutPi python[899]: [11:41:47] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio260 (上电=低/继电器关)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio259 (上电=低/继电器关)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:41:47 WalnutPi python[899]: [11:41:47] SBUS 串口已打开: /dev/ttyS2
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio259 (上电=低/继电器关)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio259 (上电=低/继电器关)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] SBUS 串口已打开: /dev/ttyS2
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] SBUS 串口已打开: /dev/ttyS2
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] SBUS 串口已打开: /dev/ttyS2
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] 喊话音量 25%, 混音控件: LINEOUT volume
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] 上传就绪: UDP :15003 (预设文件 -> /root/pa-files)
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio269 (上电=低/继电器关)
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio270 (上电=低/继电器关)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:41:47 WalnutPi python[899]: [11:41:47] pwm2: 脉宽 -> 1050us
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio260 (上电=低/继电器关)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] pwm2: 脉宽 -> 1050us
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] 喊话音量 25%, 混音控件: LINEOUT volume
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 喊话音量 25%, 混音控件: LINEOUT volume
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] pwm2: 脉宽 -> 1050us
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio259 (上电=低/继电器关)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] 上传就绪: UDP :15003 (预设文件 -> /root/pa-files)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 上传就绪: UDP :15003 (预设文件 -> /root/pa-files)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio269 (上电=低/继电器关)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio269 (上电=低/继电器关)
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio270 (上电=低/继电器关)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio270 (上电=低/继电器关)
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] SBUS 串口已打开: /dev/ttyS2
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio260 (上电=低/继电器关)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio260 (上电=低/继电器关)
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio259 (上电=低/继电器关)
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio259 (上电=低/继电器关)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] SBUS 串口已打开: /dev/ttyS2
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] SBUS 串口已打开: /dev/ttyS2
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:41:47 WalnutPi python[900]: [11:41:47] pwm2: 脉宽 -> 1050us
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] pwm2: 脉宽 -> 1050us
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] pwm2: 脉宽 -> 1050us
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] 到狗链路不通(网线/狗未开机), 等待恢复...
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:41:47 WalnutPi python[901]: [11:41:47] pwm2: 脉宽 -> 1050us
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] 喊话音量 25%, 混音控件: LINEOUT volume
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] 喊话接收就绪: UDP :15000 (PCM S16LE, 采样率可变)
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] 喊话控制就绪: UDP :15001 (HELLO/VOL/LIST/PLAY/TALK/RATE)[11:41:47] 上传就绪: UDP :15003 (预设文件 -> /root/pa-files)
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] 网络遥控就绪: UDP :15010 (G12 App 杆量通道, 新鲜时优先于 SBUS 线)
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] go2-bridge 启动: 网页端口=8000, SBUS=/dev/ttyS2, 连狗方式=LocalSTA
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio269 (上电=低/继电器关)
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio270 (上电=低/继电器关)
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio260 (上电=低/继电器关)
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] GPIO 就绪: /sys/class/gpio/gpio259 (上电=低/继电器关)
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] 舵机就绪: /sys/class/pwm/pwmchip0/pwm2 (脉宽 500~2500us = 0~180°, 上电中位 90°)
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] SBUS 串口已打开: /dev/ttyS2
+Oct 14 11:41:47 WalnutPi python[902]: [11:41:47] pwm2: 脉宽 -> 1050us
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:41:53 WalnutPi python[902]: [11:41:53] 网页端接入
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:41:54 WalnutPi python[901]: [11:41:54] 网页端接入
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:41:55 WalnutPi python[900]: [11:41:55] 网页端接入
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:42:01 WalnutPi python[900]: 🕒 WebRTC connection        : 🟡 started       (11:42:01)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:01 WalnutPi python[899]: 🕒 WebRTC connection        : 🟡 started       (11:42:01)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:01 WalnutPi python[900]: 🕒 WebRTC connection        : 🟡 started       (11:42:01)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:42:01 WalnutPi python[900]: 🕒 WebRTC connection        : 🟡 started       (11:42:01)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:01 WalnutPi python[902]: 🕒 WebRTC connection        : 🟡 started       (11:42:01)
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:42:01 WalnutPi python[901]: 🕒 WebRTC connection        : 🟡 started       (11:42:01)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:01 WalnutPi python[900]: 🕒 WebRTC connection        : 🟡 started       (11:42:01)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:01 WalnutPi python[901]: 🕒 WebRTC connection        : 🟡 started       (11:42:01)
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:42:01 WalnutPi python[900]: [11:42:01] 网页端接入
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:01 WalnutPi python[902]: 🕒 WebRTC connection        : 🟡 started       (11:42:01)
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (11:42:02)
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 Signaling State          : 🟡 have-local-offer (11:42:02)
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 ICE Gathering State      : 🟡 gathering     (11:42:02)
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 ICE Gathering State      : 🟢 complete      (11:42:02)
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (11:42:02)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:02 WalnutPi python[899]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (11:42:02)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (11:42:02)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:02 WalnutPi python[902]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (11:42:02)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (11:42:02)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:02 WalnutPi python[899]: 🕒 Signaling State          : 🟡 have-local-offer (11:42:02)
+Oct 14 11:42:02 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟡 gathering     (11:42:02)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 Signaling State          : 🟡 have-local-offer (11:42:02)
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:42:02 WalnutPi python[901]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (11:42:02)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:02 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟢 complete      (11:42:02)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 Signaling State          : 🟡 have-local-offer (11:42:02)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:02 WalnutPi python[902]: 🕒 Signaling State          : 🟡 have-local-offer (11:42:02)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:02 WalnutPi python[899]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (11:42:02)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 ICE Gathering State      : 🟡 gathering     (11:42:02)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 ICE Gathering State      : 🟡 gathering     (11:42:02)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:02 WalnutPi python[902]: 🕒 ICE Gathering State      : 🟡 gathering     (11:42:02)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 ICE Gathering State      : 🟢 complete      (11:42:02)
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:42:02 WalnutPi python[901]: 🕒 Signaling State          : 🟡 have-local-offer (11:42:02)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (11:42:02)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (11:42:02)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 ICE Gathering State      : 🟢 complete      (11:42:02)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:02 WalnutPi python[902]: 🕒 ICE Gathering State      : 🟢 complete      (11:42:02)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (11:42:02)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:02 WalnutPi python[902]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (11:42:02)
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:42:02 WalnutPi python[901]: 🕒 ICE Gathering State      : 🟡 gathering     (11:42:02)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:02 WalnutPi python[901]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (11:42:02)
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:42:02 WalnutPi python[901]: 🕒 ICE Gathering State      : 🟢 complete      (11:42:02)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 Signaling State          : 🟡 have-local-offer (11:42:02)
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:42:02 WalnutPi python[901]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (11:42:02)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 ICE Gathering State      : 🟡 gathering     (11:42:02)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:02 WalnutPi python[901]: 🕒 Signaling State          : 🟡 have-local-offer (11:42:02)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 ICE Gathering State      : 🟢 complete      (11:42:02)
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (11:42:02)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:02 WalnutPi python[901]: 🕒 ICE Gathering State      : 🟡 gathering     (11:42:02)
+Oct 14 11:42:02 WalnutPi python[901]: 🕒 ICE Gathering State      : 🟢 complete      (11:42:02)
+Oct 14 11:42:02 WalnutPi python[901]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (11:42:02)
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:02 WalnutPi python[902]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (11:42:02)
+Oct 14 11:42:02 WalnutPi python[902]: 🕒 Signaling State          : 🟡 have-local-offer (11:42:02)
+Oct 14 11:42:02 WalnutPi python[902]: 🕒 ICE Gathering State      : 🟡 gathering     (11:42:02)
+Oct 14 11:42:02 WalnutPi python[902]: 🕒 ICE Gathering State      : 🟢 complete      (11:42:02)
+Oct 14 11:42:02 WalnutPi python[902]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (11:42:02)
+-- Boot e2502b9a6e24487c90268aba4fc60479 --
+Oct 14 11:42:02 WalnutPi python[899]: 🕒 WebRTC connection        : 🟡 started       (11:42:02)
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 ICE Connection State     : 🔵 checking      (11:42:02)
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 Peer Connection State    : 🔵 connecting    (11:42:02)
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 Signaling State          : 🟢 stable        (11:42:02)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:02 WalnutPi python[899]: 🕒 ICE Connection State     : 🔵 checking      (11:42:02)
+Oct 14 11:42:02 WalnutPi python[899]: 🕒 Peer Connection State    : 🔵 connecting    (11:42:02)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 ICE Connection State     : 🔵 checking      (11:42:02)
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 Peer Connection State    : 🔵 connecting    (11:42:02)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:02 WalnutPi python[899]: 🕒 Signaling State          : 🟢 stable        (11:42:02)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 Signaling State          : 🟢 stable        (11:42:02)
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:42:02 WalnutPi python[901]: 🕒 ICE Connection State     : 🔵 checking      (11:42:02)
+Oct 14 11:42:02 WalnutPi python[901]: 🕒 Peer Connection State    : 🔵 connecting    (11:42:02)
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 ICE Connection State     : 🟢 completed     (11:42:02)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:02 WalnutPi python[902]: 🕒 ICE Connection State     : 🔵 checking      (11:42:02)
+Oct 14 11:42:02 WalnutPi python[902]: 🕒 Peer Connection State    : 🔵 connecting    (11:42:02)
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:42:02 WalnutPi python[901]: 🕒 Signaling State          : 🟢 stable        (11:42:02)
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 Peer Connection State    : 🟢 connected     (11:42:02)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:02 WalnutPi python[902]: 🕒 Signaling State          : 🟢 stable        (11:42:02)
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:42:02 WalnutPi python[900]: 🕒 Data Channel Verification: ✅ OK            (11:42:02)
+Oct 14 11:42:03 WalnutPi python[900]: [11:42:03] WebRTC 已连接
+Oct 14 11:42:03 WalnutPi python[900]: [11:42:03] 开机首连: 狗自行起立, 已锁定等待解锁
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:03 WalnutPi python[900]: 🕒 ICE Connection State     : 🔵 checking      (11:42:03)
+Oct 14 11:42:03 WalnutPi python[900]: 🕒 Peer Connection State    : 🔵 connecting    (11:42:03)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:03 WalnutPi python[899]: 🕒 ICE Connection State     : 🟢 completed     (11:42:03)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:03 WalnutPi python[900]: 🕒 Signaling State          : 🟢 stable        (11:42:03)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:03 WalnutPi python[900]: 🕒 ICE Connection State     : 🟢 completed     (11:42:03)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:03 WalnutPi python[901]: 🕒 ICE Connection State     : 🔵 checking      (11:42:03)
+Oct 14 11:42:03 WalnutPi python[901]: 🕒 Peer Connection State    : 🔵 connecting    (11:42:03)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:42:03 WalnutPi python[900]: 🕒 ICE Connection State     : 🔵 checking      (11:42:03)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:03 WalnutPi python[899]: 🕒 Peer Connection State    : 🟢 connected     (11:42:03)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:42:03 WalnutPi python[900]: 🕒 Peer Connection State    : 🔵 connecting    (11:42:03)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:03 WalnutPi python[900]: 🕒 Peer Connection State    : 🟢 connected     (11:42:03)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:03 WalnutPi python[901]: 🕒 Signaling State          : 🟢 stable        (11:42:03)
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:42:03 WalnutPi python[901]: 🕒 ICE Connection State     : 🟢 completed     (11:42:03)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:42:03 WalnutPi python[900]: 🕒 Signaling State          : 🟢 stable        (11:42:03)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:03 WalnutPi python[899]: 🕒 Data Channel Verification: ✅ OK            (11:42:03)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:03 WalnutPi python[900]: 🕒 Data Channel Verification: ✅ OK            (11:42:03)
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:42:03 WalnutPi python[901]: 🕒 Peer Connection State    : 🟢 connected     (11:42:03)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:03 WalnutPi python[902]: 🕒 ICE Connection State     : 🟢 completed     (11:42:03)
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:03 WalnutPi python[902]: 🕒 ICE Connection State     : 🔵 checking      (11:42:03)
+Oct 14 11:42:03 WalnutPi python[902]: 🕒 Peer Connection State    : 🔵 connecting    (11:42:03)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:03 WalnutPi python[902]: 🕒 Peer Connection State    : 🟢 connected     (11:42:03)
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:42:03 WalnutPi python[901]: 🕒 Data Channel Verification: ✅ OK            (11:42:03)
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:03 WalnutPi python[902]: 🕒 Signaling State          : 🟢 stable        (11:42:03)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:03 WalnutPi python[899]: [11:42:03] WebRTC 已连接
+Oct 14 11:42:03 WalnutPi python[899]: [11:42:03] 开机首连: 狗自行起立, 已锁定等待解锁
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:03 WalnutPi python[900]: [11:42:03] WebRTC 已连接
+Oct 14 11:42:03 WalnutPi python[900]: [11:42:03] 开机首连: 狗自行起立, 已锁定等待解锁
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:03 WalnutPi python[902]: 🕒 Data Channel Verification: ✅ OK            (11:42:03)
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:42:03 WalnutPi python[901]: [11:42:03] WebRTC 已连接
+Oct 14 11:42:03 WalnutPi python[901]: [11:42:03] 开机首连: 狗自行起立, 已锁定等待解锁
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:03 WalnutPi python[900]: 🕒 ICE Connection State     : 🟢 completed     (11:42:03)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:03 WalnutPi python[902]: [11:42:03] WebRTC 已连接
+Oct 14 11:42:03 WalnutPi python[902]: [11:42:03] 开机首连: 狗自行起立, 已锁定等待解锁
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:03 WalnutPi python[900]: 🕒 Peer Connection State    : 🟢 connected     (11:42:03)
+-- Boot e2502b9a6e24487c90268aba4fc60479 --
+Oct 14 11:42:03 WalnutPi python[899]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (11:42:03)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:03 WalnutPi python[901]: 🕒 ICE Connection State     : 🟢 completed     (11:42:03)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:42:03 WalnutPi python[900]: 🕒 ICE Connection State     : 🟢 completed     (11:42:03)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:03 WalnutPi python[900]: 🕒 Data Channel Verification: ✅ OK            (11:42:03)
+-- Boot e2502b9a6e24487c90268aba4fc60479 --
+Oct 14 11:42:03 WalnutPi python[899]: 🕒 Signaling State          : 🟡 have-local-offer (11:42:03)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:03 WalnutPi python[901]: 🕒 Peer Connection State    : 🟢 connected     (11:42:03)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:42:03 WalnutPi python[900]: 🕒 Peer Connection State    : 🟢 connected     (11:42:03)
+-- Boot e2502b9a6e24487c90268aba4fc60479 --
+Oct 14 11:42:03 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟡 gathering     (11:42:03)
+Oct 14 11:42:03 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟢 complete      (11:42:03)
+Oct 14 11:42:03 WalnutPi python[899]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (11:42:03)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:03 WalnutPi python[901]: 🕒 Data Channel Verification: ✅ OK            (11:42:03)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:42:03 WalnutPi python[900]: 🕒 Data Channel Verification: ✅ OK            (11:42:03)
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:03 WalnutPi python[902]: 🕒 ICE Connection State     : 🟢 completed     (11:42:03)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:03 WalnutPi python[900]: [11:42:03] WebRTC 已连接
+Oct 14 11:42:03 WalnutPi python[900]: [11:42:03] 开机首连: 狗自行起立, 已锁定等待解锁
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:03 WalnutPi python[902]: 🕒 Peer Connection State    : 🟢 connected     (11:42:03)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:03 WalnutPi python[901]: [11:42:03] WebRTC 已连接
+Oct 14 11:42:03 WalnutPi python[901]: [11:42:03] 开机首连: 狗自行起立, 已锁定等待解锁
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:42:03 WalnutPi python[900]: [11:42:03] WebRTC 已连接
+Oct 14 11:42:03 WalnutPi python[900]: [11:42:03] 开机首连: 狗自行起立, 已锁定等待解锁
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:03 WalnutPi python[902]: 🕒 Data Channel Verification: ✅ OK            (11:42:03)
+Oct 14 11:42:03 WalnutPi python[902]: [11:42:03] WebRTC 已连接
+Oct 14 11:42:03 WalnutPi python[902]: [11:42:03] 开机首连: 狗自行起立, 已锁定等待解锁
+-- Boot e2502b9a6e24487c90268aba4fc60479 --
+Oct 14 11:42:04 WalnutPi python[899]: 🕒 ICE Connection State     : 🔵 checking      (11:42:04)
+Oct 14 11:42:04 WalnutPi python[899]: 🕒 Peer Connection State    : 🔵 connecting    (11:42:04)
+Oct 14 11:42:04 WalnutPi python[899]: 🕒 Signaling State          : 🟢 stable        (11:42:04)
+Oct 14 11:42:04 WalnutPi python[899]: 🕒 ICE Connection State     : 🟢 completed     (11:42:04)
+Oct 14 11:42:04 WalnutPi python[899]: 🕒 Peer Connection State    : 🟢 connected     (11:42:04)
+Oct 14 11:42:04 WalnutPi python[899]: 🕒 Data Channel Verification: ✅ OK            (11:42:04)
+Oct 14 11:42:04 WalnutPi python[899]: [11:42:04] WebRTC 已连接
+Oct 14 11:42:04 WalnutPi python[899]: [11:42:04] 开机首连: 狗自行起立, 已锁定等待解锁
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:05 WalnutPi python[902]: [11:42:05] 网页端接入
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:42:06 WalnutPi python[900]: [11:42:06] 已解锁(RC)
+Oct 14 11:42:06 WalnutPi python[900]: [11:42:06] 指令 -> StopMove
+Oct 14 11:42:06 WalnutPi python[900]: [11:42:06] 模式 -> 走
+Oct 14 11:42:06 WalnutPi python[900]: [11:42:06] 指令 -> EconomicGait
+Oct 14 11:42:06 WalnutPi python[900]: [11:42:06] 挡位 -> 1 (EconomicGait)
+Oct 14 11:42:06 WalnutPi python[900]: [11:42:06] 指令 -> Hello
+Oct 14 11:42:06 WalnutPi python[900]: [11:42:06] 动作 -> Hello (4s)
+Oct 14 11:42:06 WalnutPi python[900]: 🕒 Robot Connection Mode    : 📡 4G            (11:42:06)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:06 WalnutPi python[899]: 🕒 Robot Connection Mode    : 📡 4G            (11:42:06)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:06 WalnutPi python[900]: 🕒 Robot Connection Mode    : 📡 4G            (11:42:06)
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:42:06 WalnutPi python[901]: 🕒 Robot Connection Mode    : 📡 4G            (11:42:06)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:06 WalnutPi python[902]: 🕒 Robot Connection Mode    : 📡 4G            (11:42:06)
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:06 WalnutPi python[900]: 🕒 Robot Connection Mode    : 📡 4G            (11:42:06)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:06 WalnutPi python[901]: 🕒 Robot Connection Mode    : 📡 4G            (11:42:06)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:42:06 WalnutPi python[900]: 🕒 Robot Connection Mode    : 📡 4G            (11:42:06)
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:06 WalnutPi python[902]: 🕒 Robot Connection Mode    : 📡 4G            (11:42:06)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:07 WalnutPi python[902]: [11:42:07] 已解锁(RC)
+Oct 14 11:42:07 WalnutPi python[902]: [11:42:07] 指令 -> StopMove
+Oct 14 11:42:07 WalnutPi python[902]: [11:42:07] 指令 -> StandDown
+Oct 14 11:42:07 WalnutPi python[902]: [11:42:07] 模式 -> 趴
+-- Boot e2502b9a6e24487c90268aba4fc60479 --
+Oct 14 11:42:07 WalnutPi python[899]: 🕒 Robot Connection Mode    : 📡 4G            (11:42:07)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:08 WalnutPi python[899]: [11:42:08] 心跳回读挡位: {"data":1}
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:08 WalnutPi python[900]: [11:42:08] 心跳回读挡位: {"data":1}
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:42:08 WalnutPi python[901]: [11:42:08] 心跳回读挡位: {"data":1}
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:08 WalnutPi python[902]: [11:42:08] 心跳回读挡位: {"data":-1}
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:08 WalnutPi python[900]: [11:42:08] 心跳回读挡位: {"data":1}
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:08 WalnutPi python[901]: [11:42:08] 心跳回读挡位: {"data":1}
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:42:08 WalnutPi python[900]: [11:42:08] 心跳回读挡位: {"data":1}
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:08 WalnutPi python[902]: [11:42:08] 心跳回读挡位: {"data":1}
+-- Boot e2502b9a6e24487c90268aba4fc60479 --
+Oct 14 11:42:09 WalnutPi python[899]: [11:42:09] 心跳回读挡位: {"data":1}
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:09 WalnutPi python[900]: [11:42:09] 已解锁(RC)
+Oct 14 11:42:09 WalnutPi python[900]: [11:42:09] 指令 -> StopMove
+Oct 14 11:42:09 WalnutPi python[900]: [11:42:09] 指令 -> StandDown
+Oct 14 11:42:09 WalnutPi python[900]: [11:42:09] 模式 -> 趴
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:09 WalnutPi python[902]: [11:42:09] 指令 -> StopMove
+Oct 14 11:42:09 WalnutPi python[902]: [11:42:09] 指令 -> StandUp
+Oct 14 11:42:09 WalnutPi python[902]: [11:42:09] 模式 -> 走
+Oct 14 11:42:09 WalnutPi python[902]: [11:42:09] 指令 -> FreeWalk
+Oct 14 11:42:09 WalnutPi python[902]: [11:42:09] 挡位 -> 2 (FreeWalk)
+Oct 14 11:42:09 WalnutPi python[902]: [11:42:09] StopMove 被狗拒绝 code = -1
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:09 WalnutPi python[901]: [11:42:09] 已解锁(RC)
+Oct 14 11:42:09 WalnutPi python[901]: [11:42:09] 指令 -> StopMove
+Oct 14 11:42:09 WalnutPi python[901]: [11:42:09] 指令 -> StandDown
+Oct 14 11:42:09 WalnutPi python[901]: [11:42:09] 模式 -> 趴
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:10 WalnutPi python[899]: [11:42:10] 已解锁(RC)
+Oct 14 11:42:10 WalnutPi python[899]: [11:42:10] 指令 -> StopMove
+Oct 14 11:42:10 WalnutPi python[899]: [11:42:10] 模式 -> 走
+Oct 14 11:42:10 WalnutPi python[899]: [11:42:10] 指令 -> EconomicGait
+Oct 14 11:42:10 WalnutPi python[899]: [11:42:10] 挡位 -> 1 (EconomicGait)
+Oct 14 11:42:10 WalnutPi python[899]: [11:42:10] 指令 -> Hello
+Oct 14 11:42:10 WalnutPi python[899]: [11:42:10] 动作 -> Hello (4s)
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:42:11 WalnutPi python[900]: [11:42:11] 心跳回读挡位: {"data":1}
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:42:11 WalnutPi python[901]: [11:42:11] 网页端接入
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:12 WalnutPi python[900]: [11:42:12] 指令 -> StopMove
+Oct 14 11:42:12 WalnutPi python[900]: [11:42:12] 指令 -> StandUp
+Oct 14 11:42:12 WalnutPi python[900]: [11:42:12] 模式 -> 走
+Oct 14 11:42:12 WalnutPi python[900]: [11:42:12] 指令 -> FreeWalk
+Oct 14 11:42:12 WalnutPi python[900]: [11:42:12] 挡位 -> 2 (FreeWalk)
+Oct 14 11:42:12 WalnutPi python[900]: [11:42:12] StopMove 被狗拒绝 code = -1
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:12 WalnutPi python[902]: [11:42:12] 指令 -> BalanceStand
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:12 WalnutPi python[900]: [11:42:12] 已解锁(RC)
+Oct 14 11:42:12 WalnutPi python[900]: [11:42:12] 指令 -> StopMove
+Oct 14 11:42:12 WalnutPi python[900]: [11:42:12] 指令 -> StandDown
+Oct 14 11:42:12 WalnutPi python[900]: [11:42:12] 模式 -> 趴
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:13 WalnutPi python[902]: [11:42:13] 已解锁(RC)
+Oct 14 11:42:13 WalnutPi python[902]: [11:42:13] 指令 -> StopMove
+Oct 14 11:42:13 WalnutPi python[902]: [11:42:13] 模式 -> 走
+Oct 14 11:42:13 WalnutPi python[902]: [11:42:13] 指令 -> EconomicGait
+Oct 14 11:42:13 WalnutPi python[902]: [11:42:13] 挡位 -> 1 (EconomicGait)
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:13 WalnutPi python[900]: [11:42:13] 心跳回读挡位: {"data":-1}
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:42:13 WalnutPi python[900]: [11:42:13] 指令 -> StopMove
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:13 WalnutPi python[902]: [11:42:13] 心跳回读挡位: {"data":1}
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:13 WalnutPi python[900]: [11:42:13] 心跳回读挡位: {"data":-1}
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:13 WalnutPi python[901]: [11:42:13] 心跳回读挡位: {"data":-1}
+Oct 14 11:42:13 WalnutPi python[901]: [11:42:13] 指令 -> StopMove
+Oct 14 11:42:13 WalnutPi python[901]: [11:42:13] 指令 -> StandUp
+Oct 14 11:42:13 WalnutPi python[901]: [11:42:13] 模式 -> 走
+Oct 14 11:42:13 WalnutPi python[901]: [11:42:13] 指令 -> FreeWalk
+Oct 14 11:42:13 WalnutPi python[901]: [11:42:13] 挡位 -> 2 (FreeWalk)
+Oct 14 11:42:13 WalnutPi python[901]: [11:42:13] StopMove 被狗拒绝 code = -1
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:15 WalnutPi python[900]: [11:42:15] 指令 -> BalanceStand
+Oct 14 11:42:15 WalnutPi python[900]: [11:42:15] 指令 -> StopMove
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:16 WalnutPi python[902]: [11:42:16] 指令 -> StopMove
+Oct 14 11:42:16 WalnutPi python[902]: [11:42:16] 指令 -> StandDown
+Oct 14 11:42:16 WalnutPi python[902]: [11:42:16] 模式 -> 趴
+Oct 14 11:42:16 WalnutPi python[902]: [11:42:16] 已上锁(RC)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:16 WalnutPi python[899]: [11:42:16] 指令 -> StopMove
+Oct 14 11:42:16 WalnutPi python[899]: [11:42:16] 指令 -> StandDown
+Oct 14 11:42:16 WalnutPi python[899]: [11:42:16] 模式 -> 趴
+Oct 14 11:42:16 WalnutPi python[899]: [11:42:16] 已上锁(RC)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:16 WalnutPi python[901]: [11:42:16] 指令 -> BalanceStand
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:42:17 WalnutPi python[902]: [11:42:17] 指令 -> StopMove
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:17 WalnutPi python[900]: [11:42:17] 指令 -> StopMove
+Oct 14 11:42:17 WalnutPi python[900]: [11:42:17] 指令 -> StandUp
+Oct 14 11:42:17 WalnutPi python[900]: [11:42:17] 模式 -> 走
+Oct 14 11:42:17 WalnutPi python[900]: [11:42:17] 指令 -> FreeWalk
+Oct 14 11:42:17 WalnutPi python[900]: [11:42:17] 挡位 -> 2 (FreeWalk)
+Oct 14 11:42:17 WalnutPi python[900]: [11:42:17] StopMove 被狗拒绝 code = -1
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:42:18 WalnutPi python[900]: [11:42:18] 心跳回读挡位: {"data":1}
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:18 WalnutPi python[901]: [11:42:18] 心跳回读挡位: {"data":1}
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:18 WalnutPi python[902]: [11:42:18] 心跳回读挡位: {"data":-1}
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:42:19 WalnutPi python[901]: [11:42:19] 指令 -> StopMove
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:19 WalnutPi python[899]: [11:42:19] 心跳回读挡位: {"data":-1}
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:20 WalnutPi python[900]: [11:42:20] 指令 -> BalanceStand
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:21 WalnutPi python[899]: [11:42:21] 已解锁(RC)
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:22 WalnutPi python[902]: [11:42:22] 已解锁(RC)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:23 WalnutPi python[899]: [11:42:23] 指令 -> StopMove
+Oct 14 11:42:23 WalnutPi python[899]: [11:42:23] 指令 -> StandUp
+Oct 14 11:42:23 WalnutPi python[899]: [11:42:23] 模式 -> 走
+Oct 14 11:42:23 WalnutPi python[899]: [11:42:23] StopMove 被狗拒绝 code = -1
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:23 WalnutPi python[900]: [11:42:23] 心跳回读挡位: {"data":1}
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:42:23 WalnutPi python[900]: [11:42:23] 已解锁(RC)
+Oct 14 11:42:23 WalnutPi python[900]: [11:42:23] 指令 -> StopMove
+Oct 14 11:42:23 WalnutPi python[900]: [11:42:23] 模式 -> 走
+Oct 14 11:42:23 WalnutPi python[900]: [11:42:23] 指令 -> FreeWalk
+Oct 14 11:42:23 WalnutPi python[900]: [11:42:23] 挡位 -> 2 (FreeWalk)
+Oct 14 11:42:24 WalnutPi python[900]: [11:42:24] 指令 -> StopMove
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:26 WalnutPi python[899]: [11:42:26] 指令 -> BalanceStand
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:26 WalnutPi python[902]: [11:42:26] 指令 -> StopMove
+Oct 14 11:42:26 WalnutPi python[902]: [11:42:26] 指令 -> StandUp
+Oct 14 11:42:26 WalnutPi python[902]: [11:42:26] 模式 -> 走
+Oct 14 11:42:26 WalnutPi python[902]: [11:42:26] StopMove 被狗拒绝 code = -1
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:28 WalnutPi python[899]: [11:42:28] 指令 -> StopMove
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:29 WalnutPi python[902]: [11:42:29] 指令 -> BalanceStand
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:42:29 WalnutPi python[899]: [11:42:29] 心跳回读挡位: {"data":1}
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:42:29 WalnutPi python[900]: [11:42:29] 指令 -> StopMove
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:42:33 WalnutPi python[902]: [11:42:33] 心跳回读挡位: {"data":1}
+Oct 14 11:42:41 WalnutPi python[902]: [11:42:41] 指令 -> StopMove
+Oct 14 11:42:41 WalnutPi python[902]: [11:42:41] 指令 -> StandDown
+Oct 14 11:42:41 WalnutPi python[902]: [11:42:41] 模式 -> 趴
+Oct 14 11:42:43 WalnutPi python[902]: [11:42:43] 心跳回读挡位: {"data":-1}
+Oct 14 11:43:05 WalnutPi python[902]: [11:43:05] 已上锁(RC)
+Oct 14 11:43:07 WalnutPi python[902]: [11:43:07] 已解锁(RC)
+Oct 14 11:43:09 WalnutPi python[902]: [11:43:09] 指令 -> StopMove
+Oct 14 11:43:09 WalnutPi python[902]: [11:43:09] 指令 -> StandUp
+Oct 14 11:43:09 WalnutPi python[902]: [11:43:09] 模式 -> 走
+Oct 14 11:43:09 WalnutPi python[902]: [11:43:09] StopMove 被狗拒绝 code = -1
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:43:09 WalnutPi python[899]: [11:43:09] 指令 -> StandDown
+Oct 14 11:43:09 WalnutPi python[899]: [11:43:09] 模式 -> 趴
+Oct 14 11:43:09 WalnutPi python[899]: [11:43:09] 心跳回读挡位: {"data":-1}
+Oct 14 11:43:11 WalnutPi python[899]: [11:43:11] 指令 -> StopMove
+Oct 14 11:43:12 WalnutPi python[899]: [11:43:11] 指令 -> StandUp
+Oct 14 11:43:12 WalnutPi python[899]: [11:43:11] 模式 -> 走
+Oct 14 11:43:12 WalnutPi python[899]: [11:43:11] StopMove 被狗拒绝 code = -1
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:43:12 WalnutPi python[902]: [11:43:12] 指令 -> BalanceStand
+Oct 14 11:43:13 WalnutPi python[902]: [11:43:13] 心跳回读挡位: {"data":1}
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 11:43:14 WalnutPi python[899]: [11:43:14] 指令 -> FreeWalk
+Oct 14 11:43:14 WalnutPi python[899]: [11:43:14] 挡位 -> 2 (FreeWalk)
+Oct 14 11:43:14 WalnutPi python[899]: [11:43:14] 心跳回读挡位: {"data":1}
+Oct 14 11:43:15 WalnutPi python[899]: [11:43:14] 指令 -> BalanceStand
+Oct 14 11:43:15 WalnutPi python[899]: [11:43:15] 指令 -> StopMove
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:43:26 WalnutPi python[901]: [11:43:26] 网页端断开, 解除网页控制并趴下
+Oct 14 11:43:26 WalnutPi python[901]: [11:43:26] 指令 -> StopMove
+Oct 14 11:43:26 WalnutPi python[901]: [11:43:26] 指令 -> StandDown
+Oct 14 11:43:26 WalnutPi python[901]: [11:43:26] 模式 -> 趴
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:43:27 WalnutPi python[902]: [11:43:27] 指令 -> StopMove
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:43:28 WalnutPi python[901]: [11:43:28] 心跳回读挡位: {"data":-1}
+Oct 14 11:43:28 WalnutPi python[901]: [11:43:28] 网页端接入
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:43:31 WalnutPi python[900]: [11:43:31] 指令 -> StandDown
+Oct 14 11:43:31 WalnutPi python[900]: [11:43:31] 模式 -> 趴
+Oct 14 11:43:31 WalnutPi python[900]: [11:43:31] 已上锁(RC)
+Oct 14 11:43:33 WalnutPi python[900]: [11:43:33] 心跳回读挡位: {"data":-1}
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:43:43 WalnutPi python[902]: [11:43:43] 指令 -> FreeWalk
+Oct 14 11:43:43 WalnutPi python[902]: [11:43:43] 挡位 -> 2 (FreeWalk)
+Oct 14 11:43:44 WalnutPi python[902]: [11:43:44] 指令 -> StopMove
+Oct 14 11:43:49 WalnutPi python[902]: [11:43:49] 指令 -> EconomicGait
+Oct 14 11:43:49 WalnutPi python[902]: [11:43:49] 挡位 -> 1 (EconomicGait)
+Oct 14 11:43:52 WalnutPi python[902]: [11:43:52] 指令 -> StopMove
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:44:35 WalnutPi python[900]: [11:44:35] 已解锁(RC)
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:44:38 WalnutPi python[902]: [11:44:38] 指令 -> FreeWalk
+Oct 14 11:44:38 WalnutPi python[902]: [11:44:38] 挡位 -> 2 (FreeWalk)
+Oct 14 11:44:41 WalnutPi python[902]: [11:44:41] 指令 -> StopMove
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:44:47 WalnutPi python[900]: [11:44:47] 已上锁(RC)
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 11:44:53 WalnutPi python[901]: [11:44:53] 网页端断开, 解除网页控制并趴下
+Oct 14 11:44:54 WalnutPi python[901]: [11:44:54] 网页端接入
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:45:07 WalnutPi python[900]: [11:45:07] 已解锁(RC)
+Oct 14 11:45:08 WalnutPi python[900]: [11:45:08] 已上锁(RC)
+Oct 14 11:45:10 WalnutPi python[900]: [11:45:10] 已解锁(RC)
+Oct 14 11:45:10 WalnutPi python[900]: [11:45:10] 已上锁(RC)
+Oct 14 11:45:11 WalnutPi python[900]: [11:45:11] 已解锁(RC)
+Oct 14 11:45:11 WalnutPi python[900]: [11:45:11] 已上锁(RC)
+Oct 14 11:45:12 WalnutPi python[900]: [11:45:12] 已解锁(RC)
+Oct 14 11:45:12 WalnutPi python[900]: [11:45:12] 已上锁(RC)
+Oct 14 11:45:15 WalnutPi python[900]: [11:45:15] 已解锁(RC)
+Oct 14 11:45:16 WalnutPi python[900]: [11:45:16] 已上锁(RC)
+-- Boot 89c68c9fff224c0bbfe6047f3b37f9b1 --
+Oct 14 11:45:17 WalnutPi python[901]: [11:45:17] 指令 -> StandDown
+-- Boot 3f534d5404c14fd79f7f9c8079162a39 --
+Oct 14 11:45:20 WalnutPi python[900]: [11:45:19] 网页端接入
+Oct 14 11:45:22 WalnutPi python[900]: [11:45:22] 已解锁(RC)
+Oct 14 11:45:34 WalnutPi python[900]: [11:45:34] 指令 -> StopMove
+Oct 14 11:45:34 WalnutPi python[900]: [11:45:34] 指令 -> StandUp
+Oct 14 11:45:34 WalnutPi python[900]: [11:45:34] 模式 -> 走
+Oct 14 11:45:34 WalnutPi python[900]: [11:45:34] StopMove 被狗拒绝 code = -1
+Oct 14 11:45:37 WalnutPi python[900]: [11:45:37] 指令 -> BalanceStand
+Oct 14 11:45:38 WalnutPi python[900]: [11:45:38] 指令 -> StopMove
+Oct 14 11:45:38 WalnutPi python[900]: [11:45:38] 心跳回读挡位: {"data":1}
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:45:45 WalnutPi python[901]: [11:45:45] 指令 -> StandDown
+Oct 14 11:45:45 WalnutPi python[901]: [11:45:45] 模式 -> 趴
+Oct 14 11:45:45 WalnutPi python[901]: [11:45:45] 已上锁(RC)
+Oct 14 11:45:48 WalnutPi python[901]: [11:45:48] 已解锁(RC)
+Oct 14 11:45:48 WalnutPi python[901]: [11:45:48] 心跳回读挡位: {"data":-1}
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:45:49 WalnutPi python[902]: [11:45:49] 指令 -> EconomicGait
+Oct 14 11:45:49 WalnutPi python[902]: [11:45:49] 挡位 -> 1 (EconomicGait)
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:45:51 WalnutPi python[901]: [11:45:51] 指令 -> StopMove
+Oct 14 11:45:51 WalnutPi python[901]: [11:45:51] 指令 -> StandUp
+Oct 14 11:45:51 WalnutPi python[901]: [11:45:51] 模式 -> 走
+Oct 14 11:45:51 WalnutPi python[901]: [11:45:51] StopMove 被狗拒绝 code = -1
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:45:52 WalnutPi python[902]: [11:45:52] 指令 -> StopMove
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:45:54 WalnutPi python[901]: [11:45:54] 指令 -> BalanceStand
+Oct 14 11:45:58 WalnutPi python[901]: [11:45:58] 心跳回读挡位: {"data":1}
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:46:01 WalnutPi python[902]: [11:46:01] 指令 -> StandDown
+Oct 14 11:46:01 WalnutPi python[902]: [11:46:01] 模式 -> 趴
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:46:01 WalnutPi python[901]: [11:46:01] pwm2: 脉宽 -> 1950us
+Oct 14 11:46:01 WalnutPi python[901]: [11:46:01] GPIO269: 电平 -> 高(继电器开)
+Oct 14 11:46:01 WalnutPi python[901]: [11:46:01] GPIO270: 电平 -> 高(继电器开)
+Oct 14 11:46:01 WalnutPi python[901]: [11:46:01] GPIO260: 电平 -> 高(继电器开)
+Oct 14 11:46:01 WalnutPi python[901]: [11:46:01] GPIO259: 电平 -> 高(继电器开)
+Oct 14 11:46:01 WalnutPi python[901]: [11:46:01] pwm2: 脉宽 -> 1050us
+Oct 14 11:46:01 WalnutPi python[901]: [11:46:01] GPIO269: 电平 -> 低(继电器关)
+Oct 14 11:46:01 WalnutPi python[901]: [11:46:01] GPIO270: 电平 -> 低(继电器关)
+Oct 14 11:46:01 WalnutPi python[901]: [11:46:01] GPIO260: 电平 -> 低(继电器关)
+Oct 14 11:46:01 WalnutPi python[901]: [11:46:01] GPIO259: 电平 -> 低(继电器关)
+Oct 14 11:46:02 WalnutPi python[901]: [11:46:02] pwm2: 脉宽 -> 1950us
+Oct 14 11:46:02 WalnutPi python[901]: [11:46:02] GPIO269: 电平 -> 高(继电器开)
+Oct 14 11:46:02 WalnutPi python[901]: [11:46:02] GPIO270: 电平 -> 高(继电器开)
+Oct 14 11:46:02 WalnutPi python[901]: [11:46:02] GPIO260: 电平 -> 高(继电器开)
+Oct 14 11:46:02 WalnutPi python[901]: [11:46:02] GPIO259: 电平 -> 高(继电器开)
+Oct 14 11:46:02 WalnutPi python[901]: [11:46:02] pwm2: 脉宽 -> 1050us
+Oct 14 11:46:02 WalnutPi python[901]: [11:46:02] GPIO269: 电平 -> 低(继电器关)
+Oct 14 11:46:02 WalnutPi python[901]: [11:46:02] GPIO270: 电平 -> 低(继电器关)
+Oct 14 11:46:02 WalnutPi python[901]: [11:46:02] GPIO260: 电平 -> 低(继电器关)
+Oct 14 11:46:02 WalnutPi python[901]: [11:46:02] GPIO259: 电平 -> 低(继电器关)
+-- Boot 8978ec9d006e4f1984a15bf8e8473031 --
+Oct 14 11:46:03 WalnutPi python[902]: [11:46:03] 心跳回读挡位: {"data":-1}
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:46:03 WalnutPi python[901]: [11:46:03] 指令 -> Hello
+Oct 14 11:46:03 WalnutPi python[901]: [11:46:03] 动作 -> Hello (4s)
+-- Boot cc0df2730167413c8c61cee787b70d90 --
+Oct 14 11:46:07 WalnutPi python[902]: [11:46:07] 指令 -> FreeWalk
+Oct 14 11:46:07 WalnutPi python[902]: [11:46:07] 挡位 -> 2 (FreeWalk)
+Oct 14 11:46:09 WalnutPi python[902]: [11:46:09] 指令 -> StopMove
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:46:10 WalnutPi python[901]: [11:46:10] 指令 -> TrotRun
+Oct 14 11:46:10 WalnutPi python[901]: [11:46:10] 挡位 -> 3 (TrotRun)
+Oct 14 11:46:10 WalnutPi python[901]: [11:46:10] 指令 -> FreeWalk
+Oct 14 11:46:10 WalnutPi python[901]: [11:46:10] 挡位 -> 2 (FreeWalk)
+Oct 14 11:46:10 WalnutPi python[901]: [11:46:10] 指令 -> EconomicGait
+Oct 14 11:46:10 WalnutPi python[901]: [11:46:10] 挡位 -> 1 (EconomicGait)
+Oct 14 11:46:11 WalnutPi python[901]: [11:46:11] 指令 -> FreeWalk
+Oct 14 11:46:11 WalnutPi python[901]: [11:46:11] 挡位 -> 2 (FreeWalk)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:46:18 WalnutPi python[900]: [11:46:18] 指令 -> StandDown
+Oct 14 11:46:18 WalnutPi python[900]: [11:46:18] 模式 -> 趴
+Oct 14 11:46:18 WalnutPi python[900]: [11:46:18] 心跳回读挡位: {"data":-1}
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:47:25 WalnutPi python[901]: [11:47:25] 指令 -> StopMove
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:47:28 WalnutPi python[900]: [11:47:28] 已上锁(RC)
+Oct 14 11:47:29 WalnutPi python[900]: [11:47:29] 已解锁(RC)
+Oct 14 11:47:31 WalnutPi python[900]: [11:47:31] 指令 -> StopMove
+Oct 14 11:47:31 WalnutPi python[900]: [11:47:31] 指令 -> StandUp
+Oct 14 11:47:31 WalnutPi python[900]: [11:47:31] 模式 -> 走
+Oct 14 11:47:31 WalnutPi python[900]: [11:47:31] StopMove 被狗拒绝 code = -1
+Oct 14 11:47:32 WalnutPi python[900]: [11:47:32] 指令 -> StopMove
+Oct 14 11:47:32 WalnutPi python[900]: [11:47:32] 指令 -> StandDown
+Oct 14 11:47:32 WalnutPi python[900]: [11:47:32] 模式 -> 趴
+Oct 14 11:47:34 WalnutPi python[900]: [11:47:34] 指令 -> BalanceStand
+Oct 14 11:47:34 WalnutPi python[900]: [11:47:34] BalanceStand 被狗拒绝 code = -1
+Oct 14 11:50:14 WalnutPi python[900]: [11:50:14] 指令 -> StopMove
+Oct 14 11:50:14 WalnutPi python[900]: [11:50:14] 指令 -> StandUp
+Oct 14 11:50:14 WalnutPi python[900]: [11:50:14] 模式 -> 走
+Oct 14 11:50:14 WalnutPi python[900]: [11:50:14] StopMove 被狗拒绝 code = -1
+Oct 14 11:50:17 WalnutPi python[900]: [11:50:17] 指令 -> BalanceStand
+Oct 14 11:50:19 WalnutPi python[900]: [11:50:19] 心跳回读挡位: {"data":1}
+Oct 14 11:50:23 WalnutPi python[900]: [11:50:23] 指令 -> StopMove
+Oct 14 11:50:50 WalnutPi python[900]: [11:50:50] 指令 -> StandDown
+Oct 14 11:50:50 WalnutPi python[900]: [11:50:50] 模式 -> 趴
+Oct 14 11:50:50 WalnutPi python[900]: [11:50:50] 已上锁(RC)
+Oct 14 11:50:54 WalnutPi python[900]: [11:50:54] 心跳回读挡位: {"data":-1}
+Oct 14 11:50:54 WalnutPi python[900]: [11:50:54] 已解锁(RC)
+Oct 14 11:50:57 WalnutPi python[900]: [11:50:57] 已上锁(RC)
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:51:02 WalnutPi python[900]: [11:51:02] 指令 -> StandDown
+Oct 14 11:51:02 WalnutPi python[900]: [11:51:02] 模式 -> 趴
+Oct 14 11:51:02 WalnutPi python[900]: [11:51:02] 已上锁(RC)
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:51:02 WalnutPi python[900]: [11:51:02] 已解锁(RC)
+Oct 14 11:51:05 WalnutPi python[900]: [11:51:05] 指令 -> StopMove
+Oct 14 11:51:05 WalnutPi python[900]: [11:51:05] 指令 -> StandUp
+Oct 14 11:51:05 WalnutPi python[900]: [11:51:05] 模式 -> 走
+Oct 14 11:51:05 WalnutPi python[900]: [11:51:05] StopMove 被狗拒绝 code = -1
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:51:06 WalnutPi python[900]: [11:51:06] 心跳回读挡位: {"data":-1}
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:51:08 WalnutPi python[900]: [11:51:08] 指令 -> BalanceStand
+Oct 14 11:51:09 WalnutPi python[900]: [11:51:09] 心跳回读挡位: {"data":1}
+-- Boot 518d4bd4f5114c619cb02e23b480ea38 --
+Oct 14 11:51:19 WalnutPi python[900]: [11:51:19] 已解锁(RC)
+Oct 14 11:51:19 WalnutPi python[900]: [11:51:19] 指令 -> StopMove
+Oct 14 11:51:19 WalnutPi python[900]: [11:51:19] 指令 -> StandUp
+Oct 14 11:51:19 WalnutPi python[900]: [11:51:19] 模式 -> 走
+Oct 14 11:51:20 WalnutPi python[900]: [11:51:19] StopMove 被狗拒绝 code = -1
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:51:22 WalnutPi python[900]: [11:51:22] 指令 -> StandDown
+Oct 14 11:51:22 WalnutPi python[900]: [11:51:22] 模式 -> 趴
+Oct 14 11:51:23 WalnutPi python[900]: [11:51:23] 心跳回读挡位: {"data":-1}
+-- Boot a3589c8530a54547a848753a309d78e5 --
+Oct 14 11:51:26 WalnutPi python[900]: [11:51:26] 指令 -> StopMove
+Oct 14 11:51:26 WalnutPi python[900]: [11:51:26] 指令 -> StandDown
+-- Boot f7e7936a886747b8b80c4973e433c69d --
+Oct 14 11:51:34 WalnutPi python[901]: [11:51:34] 网页端断开, 解除网页控制并趴下
+-- Boot 625d2d9701714505a85ba0af7061146c --
+Oct 14 11:53:19 WalnutPi python[900]: [11:53:19] 指令 -> StopMove
+Oct 14 11:53:19 WalnutPi python[900]: [11:53:19] 指令 -> StandUp
+Oct 14 11:53:19 WalnutPi python[900]: [11:53:19] 模式 -> 走
+Oct 14 11:53:19 WalnutPi python[900]: [11:53:19] StopMove 被狗拒绝 code = -1
+Oct 14 11:53:22 WalnutPi python[900]: [11:53:22] 指令 -> BalanceStand
+Oct 14 11:53:24 WalnutPi python[900]: [11:53:24] 心跳回读挡位: {"data":1}
+Oct 14 11:53:34 WalnutPi python[900]: [11:53:34] 指令 -> StopMove
+Oct 14 11:53:35 WalnutPi python[900]: [11:53:35] 指令 -> StandDown
+Oct 14 11:53:35 WalnutPi python[900]: [11:53:35] 模式 -> 趴
+Oct 14 11:53:39 WalnutPi python[900]: [11:53:39] 心跳回读挡位: {"data":-1}
+Oct 14 11:56:12 WalnutPi python[900]: [11:56:12] WebRTC 会话结束, 3s 后重连: RuntimeError('看门狗: 到狗链路断开')
+Oct 14 11:56:15 WalnutPi python[900]: 🕒 WebRTC connection        : 🟡 started       (11:56:15)
+Oct 14 11:56:15 WalnutPi python[900]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (11:56:15)
+Oct 14 11:56:15 WalnutPi python[900]: 🕒 Signaling State          : 🟡 have-local-offer (11:56:15)
+Oct 14 11:56:15 WalnutPi python[900]: 🕒 ICE Gathering State      : 🟡 gathering     (11:56:15)
+Oct 14 11:56:15 WalnutPi python[900]: 🕒 ICE Gathering State      : 🟢 complete      (11:56:15)
+Oct 14 11:56:15 WalnutPi python[900]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (11:56:15)
+Oct 14 11:56:16 WalnutPi python[900]: 🕒 ICE Connection State     : 🔵 checking      (11:56:16)
+Oct 14 11:56:16 WalnutPi python[900]: 🕒 Peer Connection State    : 🔵 connecting    (11:56:16)
+Oct 14 11:56:16 WalnutPi python[900]: 🕒 Signaling State          : 🟢 stable        (11:56:16)
+Oct 14 11:56:16 WalnutPi python[900]: 🕒 ICE Connection State     : 🟢 completed     (11:56:16)
+Oct 14 11:56:16 WalnutPi python[900]: 🕒 Peer Connection State    : 🟢 connected     (11:56:16)
+Oct 14 11:56:16 WalnutPi python[900]: 🕒 Data Channel Verification: ✅ OK            (11:56:16)
+Oct 14 11:56:16 WalnutPi python[900]: [11:56:16] WebRTC 已连接
+Oct 14 11:56:16 WalnutPi python[900]: [11:56:16] 指令 -> StopMove
+Oct 14 11:56:16 WalnutPi python[900]: [11:56:16] 断链重连: 停走保持姿态, 请重新解锁
+Oct 14 11:56:16 WalnutPi python[900]: [11:56:16] StopMove 被狗拒绝 code = -1
+Oct 14 11:56:16 WalnutPi python[900]: [11:56:16] 链路重连, 已回上锁态(保持站立), 请重新解锁
+Oct 14 11:56:20 WalnutPi python[900]: [11:56:20] WebRTC 会话结束, 3s 后重连: RuntimeError('看门狗: 到狗链路断开')
+Oct 14 11:56:21 WalnutPi python[900]: 🕒 Robot Connection Mode    : 📡 4G            (11:56:21)
+Oct 14 11:56:23 WalnutPi python[900]: 🕒 WebRTC connection        : 🟡 started       (11:56:23)
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 12:00:06 WalnutPi python[899]: [12:00:05] pwm2: 脉宽 -> 1950us
+Oct 14 12:00:06 WalnutPi python[899]: [12:00:05] GPIO269: 电平 -> 高(继电器开)
+Oct 14 12:00:06 WalnutPi python[899]: [12:00:05] GPIO270: 电平 -> 高(继电器开)
+Oct 14 12:00:06 WalnutPi python[899]: [12:00:05] GPIO260: 电平 -> 高(继电器开)
+Oct 14 12:00:06 WalnutPi python[899]: [12:00:05] GPIO259: 电平 -> 高(继电器开)
+Oct 14 12:00:08 WalnutPi python[899]: [12:00:07] pwm2: 脉宽 -> 1050us
+Oct 14 12:00:08 WalnutPi python[899]: [12:00:07] GPIO269: 电平 -> 低(继电器关)
+Oct 14 12:00:08 WalnutPi python[899]: [12:00:07] GPIO270: 电平 -> 低(继电器关)
+Oct 14 12:00:08 WalnutPi python[899]: [12:00:07] GPIO260: 电平 -> 低(继电器关)
+Oct 14 12:00:08 WalnutPi python[899]: [12:00:07] GPIO259: 电平 -> 低(继电器关)
+Oct 14 12:00:20 WalnutPi python[899]: [12:00:20] pwm2: 脉宽 -> 1950us
+Oct 14 12:00:20 WalnutPi python[899]: [12:00:20] GPIO269: 电平 -> 高(继电器开)
+Oct 14 12:00:20 WalnutPi python[899]: [12:00:20] GPIO270: 电平 -> 高(继电器开)
+Oct 14 12:00:20 WalnutPi python[899]: [12:00:20] GPIO260: 电平 -> 高(继电器开)
+Oct 14 12:00:20 WalnutPi python[899]: [12:00:20] GPIO259: 电平 -> 高(继电器开)
+Oct 14 12:00:21 WalnutPi python[899]: [12:00:21] pwm2: 脉宽 -> 1050us
+Oct 14 12:00:21 WalnutPi python[899]: [12:00:21] GPIO269: 电平 -> 低(继电器关)
+Oct 14 12:00:21 WalnutPi python[899]: [12:00:21] GPIO270: 电平 -> 低(继电器关)
+Oct 14 12:00:21 WalnutPi python[899]: [12:00:21] GPIO260: 电平 -> 低(继电器关)
+Oct 14 12:00:21 WalnutPi python[899]: [12:00:21] GPIO259: 电平 -> 低(继电器关)
+Oct 14 12:00:28 WalnutPi python[899]: [12:00:28] pwm2: 脉宽 -> 1950us
+Oct 14 12:00:28 WalnutPi python[899]: [12:00:28] GPIO269: 电平 -> 高(继电器开)
+Oct 14 12:00:28 WalnutPi python[899]: [12:00:28] GPIO270: 电平 -> 高(继电器开)
+Oct 14 12:00:28 WalnutPi python[899]: [12:00:28] GPIO260: 电平 -> 高(继电器开)
+Oct 14 12:00:28 WalnutPi python[899]: [12:00:28] GPIO259: 电平 -> 高(继电器开)
+Oct 14 12:00:29 WalnutPi python[899]: [12:00:29] pwm2: 脉宽 -> 1050us
+Oct 14 12:00:29 WalnutPi python[899]: [12:00:29] GPIO269: 电平 -> 低(继电器关)
+Oct 14 12:00:29 WalnutPi python[899]: [12:00:29] GPIO270: 电平 -> 低(继电器关)
+Oct 14 12:00:29 WalnutPi python[899]: [12:00:29] GPIO260: 电平 -> 低(继电器关)
+Oct 14 12:00:29 WalnutPi python[899]: [12:00:29] GPIO259: 电平 -> 低(继电器关)
+Oct 14 12:00:32 WalnutPi python[899]: [12:00:32] 指令 -> StandDown
+Oct 14 12:00:32 WalnutPi python[899]: [12:00:32] 模式 -> 趴
+Oct 14 12:00:35 WalnutPi python[899]: [12:00:35] 指令 -> StopMove
+Oct 14 12:00:35 WalnutPi python[899]: [12:00:35] 指令 -> StandUp
+Oct 14 12:00:35 WalnutPi python[899]: [12:00:35] 模式 -> 走
+Oct 14 12:00:35 WalnutPi python[899]: [12:00:35] StopMove 被狗拒绝 code = -1
+Oct 14 12:00:36 WalnutPi python[899]: [12:00:36] 心跳回读挡位: {"data":-1}
+Oct 14 12:00:38 WalnutPi python[899]: [12:00:38] 指令 -> BalanceStand
+Oct 14 12:00:41 WalnutPi python[899]: [12:00:41] 心跳回读挡位: {"data":1}
+Oct 14 12:01:00 WalnutPi python[899]: [12:01:00] pwm2: 脉宽 -> 1950us
+Oct 14 12:01:00 WalnutPi python[899]: [12:01:00] GPIO269: 电平 -> 高(继电器开)
+Oct 14 12:01:00 WalnutPi python[899]: [12:01:00] GPIO270: 电平 -> 高(继电器开)
+Oct 14 12:01:00 WalnutPi python[899]: [12:01:00] GPIO260: 电平 -> 高(继电器开)
+Oct 14 12:01:00 WalnutPi python[899]: [12:01:00] GPIO259: 电平 -> 高(继电器开)
+Oct 14 12:01:18 WalnutPi python[899]: [12:01:18] 指令 -> Hello
+Oct 14 12:01:18 WalnutPi python[899]: [12:01:18] 动作 -> Hello (4s)
+Oct 14 12:01:23 WalnutPi python[899]: [12:01:23] 心跳回读挡位: {"data":-1}
+Oct 14 12:01:30 WalnutPi python[899]: [12:01:30] 指令 -> StopMove
+Oct 14 12:01:30 WalnutPi python[899]: [12:01:30] 指令 -> StandDown
+Oct 14 12:01:30 WalnutPi python[899]: [12:01:30] 模式 -> 趴
+Oct 14 12:01:30 WalnutPi python[899]: [12:01:30] StopMove 被狗拒绝 code = -1
+Oct 14 12:01:32 WalnutPi python[899]: [12:01:32] StandDown 被狗拒绝 code = -1
+Oct 14 12:01:42 WalnutPi python[899]: [12:01:42] 指令 -> StopMove
+Oct 14 12:01:42 WalnutPi python[899]: [12:01:42] 指令 -> StandUp
+Oct 14 12:01:42 WalnutPi python[899]: [12:01:42] 模式 -> 走
+Oct 14 12:01:42 WalnutPi python[899]: [12:01:42] StopMove 被狗拒绝 code = -1
+Oct 14 12:01:42 WalnutPi python[899]: [12:01:42] StandUp 被狗拒绝 code = -1
+Oct 14 12:01:45 WalnutPi python[899]: [12:01:45] 指令 -> BalanceStand
+Oct 14 12:01:45 WalnutPi python[899]: [12:01:45] BalanceStand 被狗拒绝 code = -1
+Oct 14 12:01:46 WalnutPi python[899]: [12:01:46] 指令 -> StopMove
+Oct 14 12:01:46 WalnutPi python[899]: [12:01:46] StopMove 被狗拒绝 code = -1
+Oct 14 12:01:46 WalnutPi python[899]: [12:01:46] StopMove 被狗拒绝 code = -1
+Oct 14 12:01:46 WalnutPi python[899]: [12:01:46] StopMove 被狗拒绝 code = -1
+Oct 14 12:01:47 WalnutPi python[899]: [12:01:47] StopMove 被狗拒绝 code = -1
+Oct 14 12:01:54 WalnutPi python[899]: [12:01:54] 指令 -> StandDown
+Oct 14 12:01:54 WalnutPi python[899]: [12:01:54] 模式 -> 趴
+Oct 14 12:01:54 WalnutPi python[899]: [12:01:54] StopMove 被狗拒绝 code = -1
+Oct 14 12:01:56 WalnutPi python[899]: [12:01:56] StandDown 被狗拒绝 code = -1
+Oct 14 12:01:59 WalnutPi python[899]: [12:01:59] 已上锁(RC)
+Oct 14 12:02:04 WalnutPi python[899]: [12:02:04] 已解锁(RC)
+Oct 14 12:02:09 WalnutPi python[899]: [12:02:09] 指令 -> StopMove
+Oct 14 12:02:09 WalnutPi python[899]: [12:02:09] 指令 -> StandUp
+Oct 14 12:02:09 WalnutPi python[899]: [12:02:09] 模式 -> 走
+Oct 14 12:02:09 WalnutPi python[899]: [12:02:09] StopMove 被狗拒绝 code = -1
+Oct 14 12:02:09 WalnutPi python[899]: [12:02:09] StandUp 被狗拒绝 code = -1
+Oct 14 12:02:12 WalnutPi python[899]: [12:02:12] 指令 -> BalanceStand
+Oct 14 12:02:12 WalnutPi python[899]: [12:02:12] BalanceStand 被狗拒绝 code = -1
+Oct 14 12:02:15 WalnutPi python[899]: [12:02:15] pwm2: 脉宽 -> 1500us
+Oct 14 12:02:15 WalnutPi python[899]: [12:02:15] GPIO269: 电平 -> 低(继电器关)
+Oct 14 12:02:15 WalnutPi python[899]: [12:02:15] GPIO270: 电平 -> 低(继电器关)
+Oct 14 12:02:15 WalnutPi python[899]: [12:02:15] GPIO260: 电平 -> 低(继电器关)
+Oct 14 12:02:15 WalnutPi python[899]: [12:02:15] GPIO259: 电平 -> 低(继电器关)
+Oct 14 12:02:15 WalnutPi python[899]: [12:02:15] 指令 -> StopMove
+Oct 14 12:02:15 WalnutPi python[899]: [12:02:15] 指令 -> StandDown
+Oct 14 12:02:15 WalnutPi python[899]: [12:02:15] 模式 -> 趴
+Oct 14 12:02:15 WalnutPi python[899]: [12:02:15] 已上锁(RC)
+Oct 14 12:02:15 WalnutPi python[899]: [12:02:15] StopMove 被狗拒绝 code = -1
+Oct 14 12:02:17 WalnutPi python[899]: [12:02:17] 已解锁(RC)
+Oct 14 12:02:17 WalnutPi python[899]: [12:02:17] StandDown 被狗拒绝 code = -1
+Oct 14 12:02:22 WalnutPi python[899]: [12:02:22] pwm2: 脉宽 -> 1950us
+Oct 14 12:02:22 WalnutPi python[899]: [12:02:22] GPIO269: 电平 -> 高(继电器开)
+Oct 14 12:02:22 WalnutPi python[899]: [12:02:22] GPIO270: 电平 -> 高(继电器开)
+Oct 14 12:02:22 WalnutPi python[899]: [12:02:22] GPIO260: 电平 -> 高(继电器开)
+Oct 14 12:02:22 WalnutPi python[899]: [12:02:22] GPIO259: 电平 -> 高(继电器开)
+Oct 14 12:02:22 WalnutPi python[899]: [12:02:22] 指令 -> StopMove
+Oct 14 12:02:22 WalnutPi python[899]: [12:02:22] 指令 -> StandUp
+Oct 14 12:02:22 WalnutPi python[899]: [12:02:22] 模式 -> 走
+Oct 14 12:02:22 WalnutPi python[899]: [12:02:22] StopMove 被狗拒绝 code = -1
+Oct 14 12:02:22 WalnutPi python[899]: [12:02:22] StandUp 被狗拒绝 code = -1
+Oct 14 12:02:25 WalnutPi python[899]: [12:02:25] 指令 -> StopMove
+Oct 14 12:02:25 WalnutPi python[899]: [12:02:25] 指令 -> StandDown
+Oct 14 12:02:25 WalnutPi python[899]: [12:02:25] 模式 -> 趴
+Oct 14 12:02:25 WalnutPi python[899]: [12:02:25] StopMove 被狗拒绝 code = -1
+Oct 14 12:02:25 WalnutPi python[899]: [12:02:25] 指令 -> BalanceStand
+Oct 14 12:02:27 WalnutPi python[899]: [12:02:27] StandDown 被狗拒绝 code = -1
+Oct 14 12:02:27 WalnutPi python[899]: [12:02:27] BalanceStand 被狗拒绝 code = -1
+Oct 14 12:02:38 WalnutPi python[899]: [12:02:38] pwm2: 脉宽 -> 1050us
+Oct 14 12:02:38 WalnutPi python[899]: [12:02:38] GPIO269: 电平 -> 低(继电器关)
+Oct 14 12:02:38 WalnutPi python[899]: [12:02:38] GPIO270: 电平 -> 低(继电器关)
+Oct 14 12:02:38 WalnutPi python[899]: [12:02:38] GPIO260: 电平 -> 低(继电器关)
+Oct 14 12:02:38 WalnutPi python[899]: [12:02:38] GPIO259: 电平 -> 低(继电器关)
+Oct 14 12:02:44 WalnutPi python[899]: [12:02:44] 已上锁(RC)
+Oct 14 12:02:46 WalnutPi python[899]: [12:02:46] 已解锁(RC)
+Oct 14 12:02:47 WalnutPi python[899]: [12:02:47] 指令 -> StopMove
+Oct 14 12:02:47 WalnutPi python[899]: [12:02:47] 指令 -> StandUp
+Oct 14 12:02:47 WalnutPi python[899]: [12:02:47] 模式 -> 走
+Oct 14 12:02:47 WalnutPi python[899]: [12:02:47] StopMove 被狗拒绝 code = -1
+Oct 14 12:02:48 WalnutPi python[899]: [12:02:47] StandUp 被狗拒绝 code = -1
+Oct 14 12:02:49 WalnutPi python[899]: [12:02:49] 指令 -> StopMove
+Oct 14 12:02:49 WalnutPi python[899]: [12:02:49] 指令 -> StandDown
+Oct 14 12:02:49 WalnutPi python[899]: [12:02:49] 模式 -> 趴
+Oct 14 12:02:49 WalnutPi python[899]: [12:02:49] StopMove 被狗拒绝 code = -1
+Oct 14 12:02:50 WalnutPi python[899]: [12:02:50] 指令 -> BalanceStand
+Oct 14 12:02:51 WalnutPi python[899]: [12:02:51] StandDown 被狗拒绝 code = -1
+Oct 14 12:02:51 WalnutPi python[899]: [12:02:51] BalanceStand 被狗拒绝 code = -1
+Oct 14 12:02:56 WalnutPi python[899]: [12:02:55] 指令 -> StopMove
+Oct 14 12:02:56 WalnutPi python[899]: [12:02:55] 指令 -> StandUp
+Oct 14 12:02:56 WalnutPi python[899]: [12:02:55] 模式 -> 走
+Oct 14 12:02:56 WalnutPi python[899]: [12:02:56] StopMove 被狗拒绝 code = -1
+Oct 14 12:02:56 WalnutPi python[899]: [12:02:56] StandUp 被狗拒绝 code = -1
+Oct 14 12:02:59 WalnutPi python[899]: [12:02:59] 指令 -> BalanceStand
+Oct 14 12:02:59 WalnutPi python[899]: [12:02:59] BalanceStand 被狗拒绝 code = -1
+Oct 14 12:03:09 WalnutPi python[899]: [12:03:09] 指令 -> Hello
+Oct 14 12:03:09 WalnutPi python[899]: [12:03:09] 动作 -> Hello (4s)
+Oct 14 12:03:13 WalnutPi python[899]: [12:03:13] 心跳回读挡位: {"data":1}
+Oct 14 12:03:15 WalnutPi python[899]: [12:03:15] 指令 -> StopMove
+Oct 14 12:03:29 WalnutPi python[899]: [12:03:29] WebRTC 会话结束, 3s 后重连: RuntimeError('看门狗: 到狗链路断开')
+Oct 14 12:03:31 WalnutPi python[899]: ERROR:root:Error processing WebRTC data
+Oct 14 12:03:31 WalnutPi python[899]: Traceback (most recent call last):
+Oct 14 12:03:31 WalnutPi python[899]:   File "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages/unitree_webrtc_connect/webrtc_datachannel.py", line 76, in on_message
+Oct 14 12:03:31 WalnutPi python[899]:     self.pub_sub.run_resolve(parsed_data)
+Oct 14 12:03:31 WalnutPi python[899]:   File "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages/unitree_webrtc_connect/msgs/pub_sub.py", line 19, in run_resolve
+Oct 14 12:03:31 WalnutPi python[899]:     self.future_resolver.run_resolve_for_topic(message)
+Oct 14 12:03:31 WalnutPi python[899]:   File "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages/unitree_webrtc_connect/msgs/future_resolver.py", line 63, in run_resolve_for_topic
+Oct 14 12:03:31 WalnutPi python[899]:     future.set_result(message)  # Resolve the future with the message
+Oct 14 12:03:31 WalnutPi python[899]: asyncio.exceptions.InvalidStateError: invalid state
+Oct 14 12:03:32 WalnutPi python[899]: 🕒 WebRTC connection        : 🟡 started       (12:03:32)
+Oct 14 12:03:32 WalnutPi python[899]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (12:03:32)
+Oct 14 12:03:32 WalnutPi python[899]: 🕒 Signaling State          : 🟡 have-local-offer (12:03:32)
+Oct 14 12:03:32 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟡 gathering     (12:03:32)
+Oct 14 12:03:32 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟢 complete      (12:03:32)
+Oct 14 12:03:32 WalnutPi python[899]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (12:03:32)
+Oct 14 12:03:33 WalnutPi python[899]: 🕒 ICE Connection State     : 🔵 checking      (12:03:33)
+Oct 14 12:03:33 WalnutPi python[899]: 🕒 Peer Connection State    : 🔵 connecting    (12:03:33)
+Oct 14 12:03:33 WalnutPi python[899]: 🕒 Signaling State          : 🟢 stable        (12:03:33)
+Oct 14 12:03:33 WalnutPi python[899]: 🕒 ICE Connection State     : 🟢 completed     (12:03:33)
+Oct 14 12:03:33 WalnutPi python[899]: 🕒 Peer Connection State    : 🟢 connected     (12:03:33)
+Oct 14 12:03:33 WalnutPi python[899]: 🕒 Data Channel Verification: ✅ OK            (12:03:33)
+Oct 14 12:03:33 WalnutPi python[899]: [12:03:33] WebRTC 已连接
+Oct 14 12:03:33 WalnutPi python[899]: [12:03:33] 断链重连: 停走保持姿态, 请重新解锁
+Oct 14 12:03:33 WalnutPi python[899]: [12:03:33] 链路重连, 已回上锁态(保持站立), 请重新解锁
+Oct 14 12:03:34 WalnutPi python[899]: 🕒 Robot Connection Mode    : 📡 4G            (12:03:34)
+Oct 14 12:03:37 WalnutPi python[899]: [12:03:37] WebRTC 会话结束, 3s 后重连: RuntimeError('看门狗: 到狗链路断开')
+Oct 14 12:03:40 WalnutPi python[899]: 🕒 WebRTC connection        : 🟡 started       (12:03:40)
+Oct 14 12:03:40 WalnutPi python[899]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (12:03:40)
+Oct 14 12:03:41 WalnutPi python[899]: 🕒 Signaling State          : 🟡 have-local-offer (12:03:41)
+Oct 14 12:03:41 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟡 gathering     (12:03:41)
+Oct 14 12:03:41 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟢 complete      (12:03:41)
+Oct 14 12:03:41 WalnutPi python[899]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (12:03:41)
+Oct 14 12:03:41 WalnutPi python[899]: 🕒 ICE Connection State     : 🔵 checking      (12:03:41)
+Oct 14 12:03:41 WalnutPi python[899]: 🕒 Peer Connection State    : 🔵 connecting    (12:03:41)
+Oct 14 12:03:41 WalnutPi python[899]: 🕒 Signaling State          : 🟢 stable        (12:03:41)
+Oct 14 12:03:41 WalnutPi python[899]: 🕒 ICE Connection State     : 🟢 completed     (12:03:41)
+Oct 14 12:03:41 WalnutPi python[899]: 🕒 Peer Connection State    : 🟢 connected     (12:03:41)
+Oct 14 12:03:41 WalnutPi python[899]: 🕒 Data Channel Verification: ✅ OK            (12:03:41)
+Oct 14 12:03:41 WalnutPi python[899]: [12:03:41] WebRTC 已连接
+Oct 14 12:03:41 WalnutPi python[899]: [12:03:41] 断链重连: 停走保持姿态, 请重新解锁
+Oct 14 12:03:45 WalnutPi python[899]: 🕒 Robot Connection Mode    : 📡 4G            (12:03:45)
+Oct 14 12:04:04 WalnutPi python[899]: [12:04:04] 网页端接入
+Oct 14 12:04:07 WalnutPi python[899]: [12:04:07] 已解锁(RC)
+Oct 14 12:04:07 WalnutPi python[899]: [12:04:07] 指令 -> StandDown
+Oct 14 12:04:07 WalnutPi python[899]: [12:04:07] 模式 -> 趴
+Oct 14 12:04:09 WalnutPi python[899]: [12:04:09] WebRTC 会话结束, 3s 后重连: RuntimeError('看门狗: 到狗链路断开')
+Oct 14 12:04:09 WalnutPi python[899]: ERROR:root:Error processing WebRTC data
+Oct 14 12:04:09 WalnutPi python[899]: Traceback (most recent call last):
+Oct 14 12:04:09 WalnutPi python[899]:   File "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages/unitree_webrtc_connect/webrtc_datachannel.py", line 76, in on_message
+Oct 14 12:04:09 WalnutPi python[899]:     self.pub_sub.run_resolve(parsed_data)
+Oct 14 12:04:09 WalnutPi python[899]:   File "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages/unitree_webrtc_connect/msgs/pub_sub.py", line 19, in run_resolve
+Oct 14 12:04:09 WalnutPi python[899]:     self.future_resolver.run_resolve_for_topic(message)
+Oct 14 12:04:09 WalnutPi python[899]:   File "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages/unitree_webrtc_connect/msgs/future_resolver.py", line 63, in run_resolve_for_topic
+Oct 14 12:04:09 WalnutPi python[899]:     future.set_result(message)  # Resolve the future with the message
+Oct 14 12:04:09 WalnutPi python[899]: asyncio.exceptions.InvalidStateError: invalid state
+Oct 14 12:04:09 WalnutPi python[899]: ERROR:root:Error processing WebRTC data
+Oct 14 12:04:09 WalnutPi python[899]: Traceback (most recent call last):
+Oct 14 12:04:09 WalnutPi python[899]:   File "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages/unitree_webrtc_connect/webrtc_datachannel.py", line 76, in on_message
+Oct 14 12:04:09 WalnutPi python[899]:     self.pub_sub.run_resolve(parsed_data)
+Oct 14 12:04:09 WalnutPi python[899]:   File "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages/unitree_webrtc_connect/msgs/pub_sub.py", line 19, in run_resolve
+Oct 14 12:04:09 WalnutPi python[899]:     self.future_resolver.run_resolve_for_topic(message)
+Oct 14 12:04:09 WalnutPi python[899]:   File "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages/unitree_webrtc_connect/msgs/future_resolver.py", line 63, in run_resolve_for_topic
+Oct 14 12:04:09 WalnutPi python[899]:     future.set_result(message)  # Resolve the future with the message
+Oct 14 12:04:09 WalnutPi python[899]: asyncio.exceptions.InvalidStateError: invalid state
+Oct 14 12:04:09 WalnutPi python[899]: [12:04:09] 模式 -> 走
+Oct 14 12:04:13 WalnutPi python[899]: [12:04:13] 到狗链路不通(网线/狗未开机), 等待恢复...
+Oct 14 12:04:15 WalnutPi python[899]: 🕒 WebRTC connection        : 🟡 started       (12:04:15)
+Oct 14 12:04:15 WalnutPi python[899]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (12:04:15)
+Oct 14 12:04:15 WalnutPi python[899]: 🕒 Signaling State          : 🟡 have-local-offer (12:04:15)
+Oct 14 12:04:15 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟡 gathering     (12:04:15)
+Oct 14 12:04:15 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟢 complete      (12:04:15)
+Oct 14 12:04:15 WalnutPi python[899]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (12:04:15)
+Oct 14 12:04:16 WalnutPi python[899]: 🕒 ICE Connection State     : 🔵 checking      (12:04:16)
+Oct 14 12:04:16 WalnutPi python[899]: 🕒 Peer Connection State    : 🔵 connecting    (12:04:16)
+Oct 14 12:04:16 WalnutPi python[899]: 🕒 Signaling State          : 🟢 stable        (12:04:16)
+Oct 14 12:04:16 WalnutPi python[899]: 🕒 ICE Connection State     : 🟢 completed     (12:04:16)
+Oct 14 12:04:16 WalnutPi python[899]: 🕒 Peer Connection State    : 🟢 connected     (12:04:16)
+Oct 14 12:04:16 WalnutPi python[899]: 🕒 Data Channel Verification: ✅ OK            (12:04:16)
+Oct 14 12:04:16 WalnutPi python[899]: [12:04:16] WebRTC 已连接
+Oct 14 12:04:16 WalnutPi python[899]: [12:04:16] 指令 -> StopMove
+Oct 14 12:04:16 WalnutPi python[899]: [12:04:16] 断链重连: 停走保持姿态, 请重新解锁
+Oct 14 12:04:16 WalnutPi python[899]: [12:04:16] 链路重连, 已回上锁态(保持站立), 请重新解锁
+Oct 14 12:04:17 WalnutPi python[899]: 🕒 Robot Connection Mode    : 📡 4G            (12:04:17)
+Oct 14 12:04:20 WalnutPi python[899]: 🕒 Signaling State          : ⚫ closed        (12:04:20)
+Oct 14 12:04:20 WalnutPi python[899]: 🕒 ICE Connection State     : ⚫ closed        (12:04:20)
+Oct 14 12:04:20 WalnutPi python[899]: 🕒 Peer Connection State    : ⚫ closed        (12:04:20)
+Oct 14 12:04:20 WalnutPi python[899]: [12:04:20] WebRTC 会话结束, 3s 后重连: RuntimeError('看门狗: 到狗链路断开')
+Oct 14 12:04:25 WalnutPi python[899]: [12:04:25] 到狗链路不通(网线/狗未开机), 等待恢复...
+Oct 14 12:04:31 WalnutPi python[899]: 🕒 WebRTC connection        : 🟡 started       (12:04:31)
+Oct 14 12:04:31 WalnutPi python[899]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (12:04:31)
+Oct 14 12:04:31 WalnutPi python[899]: 🕒 Signaling State          : 🟡 have-local-offer (12:04:31)
+Oct 14 12:04:31 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟡 gathering     (12:04:31)
+Oct 14 12:04:31 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟢 complete      (12:04:31)
+Oct 14 12:04:34 WalnutPi python[899]: [12:04:34] WebRTC 会话结束, 3s 后重连: LocalSignalingPortError('Robot at 192.168.123.161 is not exposing a signaling port (tried 9991, 8081). Check the IP / power / Wi-Fi network / firewall on the robot.')
+Oct 14 12:04:39 WalnutPi python[899]: [12:04:39] 到狗链路不通(网线/狗未开机), 等待恢复...
+Oct 14 12:04:41 WalnutPi python[899]: 🕒 WebRTC connection        : 🟡 started       (12:04:41)
+Oct 14 12:04:41 WalnutPi python[899]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (12:04:41)
+Oct 14 12:04:41 WalnutPi python[899]: 🕒 Signaling State          : 🟡 have-local-offer (12:04:41)
+Oct 14 12:04:41 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟡 gathering     (12:04:41)
+Oct 14 12:04:41 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟢 complete      (12:04:41)
+Oct 14 12:04:41 WalnutPi python[899]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (12:04:41)
+Oct 14 12:04:41 WalnutPi python[899]: 🕒 ICE Connection State     : 🔵 checking      (12:04:41)
+Oct 14 12:04:41 WalnutPi python[899]: 🕒 Peer Connection State    : 🔵 connecting    (12:04:41)
+Oct 14 12:04:41 WalnutPi python[899]: 🕒 Signaling State          : 🟢 stable        (12:04:41)
+Oct 14 12:04:41 WalnutPi python[899]: 🕒 ICE Connection State     : 🟢 completed     (12:04:41)
+Oct 14 12:04:41 WalnutPi python[899]: 🕒 Peer Connection State    : 🟢 connected     (12:04:41)
+Oct 14 12:04:41 WalnutPi python[899]: 🕒 Data Channel Verification: ✅ OK            (12:04:41)
+Oct 14 12:04:41 WalnutPi python[899]: [12:04:41] WebRTC 已连接
+Oct 14 12:04:41 WalnutPi python[899]: [12:04:41] 断链重连: 停走保持姿态, 请重新解锁
+Oct 14 12:04:43 WalnutPi python[899]: 🕒 Robot Connection Mode    : 📡 4G            (12:04:43)
+Oct 14 12:04:46 WalnutPi python[899]: [12:04:46] WebRTC 会话结束, 3s 后重连: RuntimeError('看门狗: 到狗链路断开')
+Oct 14 12:04:49 WalnutPi python[899]: 🕒 Signaling State          : ⚫ closed        (12:04:49)
+Oct 14 12:04:49 WalnutPi python[899]: 🕒 ICE Connection State     : ⚫ closed        (12:04:49)
+Oct 14 12:04:49 WalnutPi python[899]: 🕒 Peer Connection State    : ⚫ closed        (12:04:49)
+Oct 14 12:04:50 WalnutPi python[899]: [12:04:50] 到狗链路不通(网线/狗未开机), 等待恢复...
+Oct 14 12:04:52 WalnutPi python[899]: 🕒 WebRTC connection        : 🟡 started       (12:04:52)
+Oct 14 12:04:52 WalnutPi python[899]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (12:04:52)
+Oct 14 12:04:52 WalnutPi python[899]: 🕒 Signaling State          : 🟡 have-local-offer (12:04:52)
+Oct 14 12:04:52 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟡 gathering     (12:04:52)
+Oct 14 12:04:52 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟢 complete      (12:04:52)
+Oct 14 12:04:52 WalnutPi python[899]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (12:04:52)
+Oct 14 12:04:58 WalnutPi python[899]: ERROR:asyncio:Exception in callback Transaction.__retry()
+Oct 14 12:04:58 WalnutPi python[899]: handle: <TimerHandle when=1419.684684841 Transaction.__retry()>
+Oct 14 12:04:58 WalnutPi python[899]: Traceback (most recent call last):
+Oct 14 12:04:58 WalnutPi python[899]:   File "/usr/lib/python3.10/asyncio/events.py", line 80, in _run
+Oct 14 12:04:58 WalnutPi python[899]:     self._context.run(self._callback, *self._args)
+Oct 14 12:04:58 WalnutPi python[899]:   File "/home/pi/go2-bridge/.venv/lib/python3.10/site-packages/aioice/stun.py", line 330, in __retry
+Oct 14 12:04:58 WalnutPi python[899]:     self.__future.set_exception(TransactionTimeout())
+Oct 14 12:04:58 WalnutPi python[899]: asyncio.exceptions.InvalidStateError: invalid state
+Oct 14 12:04:58 WalnutPi python[899]: 🕒 ICE Connection State     : 🔵 checking      (12:04:58)
+Oct 14 12:04:58 WalnutPi python[899]: 🕒 Peer Connection State    : 🔵 connecting    (12:04:58)
+Oct 14 12:04:58 WalnutPi python[899]: 🕒 Signaling State          : 🟢 stable        (12:04:58)
+Oct 14 12:04:58 WalnutPi python[899]: 🕒 ICE Connection State     : 🟢 completed     (12:04:58)
+Oct 14 12:04:58 WalnutPi python[899]: 🕒 Peer Connection State    : 🟢 connected     (12:04:58)
+Oct 14 12:04:58 WalnutPi python[899]: 🕒 Data Channel Verification: ✅ OK            (12:04:58)
+Oct 14 12:04:58 WalnutPi python[899]: [12:04:58] WebRTC 已连接
+Oct 14 12:04:58 WalnutPi python[899]: [12:04:58] 断链重连: 停走保持姿态, 请重新解锁
+Oct 14 12:05:00 WalnutPi python[899]: 🕒 Robot Connection Mode    : 📡 4G            (12:05:00)
+Oct 14 12:05:17 WalnutPi python[899]: [12:05:17] WebRTC 会话结束, 3s 后重连: RuntimeError('看门狗: 到狗链路断开')
+Oct 14 12:05:22 WalnutPi python[899]: [12:05:22] 到狗链路不通(网线/狗未开机), 等待恢复...
+Oct 14 12:05:24 WalnutPi python[899]: 🕒 WebRTC connection        : 🟡 started       (12:05:24)
+Oct 14 12:05:24 WalnutPi python[899]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (12:05:24)
+Oct 14 12:05:24 WalnutPi python[899]: 🕒 Signaling State          : 🟡 have-local-offer (12:05:24)
+Oct 14 12:05:24 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟡 gathering     (12:05:24)
+Oct 14 12:05:24 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟢 complete      (12:05:24)
+Oct 14 12:05:24 WalnutPi python[899]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (12:05:24)
+Oct 14 12:05:24 WalnutPi python[899]: 🕒 ICE Connection State     : 🔵 checking      (12:05:24)
+Oct 14 12:05:24 WalnutPi python[899]: 🕒 Peer Connection State    : 🔵 connecting    (12:05:24)
+Oct 14 12:05:24 WalnutPi python[899]: 🕒 Signaling State          : 🟢 stable        (12:05:24)
+Oct 14 12:05:24 WalnutPi python[899]: 🕒 ICE Connection State     : 🟢 completed     (12:05:24)
+Oct 14 12:05:24 WalnutPi python[899]: 🕒 Peer Connection State    : 🟢 connected     (12:05:24)
+Oct 14 12:05:24 WalnutPi python[899]: 🕒 Data Channel Verification: ✅ OK            (12:05:24)
+Oct 14 12:05:24 WalnutPi python[899]: [12:05:24] WebRTC 已连接
+Oct 14 12:05:24 WalnutPi python[899]: [12:05:24] 断链重连: 停走保持姿态, 请重新解锁
+Oct 14 12:05:25 WalnutPi python[899]: 🕒 Robot Connection Mode    : 📡 4G            (12:05:25)
+Oct 14 12:05:29 WalnutPi python[899]: [12:05:29] WebRTC 会话结束, 3s 后重连: RuntimeError('看门狗: 到狗链路断开')
+Oct 14 12:05:33 WalnutPi python[899]: [12:05:33] 到狗链路不通(网线/狗未开机), 等待恢复...
+-- Boot fb9452dae06147d4a9ff04898dea6601 --
+Oct 14 12:05:34 WalnutPi python[901]: [12:05:34] 网页端断开, 解除网页控制并趴下
+-- Boot 041d632c6f974a58a732566b02af3701 --
+Oct 14 12:05:35 WalnutPi python[899]: 🕒 WebRTC connection        : 🟡 started       (12:05:35)
+Oct 14 12:05:35 WalnutPi python[899]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (12:05:35)
+Oct 14 12:05:35 WalnutPi python[899]: 🕒 Signaling State          : 🟡 have-local-offer (12:05:35)
+Oct 14 12:05:35 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟡 gathering     (12:05:35)
+Oct 14 12:05:35 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟢 complete      (12:05:35)
+Oct 14 12:05:35 WalnutPi python[899]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (12:05:35)
+Oct 14 12:05:36 WalnutPi python[899]: 🕒 ICE Connection State     : 🔵 checking      (12:05:36)
+Oct 14 12:05:36 WalnutPi python[899]: 🕒 Peer Connection State    : 🔵 connecting    (12:05:36)
+Oct 14 12:05:36 WalnutPi python[899]: 🕒 Signaling State          : 🟢 stable        (12:05:36)
+Oct 14 12:05:36 WalnutPi python[899]: 🕒 ICE Connection State     : 🟢 completed     (12:05:36)
+Oct 14 12:05:36 WalnutPi python[899]: 🕒 Peer Connection State    : 🟢 connected     (12:05:36)
+Oct 14 12:05:36 WalnutPi python[899]: 🕒 Data Channel Verification: ✅ OK            (12:05:36)
+Oct 14 12:05:36 WalnutPi python[899]: [12:05:36] WebRTC 已连接
+Oct 14 12:05:36 WalnutPi python[899]: [12:05:36] 断链重连: 停走保持姿态, 请重新解锁
+Oct 14 12:05:37 WalnutPi python[899]: 🕒 Robot Connection Mode    : 📡 4G            (12:05:37)
+Oct 14 12:05:40 WalnutPi python[899]: [12:05:40] WebRTC 会话结束, 3s 后重连: RuntimeError('看门狗: 到狗链路断开')
+Oct 14 12:05:44 WalnutPi python[899]: 🕒 WebRTC connection        : 🟡 started       (12:05:44)
+Oct 14 12:05:44 WalnutPi python[899]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (12:05:44)
+Oct 14 12:05:44 WalnutPi python[899]: 🕒 Signaling State          : 🟡 have-local-offer (12:05:44)
+Oct 14 12:05:44 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟡 gathering     (12:05:44)
+Oct 14 12:05:44 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟢 complete      (12:05:44)
+Oct 14 12:05:44 WalnutPi python[899]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (12:05:44)
+Oct 14 12:05:44 WalnutPi python[899]: ERROR:root:Local request failed: 429 Client Error: Too Many Requests for url: http://192.168.123.161:9991/con_notify
+Oct 14 12:05:44 WalnutPi python[899]: [12:05:44] WebRTC 会话结束, 3s 后重连: ValueError('Failed to receive initial public key response.')
+Oct 14 12:05:49 WalnutPi python[899]: [12:05:49] 到狗链路不通(网线/狗未开机), 等待恢复...
+Oct 14 12:05:51 WalnutPi python[899]: 🕒 WebRTC connection        : 🟡 started       (12:05:51)
+Oct 14 12:05:51 WalnutPi python[899]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (12:05:51)
+Oct 14 12:05:51 WalnutPi python[899]: 🕒 Signaling State          : 🟡 have-local-offer (12:05:51)
+Oct 14 12:05:51 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟡 gathering     (12:05:51)
+Oct 14 12:05:51 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟢 complete      (12:05:51)
+Oct 14 12:05:51 WalnutPi python[899]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (12:05:51)
+Oct 14 12:05:51 WalnutPi python[899]: 🕒 ICE Connection State     : 🔵 checking      (12:05:51)
+Oct 14 12:05:51 WalnutPi python[899]: 🕒 Peer Connection State    : 🔵 connecting    (12:05:51)
+Oct 14 12:05:51 WalnutPi python[899]: 🕒 Signaling State          : 🟢 stable        (12:05:51)
+Oct 14 12:05:51 WalnutPi python[899]: 🕒 ICE Connection State     : 🟢 completed     (12:05:51)
+Oct 14 12:05:54 WalnutPi python[899]: 🕒 Peer Connection State    : 🟢 connected     (12:05:54)
+Oct 14 12:05:54 WalnutPi python[899]: 🕒 Data Channel Verification: ✅ OK            (12:05:54)
+Oct 14 12:05:54 WalnutPi python[899]: [12:05:54] WebRTC 已连接
+Oct 14 12:05:54 WalnutPi python[899]: [12:05:54] 断链重连: 停走保持姿态, 请重新解锁
+Oct 14 12:05:55 WalnutPi python[899]: 🕒 Robot Connection Mode    : 📡 4G            (12:05:55)
+Oct 14 12:05:59 WalnutPi python[899]: [12:05:59] WebRTC 会话结束, 3s 后重连: RuntimeError('看门狗: 到狗链路断开')
+Oct 14 12:06:04 WalnutPi python[899]: [12:06:03] 到狗链路不通(网线/狗未开机), 等待恢复...
+Oct 14 12:06:06 WalnutPi python[899]: 🕒 WebRTC connection        : 🟡 started       (12:06:05)
+Oct 14 12:06:06 WalnutPi python[899]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (12:06:06)
+Oct 14 12:06:06 WalnutPi python[899]: 🕒 Signaling State          : 🟡 have-local-offer (12:06:06)
+Oct 14 12:06:06 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟡 gathering     (12:06:06)
+Oct 14 12:06:06 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟢 complete      (12:06:06)
+Oct 14 12:06:06 WalnutPi python[899]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (12:06:06)
+Oct 14 12:06:06 WalnutPi python[899]: 🕒 ICE Connection State     : 🔵 checking      (12:06:06)
+Oct 14 12:06:06 WalnutPi python[899]: 🕒 Peer Connection State    : 🔵 connecting    (12:06:06)
+Oct 14 12:06:06 WalnutPi python[899]: 🕒 Signaling State          : 🟢 stable        (12:06:06)
+Oct 14 12:06:06 WalnutPi python[899]: 🕒 ICE Connection State     : 🟢 completed     (12:06:06)
+Oct 14 12:06:09 WalnutPi python[899]: 🕒 Peer Connection State    : 🟢 connected     (12:06:09)
+Oct 14 12:06:09 WalnutPi python[899]: 🕒 Data Channel Verification: ✅ OK            (12:06:09)
+Oct 14 12:06:09 WalnutPi python[899]: [12:06:09] WebRTC 已连接
+Oct 14 12:06:09 WalnutPi python[899]: [12:06:09] 断链重连: 停走保持姿态, 请重新解锁
+Oct 14 12:06:10 WalnutPi python[899]: 🕒 Robot Connection Mode    : 📡 4G            (12:06:10)
+Oct 14 12:06:14 WalnutPi python[899]: [12:06:14] WebRTC 会话结束, 3s 后重连: RuntimeError('看门狗: 到狗链路断开')
+Oct 14 12:06:18 WalnutPi python[899]: [12:06:18] 到狗链路不通(网线/狗未开机), 等待恢复...
+Oct 14 12:06:20 WalnutPi python[899]: 🕒 WebRTC connection        : 🟡 started       (12:06:20)
+Oct 14 12:06:20 WalnutPi python[899]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (12:06:20)
+Oct 14 12:06:20 WalnutPi python[899]: 🕒 Signaling State          : 🟡 have-local-offer (12:06:20)
+Oct 14 12:06:20 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟡 gathering     (12:06:20)
+Oct 14 12:06:20 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟢 complete      (12:06:20)
+Oct 14 12:06:20 WalnutPi python[899]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (12:06:20)
+Oct 14 12:06:20 WalnutPi python[899]: 🕒 ICE Connection State     : 🔵 checking      (12:06:20)
+Oct 14 12:06:20 WalnutPi python[899]: 🕒 Peer Connection State    : 🔵 connecting    (12:06:20)
+Oct 14 12:06:20 WalnutPi python[899]: 🕒 ICE Connection State     : 🟢 completed     (12:06:20)
+Oct 14 12:06:20 WalnutPi python[899]: 🕒 Signaling State          : 🟢 stable        (12:06:20)
+Oct 14 12:06:23 WalnutPi python[899]: 🕒 Signaling State          : ⚫ closed        (12:06:23)
+Oct 14 12:06:23 WalnutPi python[899]: 🕒 ICE Connection State     : ⚫ closed        (12:06:23)
+Oct 14 12:06:23 WalnutPi python[899]: 🕒 Peer Connection State    : ⚫ closed        (12:06:23)
+Oct 14 12:06:24 WalnutPi python[899]: 🕒 Signaling State          : ⚫ closed        (12:06:24)
+Oct 14 12:06:24 WalnutPi python[899]: 🕒 ICE Connection State     : ⚫ closed        (12:06:24)
+Oct 14 12:06:24 WalnutPi python[899]: 🕒 Peer Connection State    : ⚫ closed        (12:06:24)
+Oct 14 12:06:25 WalnutPi python[899]: 🕒 Signaling State          : ⚫ closed        (12:06:25)
+Oct 14 12:06:25 WalnutPi python[899]: 🕒 ICE Connection State     : ⚫ closed        (12:06:25)
+Oct 14 12:06:25 WalnutPi python[899]: 🕒 Peer Connection State    : ⚫ closed        (12:06:25)
+Oct 14 12:06:27 WalnutPi python[899]: 🕒 Signaling State          : ⚫ closed        (12:06:27)
+Oct 14 12:06:27 WalnutPi python[899]: 🕒 ICE Connection State     : ⚫ closed        (12:06:27)
+Oct 14 12:06:27 WalnutPi python[899]: 🕒 Peer Connection State    : ⚫ closed        (12:06:27)
+Oct 14 12:06:35 WalnutPi python[899]: [12:06:35] WebRTC 会话结束, 3s 后重连: DataChannelTimeoutError("Data channel setup timed out after 15s — the WebRTC peer never reached `connected` (peer=connecting, ice=completed). This usually means ICE/DTLS failed — another WebRTC client is probably holding the slot, the network is flaky, or a stale peer on the robot hasn't been released yet. Try again in 10–20 s, or kill any other connected client (mobile apk, second script).")
+Oct 14 12:06:36 WalnutPi python[899]: 🕒 Peer Connection State    : 🟢 connected     (12:06:36)
+Oct 14 12:06:36 WalnutPi python[899]: 🕒 Data Channel Verification: ✅ OK            (12:06:36)
+Oct 14 12:06:39 WalnutPi python[899]: 🕒 Signaling State          : ⚫ closed        (12:06:39)
+Oct 14 12:06:39 WalnutPi python[899]: 🕒 ICE Connection State     : ⚫ closed        (12:06:39)
+Oct 14 12:06:39 WalnutPi python[899]: 🕒 Peer Connection State    : ⚫ closed        (12:06:39)
+Oct 14 12:06:39 WalnutPi python[899]: 🕒 WebRTC connection        : 🟡 started       (12:06:39)
+Oct 14 12:06:40 WalnutPi python[899]: 🕒 Lidar Decoder            : 🧊 LibVoxelDecoder (12:06:40)
+Oct 14 12:06:40 WalnutPi python[899]: 🕒 Signaling State          : 🟡 have-local-offer (12:06:40)
+Oct 14 12:06:40 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟡 gathering     (12:06:40)
+Oct 14 12:06:40 WalnutPi python[899]: 🕒 ICE Gathering State      : 🟢 complete      (12:06:40)
+Oct 14 12:06:40 WalnutPi python[899]: 🕒 LAN Signaling Method     : 🆕 con_notify (192.168.123.161:9991) (12:06:40)
+Oct 14 12:06:40 WalnutPi python[899]: 🕒 ICE Connection State     : 🔵 checking      (12:06:40)
+Oct 14 12:06:40 WalnutPi python[899]: 🕒 Peer Connection State    : 🔵 connecting    (12:06:40)
+Oct 14 12:06:40 WalnutPi python[899]: 🕒 Robot Connection Mode    : 📡 4G            (12:06:40)
+Oct 14 12:06:40 WalnutPi python[899]: 🕒 ICE Connection State     : 🟢 completed     (12:06:40)
+Oct 14 12:06:40 WalnutPi python[899]: 🕒 Signaling State          : 🟢 stable        (12:06:40)
+Oct 14 12:06:40 WalnutPi python[899]: 🕒 Peer Connection State    : 🟢 connected     (12:06:40)
+Oct 14 12:06:40 WalnutPi python[899]: 🕒 Data Channel Verification: ✅ OK            (12:06:40)
+Oct 14 12:06:40 WalnutPi python[899]: [12:06:40] WebRTC 已连接
+Oct 14 12:06:40 WalnutPi python[899]: [12:06:40] 断链重连: 停走保持姿态, 请重新解锁
+Oct 14 12:06:41 WalnutPi python[899]: 🕒 Robot Connection Mode    : 📡 4G            (12:06:41)
+Oct 14 12:06:45 WalnutPi python[899]: [12:06:45] WebRTC 会话结束, 3s 后重连: RuntimeError('看门狗: 到狗链路断开')
+Oct 14 12:06:49 WalnutPi python[899]: [12:06:49] 到狗链路不通(网线/狗未开机), 等待恢复...
+Oct 14 12:06:51 WalnutPi python[899]: [12:06:51] pwm2: 脉宽 -> 1500us
+Oct 14 12:06:55 WalnutPi python[899]: 🕒 WebRTC connection        : 🟡 started       (12:06:55)

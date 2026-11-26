@@ -1,0 +1,42 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="tokens.css">
+<style>
+/* PaSend 主屏 360×740dp → 720×1480px */
+body { width: 720px; height: 1480px; display: flex; flex-direction: column; }
+/* 动作播放提示条: 卡面+成功字, 紧贴顶下 */
+#act { margin: 12px 20px 0; background: var(--green-bg); border-radius: 999px;
+       padding: 14px 26px; font-size: 25px; font-weight: 600; color: var(--txt);
+       display: flex; align-items: center; gap: 14px; width: max-content; }
+#act .t { color: var(--txt2); font-weight: 400; font-variant-numeric: tabular-nums; }
+/* WebView 区 */
+#web { flex: 1; margin: 12px 20px 0; border-radius: 24px; background: var(--frame);
+       display: flex; flex-direction: column; align-items: center; justify-content: center;
+       gap: 18px; color: #6b7080; }
+#web .dot { width: 200px; height: 200px; border-radius: 50%; background: var(--sub);
+            display: flex; align-items: center; justify-content: center; font-size: 72px; }
+#web .t1 { font-size: 30px; font-weight: 600; color: var(--txt2); }
+#web .t2 { font-size: 24px; }
+/* 底部: FlClash 移动端悬浮容器条(一张圆角卡装下全部动作, 蓝=唯一主动作) */
+#bar { margin: 24px 20px 28px; background: var(--card); border-radius: 999px;
+       padding: 10px; display: flex; gap: 8px; align-items: center; }
+#bar .btn { height: 84px; border-radius: 999px; white-space: nowrap; overflow: hidden;
+            display: flex; align-items: center; justify-content: center; }
+#go { flex: 1.7; background: var(--blue); color: #fff; font-size: 29px; }
+#ip { width: 84px; background: transparent; color: var(--txt2); font-size: 34px; }
+#bird, #actbtn, #man { flex: 1; background: transparent; color: var(--txt2); font-size: 28px; }
+</style></head><body>
+  <div id="act"><span style="color:var(--green)">●</span> 摇摆舞 <span class="t num">剩 12.4s</span></div>
+  <div id="web">
+    <div class="dot"><svg width="96" height="96" viewBox="0 0 24 24" style="vertical-align:middle"><path d="M5,11a8,8 0 0 0 8,8 M5,11l8,8 M13,19l3,-3 M14.5,4.5a6,6 0 0 1 5,5 M14.5,7.5a3,3 0 0 1 2,2" fill="none" stroke="#C1C6D7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="t1">SBUS 调试台 (WebView 区)</div>
+    <div class="t2">此区域内容由板端提供 · 第二轮重构</div>
+  </div>
+  <div id="bar">
+    <div class="btn pill pill-blue" id="go"><svg width="30" height="30" viewBox="0 0 24 24" style="vertical-align:middle"><path d="M12,14c1.66,0 3,-1.34 3,-3V5c0,-1.66 -1.34,-3 -3,-3S9,3.34 9,5v6C9,12.66 10.34,14 12,14z M17,11c0,2.76 -2.24,5 -5,5s-5,-2.24 -5,-5H5c0,3.53 2.61,6.43 6,6.92V21h2v-3.08c3.39,-0.49 6,-3.39 6,-6.92H17z" fill="#FFFFFF"/></svg> 喊话悬浮窗</div>
+    <div class="btn pill" id="ip"><svg width="30" height="30" viewBox="0 0 24 24" style="vertical-align:middle"><path d="M4,8h9 M17,8h3 M4,16h3 M11,16h9 M15,5.5v5 M9,13.5v5" fill="none" stroke="#C1C6D7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="btn pill" id="bird"><svg width="30" height="30" viewBox="0 0 24 24" style="vertical-align:middle"><path d="M4,10v4h3l4,4V6L7,10H4z" fill="#C1C6D7"/><path d="M14.5,9.5a4,4 0 0 1 0,5 M17.5,7.5a8,8 0 0 1 0,9" fill="none" stroke="#C1C6D7" stroke-width="1.8" stroke-linecap="round"/></svg> 驱鸟</div>
+    <div class="btn pill" id="actbtn"><svg width="30" height="30" viewBox="0 0 24 24" style="vertical-align:middle"><path d="M12,17.27L18.18,21l-1.64,-7.03L22,9.24l-7.19,-0.61L12,2 9.19,8.63 2,9.24l5.46,4.73L5.82,21z" fill="#C1C6D7"/></svg> 动作</div>
+    <div class="btn pill" id="man"><svg width="30" height="30" viewBox="0 0 24 24" style="vertical-align:middle"><path d="M7,5h10a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4H7a4,4 0 0 1 -4,-4V9a4,4 0 0 1 4,-4z M9,9.5v5 M6.5,12h5 M14.5,10.5h0.02 M17,13.5h0.02" fill="none" stroke="#C1C6D7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> 手动</div>
+  </div>
+  <!-- 喊话按钮动态文案: 无权限时 "🎙 喊话 · 先授麦克风" 单行截断 + toast 引导 -->
+
+</body></html>

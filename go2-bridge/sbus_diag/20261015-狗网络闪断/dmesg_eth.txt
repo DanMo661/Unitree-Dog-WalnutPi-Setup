@@ -1,0 +1,13 @@
+[Wed Oct 14 11:41:13 2026] Booting Linux on physical CPU 0x0000000000 [0x410fd034]
+[Wed Oct 14 11:41:13 2026] arch_timer: cp15 timer(s) running at 24.00MHz (phys).
+[Wed Oct 14 11:41:13 2026] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[Wed Oct 14 11:41:13 2026] audit: initializing netlink subsys (disabled)
+[Wed Oct 14 11:41:13 2026] sun8i-dw-hdmi 6000000.hdmi: Detected HDMI TX controller v2.12a with HDCP (DWC HDMI 2.0 TX PHY)
+[Wed Oct 14 11:41:14 2026] phy phy-5100400.phy.0: Changing dr_mode to 1
+[Wed Oct 14 11:41:14 2026] usb_phy_generic usb_phy_generic.4.auto: supply vcc not found, using dummy regulator
+[Wed Oct 14 11:41:14 2026] usb_phy_generic usb_phy_generic.4.auto: dummy supplies not allowed for exclusive requests
+[Wed Oct 14 11:41:18 2026] systemd[1]: Listening on Network Service Netlink Socket.
+[Wed Oct 14 11:41:22 2026] sunxi-gmac 5030000.ethernet eth0: No PHY found!
+[Wed Oct 14 11:41:22 2026] sunxi-gmac 5030000.ethernet eth0: phy init again...
+[Wed Oct 14 11:41:23 2026] sunxi-gmac 5030000.ethernet eth0: eth0: Type(7) PHY ID 00441400 at 0 IRQ poll (5030000.ethernet-0:00)
+[Wed Oct 14 11:41:25 2026] sunxi-gmac 5030000.ethernet eth0: Link is Up - 100Mbps/Full - flow control off

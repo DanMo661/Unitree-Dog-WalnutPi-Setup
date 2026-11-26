@@ -1,0 +1,53 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="tokens.css">
+<style>
+/* 手动控制 360×740dp → 720×1480px (v2: 大控件=大圆角矩形, 文字单行) */
+body { width: 720px; height: 1480px; display: flex; flex-direction: column; }
+#top { display: flex; align-items: center; padding: 28px 28px 8px; }
+#top .tt { font-size: 36px; font-weight: 600; color: var(--txt); white-space: nowrap; }
+#top .dot { flex: 1; font-size: 23px; color: var(--green); margin-left: 20px;
+            white-space: nowrap; overflow: hidden; }
+#exit { width: 72px; height: 72px; border-radius: 50%; background: var(--card);
+        color: var(--txt2); font-size: 30px; display: flex; align-items: center;
+        justify-content: center; margin-left: 16px; }
+#status { padding: 12px 30px 16px; font-size: 25px; color: var(--txt2); }
+#body { flex: 1; display: flex; gap: 20px; padding: 8px 24px 20px; }
+#joycard { flex: 1.3; background: var(--card); border-radius: 32px;
+           display: flex; align-items: center; justify-content: center; }
+#ring { width: 420px; height: 420px; border-radius: 50%; background: var(--sub);
+        position: relative; }
+#ring .h, #ring .v { position: absolute; background: var(--divider); }
+#ring .h { left: 8%; right: 8%; top: 50%; height: 3px; }
+#ring .v { top: 8%; bottom: 8%; left: 50%; width: 3px; }
+#knob { position: absolute; left: 50%; top: 50%; width: 140px; height: 140px;
+        border-radius: 50%; background: var(--blue); transform: translate(-8%, -50%);
+        box-shadow: var(--shadow); }
+#col { flex: 1; display: flex; flex-direction: column; gap: 16px; }
+.kbtn { flex: 1.1; border-radius: 40px; display: flex; align-items: center; justify-content: center;
+        font-size: 29px; font-weight: 600; background: var(--well); color: var(--txt);
+        white-space: nowrap; overflow: hidden; }
+.kbtn.on { background: var(--blue); color: #fff; }
+#gears { flex: .55; display: flex; gap: 10px; background: var(--card);
+         border-radius: 40px; padding: 12px; }
+.gear { flex: 1; border-radius: 999px; display: flex; align-items: center; justify-content: center;
+        font-size: 26px; color: var(--txt2); white-space: nowrap; }
+.gear.on { background: var(--blue); color: #fff; font-weight: 600; }
+#estop { flex: .8; background: var(--estop); color: #fff; }
+#tip { padding: 10px 30px 30px; font-size: 22px; color: #6b7080; text-align: center; line-height: 1.5; }
+</style></head><body>
+  <div id="top">
+    <div class="tt"><svg width="34" height="34" viewBox="0 0 24 24" style="vertical-align:middle"><path d="M7,5h10a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4H7a4,4 0 0 1 -4,-4V9a4,4 0 0 1 4,-4z M9,9.5v5 M6.5,12h5 M14.5,10.5h0.02 M17,13.5h0.02" fill="none" stroke="#F5F6FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> 手动控制</div>
+    <div class="dot" style="background:var(--green-bg);color:var(--green);border-radius:999px;padding:8px 20px;font-size:23px">● 在线 · 桥:解锁/走/挡2</div>
+    <div id="exit">✕</div>
+  </div>
+  <div id="status" class="num">seq 1284 · 已解锁 · 挡2 · 摇杆 0.31/0.00</div>
+  <div id="body">
+    <div id="joycard"><div id="ring"><div class="h"></div><div class="v"></div><div id="knob"></div></div></div>
+    <div id="col">
+      <div class="kbtn on">上锁</div>
+      <div class="kbtn">站立</div>
+      <div id="gears"><div class="gear">挡1</div><div class="gear on">挡2</div><div class="gear">挡3</div></div>
+      <div class="kbtn" id="estop">急停 · 趴下</div>
+    </div>
+  </div>
+  <div id="tip">通道语义与实体遥控一致: 解锁→站立→摇杆 · 挡位=步态<br>退出或切后台即停发, 约0.55s 站定; 30s 无信号上锁保持姿态</div>
+</body></html>

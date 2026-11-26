@@ -1,0 +1,18 @@
+[Unit]
+Description=Go2 SBUS RC bridge (SBUS -> WebRTC MCF)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/go2-bridge
+ExecStart=/home/pi/go2-bridge/.venv/bin/python bridge.py
+Environment=PYTHONUNBUFFERED=1
+SupplementaryGroups=dialout
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

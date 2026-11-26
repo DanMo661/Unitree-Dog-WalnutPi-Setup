@@ -1,0 +1,12 @@
+[Unit]
+Description=Go2 SBUS RC bridge
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/go2rc/main.py
+WorkingDirectory=/opt/go2rc
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

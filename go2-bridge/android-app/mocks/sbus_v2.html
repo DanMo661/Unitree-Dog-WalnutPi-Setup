@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>哨兵S1调试台</title>
+<style>
+/* ==== 浅色主题 (方案 v2: FlClash 浅色实测值) ==== */
+:root{
+  --bg-primary:#F5F6FA; --bg-secondary:#FFFFFF; --bg-tertiary:#FAFBFC;
+  --text-primary:#1F2937; --text-secondary:#6B7280; --text-tertiary:#9CA3AF;
+  --border-light:#E5E7EB; --border-medium:#D1D5DB;
+  --color-primary:#3B82F6; --color-success:#10B981; --color-warning:#F59E0B; --color-danger:#EF4444;
+  --hover-bg:#F3F4F6; --active-bg:#E5E7EB;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05); --shadow-md:0 4px 6px -1px rgba(0,0,0,.1);
+  /* 旧变量别名(renderSys 内联样式沿用) */
+  --txt:var(--text-primary); --dim:var(--text-secondary);
+  --ok:var(--color-success); --warn:var(--color-warning); --bad:var(--color-danger);
+  --accent:var(--color-primary);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{margin:0}
+body{
+  background:var(--bg-primary); color:var(--text-primary);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:14px; line-height:1.6;
+}
+.num{font-family:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;
+     font-variant-numeric:tabular-nums}
+button{font-family:inherit; touch-action:manipulation}
+a{color:var(--color-primary);text-decoration:none;font-weight:500}
+a:hover{text-decoration:underline}
+
+/* ==== 布局: 侧边栏 + 主区 (方案 v2 §1.2, v2.1 加宽) ==== */
+.container{display:flex;height:100vh;height:100dvh}
+.sidebar{width:104px;flex:none;background:var(--bg-secondary);
+  border-right:1px solid var(--border-light);box-shadow:var(--shadow-sm);
+  display:flex;flex-direction:column;padding:16px 0;z-index:2}
+.brand{font-size:14px;font-weight:700;letter-spacing:.08em;text-align:center;
+  color:var(--color-primary);margin-bottom:14px;white-space:nowrap}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:5px;
+  margin:2px 10px;padding:12px 0;border-radius:10px;
+  border-left:3px solid transparent;cursor:pointer;user-select:none;
+  color:var(--text-secondary);font-size:11.5px;transition:background .15s,color .15s}
+.nav-item svg{width:22px;height:22px;flex:none}
+.nav-item:hover{background:var(--hover-bg);color:var(--text-primary)}
+.nav-item.active{color:var(--color-primary);background:#EFF6FF;
+  border-left-color:var(--color-primary)}
+
+.main{flex:1;min-width:0;overflow-y:auto;padding:26px 32px;-webkit-overflow-scrolling:touch}
+.page{display:none;max-width:920px;margin:0 auto}
+.page.active{display:block}
+
+.header{display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:22px;gap:10px;flex-wrap:wrap}
+.header h1{font-size:18px;font-weight:600;white-space:nowrap}
+.status-chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:6px;padding:4px 11px;
+  background:var(--bg-secondary);border:1px solid var(--border-light);
+  border-radius:20px;font-size:12px;color:var(--text-secondary);white-space:nowrap}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:var(--border-medium);flex:none}
+.chip .dot.ok{background:var(--color-success);box-shadow:0 0 6px #10B98155}
+.chip .dot.warn{background:var(--color-warning)}
+.chip .dot.bad{background:var(--color-danger)}
+
+/* ==== 卡片 (v2 §1.3: 白底+边框+轻阴影; v2.1 控件收紧) ==== */
+.card{background:var(--bg-secondary);border:1px solid var(--border-light);
+  border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
+.card-title{font-size:12px;font-weight:600;color:var(--text-secondary);
+  letter-spacing:.05em;margin-bottom:10px;display:flex;
+  justify-content:space-between;align-items:center;gap:8px}
+
+/* KPI 四联(任何宽度一排四个) */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.kpi-card,.keyseg{min-height:104px}
+.kpi-card{background:var(--bg-secondary);border:1px solid var(--border-light);
+  border-radius:10px;padding:14px 6px;text-align:center;box-shadow:var(--shadow-sm);min-width:0}
+.kpi-card .value{font-size:23px;font-weight:600;line-height:1.2;color:var(--text-primary)}
+.kpi-card .value small{font-size:11px;color:var(--text-tertiary);font-weight:400;margin-left:1px}
+.kpi-card .label{font-size:10.5px;color:var(--text-secondary);margin-top:3px;letter-spacing:.04em;white-space:nowrap}
+.kpi-card.warn .value{color:var(--color-warning)}
+.kpi-card.bad .value{color:var(--color-danger)}
+.kpi-card.success .value{color:var(--color-success)}
+
+/* 按键状态: 迷你分段(块体与 KPI 卡同大, 当前态=蓝实心白字) */
+.key-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.keyseg{background:var(--bg-secondary);border:1px solid var(--border-light);
+  border-radius:10px;padding:14px 6px;text-align:center;box-shadow:var(--shadow-sm);min-width:0;
+  display:flex;flex-direction:column;justify-content:center;gap:11px}
+.keyseg .label{font-size:13px;color:var(--text-secondary);font-weight:500;white-space:nowrap}
+.miniseg{display:flex;background:var(--bg-tertiary);border:1px solid var(--border-light);
+  border-radius:999px;padding:3px;gap:2px}
+.miniseg span{flex:1;min-width:0;text-align:center;font-size:15px;line-height:1.5;
+  padding:7px 0;border-radius:999px;color:var(--text-secondary);white-space:nowrap}
+.miniseg span.on{background:var(--color-primary);color:#fff;font-weight:600}
+
+/* 通道条 */
+.chrow{display:grid;grid-template-columns:150px minmax(0,1fr) 52px;gap:10px;
+  align-items:center;padding:3px 0}
+.chrow .lbl{font-size:12px;color:var(--text-secondary);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.chrow .lbl b{color:var(--text-primary);font-weight:600}
+.bar{position:relative;height:10px;background:var(--bg-tertiary);
+  border:1px solid var(--border-light);border-radius:999px;overflow:hidden}
+.bar .fill{position:absolute;left:0;top:0;bottom:0;width:0;
+  background:var(--color-primary);transition:width .12s}
+.bar .tick{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--color-danger)}
+.chrow .val{font-size:12.5px;text-align:right;color:var(--text-primary);font-weight:500}
+
+canvas{display:block;width:100%;max-width:100%;height:36px}
+
+/* 按钮 (v2: 主/次/危险, 圆角8; v2.1 收紧) */
+.btn{display:inline-flex;align-items:center;justify-content:center;
+  padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;
+  cursor:pointer;border:none;transition:background .15s;appearance:none}
+.btn-primary{background:var(--color-primary);color:#fff}
+.btn-primary:active{background:#2563EB}
+.btn-secondary{background:var(--bg-secondary);color:var(--text-primary);
+  border:1.5px solid var(--border-medium)}
+.btn-secondary:active{background:var(--hover-bg)}
+.btn-danger{background:var(--color-danger);color:#fff}
+.btn-danger:active{background:#DC2626}
+.btn-sm{padding:5px 10px;font-size:12px}
+.mut{font-size:11.5px;color:var(--text-tertiary);margin-top:10px}
+
+/* 系统 kv / 统计块 */
+.kv{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px 10px;font-size:13px}
+.kv .k{font-size:12px;color:var(--text-secondary);padding-top:1px;white-space:nowrap}
+.kv .v{color:var(--text-primary);overflow-wrap:break-word;min-width:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:10px}
+.stat{background:var(--bg-tertiary);border:1px solid var(--border-light);
+  border-radius:10px;padding:10px 12px}
+.stat .v{font-size:20px;line-height:1.2;font-weight:600}
+.stat .v small{font-size:12px;color:var(--text-tertiary);font-weight:400;margin-left:2px}
+.stat .k{font-size:11px;color:var(--text-secondary);margin-top:3px}
+.stat.bad .v{color:var(--color-danger)}
+.stat.warn .v{color:var(--color-warning)}
+.pwbad{display:none;text-align:center;font-size:13px;font-weight:600;
+  padding:9px 12px;border-radius:8px;margin-bottom:12px;
+  background:#FEE2E2;color:#991B1B}
+
+/* 事件列表 (v2: 底色行+彩色标签) */
+.evs{display:flex;flex-direction:column;gap:8px}
+.evrow{display:flex;gap:10px;align-items:baseline;padding:9px 10px;
+  background:var(--bg-tertiary);border-radius:8px;font-size:13px;min-width:0}
+.evrow .t{color:var(--text-tertiary);flex:none;font-size:12px}
+.evrow .tag{flex:none;font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px}
+.evrow.info .tag{background:#DBEAFE;color:#1E40AF}
+.evrow.act .tag{background:#D1FAE5;color:#065F46}
+.evrow.warn .tag{background:#FEF3C7;color:#92400E}
+.evrow.err .tag{background:#FEE2E2;color:#991B1B}
+.evrow .txt{color:var(--text-primary);overflow-wrap:break-word;min-width:0}
+.evrow .txt b{font-weight:600}
+
+.tip{font-size:12px;color:var(--text-tertiary);text-align:center;
+  line-height:1.8;margin:6px 0 10px}
+#logPre{max-height:360px;overflow:auto;font:11.5px/1.6 ui-monospace,monospace;
+  white-space:pre-wrap;word-break:break-all;background:var(--bg-tertiary);
+  border:1px solid var(--border-light);border-radius:8px;padding:12px;
+  margin:0;color:var(--text-secondary)}
+.logtools{display:flex;gap:10px;margin-bottom:12px}
+.live{color:var(--color-success);font-weight:400;letter-spacing:0}
+
+@media (max-width:768px){
+  .sidebar{width:72px;padding:12px 0}
+  .brand{font-size:12px;margin-bottom:10px}
+  .nav-item{font-size:10.5px;padding:11px 0;margin:2px 6px;gap:4px}
+  .nav-item svg{width:20px;height:20px}
+  .main{padding:14px 12px}
+  .header{gap:8px;margin-bottom:12px}
+  .header h1{font-size:16px}
+  .kpi-grid{gap:7px}
+  .kpi-card,.keyseg{min-height:92px}
+  .kpi-card{padding:11px 4px}
+  .kpi-card .value{font-size:19px}
+  .kpi-card .label{font-size:9.5px}
+  canvas{height:34px}
+  .chrow{grid-template-columns:104px minmax(0,1fr) 46px;gap:8px}
+  .key-grid{gap:7px}
+  .keyseg{padding:11px 4px;gap:8px}
+  .keyseg .label{font-size:11px}
+  .miniseg span{font-size:13px;padding:5px 0}
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .stat .v{font-size:16px}
+  .card{padding:12px;margin-bottom:12px}
+  .kv{grid-template-columns:76px minmax(0,1fr)}
+  .btn{padding:8px 12px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- 侧边栏导航 (方案 v2: 5 页面) -->
+  <nav class="sidebar">
+    <div class="brand">哨兵S1</div>
+    <div class="nav-item active" data-page="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 13.5a7.5 7.5 0 1 1 15 0"/><path d="M12 13.5l3.4-3.4"/><circle cx="12" cy="13.5" r="1.1" fill="currentColor" stroke="none"/><path d="M4.5 18.5h15"/></svg>
+      <div>仪表盘</div>
+    </div>
+    <div class="nav-item" data-page="channels">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h2.6l2-5 3.6 9.5 2.3-7 1.5 2.5H21"/></svg>
+      <div>通道</div>
+    </div>
+    <div class="nav-item" data-page="logs">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="3.8" width="13" height="16.4" rx="2"/><path d="M9 9h6M9 12.6h6M9 16.2h3.5"/></svg>
+      <div>日志</div>
+    </div>
+    <div class="nav-item" data-page="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7.5h15M4.5 12h15M4.5 16.5h15"/><circle cx="9.5" cy="7.5" r="1.8" fill="#fff"/><circle cx="15" cy="12" r="1.8" fill="#fff"/><circle cx="11" cy="16.5" r="1.8" fill="#fff"/></svg>
+      <div>设置</div>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="header">
+      <h1>哨兵S1调试台</h1>
+      <div class="status-chips">
+        <span class="chip"><span class="dot" id="dLink"></span><span id="tLink">狗连接</span></span>
+        <span class="chip"><span class="dot" id="dSbus"></span><span id="tSbus">SBUS</span></span>
+        <span class="chip"><span class="dot" id="dCtl"></span><span id="tCtl">控制权</span></span>
+        <span class="chip"><span class="dot" id="dRun"></span><span id="tRun">—</span></span>
+      </div>
+    </div>
+
+    <!-- 页面 1: 仪表盘 -->
+    <div class="page active" id="page-dashboard">
+      <div class="kpi-grid">
+        <div class="kpi-card" id="kpiFps"><div class="value num">—</div><div class="label">帧率 fps</div></div>
+        <div class="kpi-card" id="kpiLoss"><div class="value num">—</div><div class="label">丢包率</div></div>
+        <div class="kpi-card" id="kpiIv"><div class="value num">—</div><div class="label">帧间隔</div></div>
+        <div class="kpi-card" id="kpiChart"><canvas id="chart"></canvas><div class="label">帧率趋势</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">按键状态</div>
+        <div class="key-grid">
+          <div class="keyseg"><div class="label">A 键</div>
+            <div class="miniseg" id="segA"><span>解锁</span><span>上锁</span></div></div>
+          <div class="keyseg"><div class="label">B 键</div>
+            <div class="miniseg" id="segB"><span>高位</span><span>低位</span></div></div>
+          <div class="keyseg"><div class="label">C 键</div>
+            <div class="miniseg" id="segC"><span>趴下</span><span>站立</span></div></div>
+          <div class="keyseg"><div class="label">三挡</div>
+            <div class="miniseg" id="segG"><span>1</span><span>2</span><span>3</span></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">控制源</div>
+        <div class="kv">
+          <div class="k">运行状态</div><div class="v" id="kvRun">—</div>
+          <div class="k">当前控制</div><div class="v num" id="kvSrc">—</div>
+          <div class="k">网络遥控</div><div class="v num" id="kvNet">—</div>
+          <div class="k">RC 解锁</div><div class="v num" id="kvRc">—</div>
+          <div class="k">狗链路代数</div><div class="v num" id="kvLink">—</div>
+          <div class="k">狗真实姿态</div><div class="v num" id="kvDog">—</div>
+          <div class="k">控制抑制</div><div class="v num" id="kvCtl">—</div>
+          <div class="k">最后命令</div><div class="v num" id="kvCmd">—</div>
+        </div>
+      </div>
+
+      <p class="tip">黄灯 = 丢帧狗已站定等待恢复 · 10s 无干净帧才缓降趴下 ·
+帧间隔为串口批次推断均值，丢帧另有接收机 fs/lost 标志佐证</p>
+    </div>
+
+    <!-- 页面 2: 通道监控 -->
+    <div class="page" id="page-channels">
+      <div class="card">
+        <div class="card-title"><span id="chTitle">关键通道</span>
+          <button class="btn btn-secondary btn-sm" id="btnToggleAll">显示全部 16 通道</button></div>
+        <div id="keyChannels"></div>
+        <div id="allChannels" hidden></div>
+      </div>
+    </div>
+
+    <!-- 页面 3: 系统日志 -->
+    <div class="page" id="page-logs">
+      <div class="card">
+        <div class="card-title">系统信息</div>
+        <div class="pwbad" id="pwBanner">⚠ 上次异常断电</div>
+        <div class="kv" style="margin-bottom:14px">
+          <div class="k">上次关机</div><div class="v num" id="kvStop">—</div>
+          <div class="k">桥进程</div><div class="v num" id="kvBridge">—</div>
+          <div class="k">音频服务</div><div class="v num" id="kvAudio">—</div>
+        </div>
+        <div class="stats" id="lossStats" style="margin-bottom:14px">
+          <div class="stat" id="sTotal"><div class="v num">—</div><div class="k">总帧数</div></div>
+          <div class="stat" id="sFs"><div class="v num">—</div><div class="k">fs 失控帧</div></div>
+          <div class="stat" id="sLost"><div class="v num">—</div><div class="k">lost 丢帧标志</div></div>
+        </div>
+        <div class="stats">
+          <div class="stat" id="stLoad"><div class="v num">—</div><div class="k">系统负载 load1</div></div>
+          <div class="stat" id="stMem"><div class="v num">—<small>%</small></div><div class="k">内存占用</div></div>
+          <div class="stat" id="stTemp"><div class="v num">—<small>°C</small></div><div class="k">CPU 温度</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span>最近事件 · 最近 10 条</span><span class="live" id="sysLive"></span></div>
+        <div class="evs" id="evList"><div class="evrow info"><span class="txt" style="color:var(--text-tertiary)">—</span></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span>实时日志 · 每 2s 刷新</span><span class="live" id="logLive"></span></div>
+        <div class="logtools">
+          <button class="btn btn-primary btn-sm" id="btnLogAuto">自动滚动 ●</button>
+          <button class="btn btn-secondary btn-sm" id="btnLogClear">清空</button>
+        </div>
+        <pre id="logPre">(进入本页后开始拉取)</pre>
+      </div>
+    </div>
+
+    <!-- 页面 5: 设置 -->
+    <div class="page" id="page-settings">
+      <div class="card">
+        <div class="card-title">显示选项</div>
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:14px">
+          <label style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="optFullChannels">
+            <span>通道页显示完整 16 通道</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="optLossDetail" checked>
+            <span>显示丢帧详情 (总帧 / fs / lost 计数)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="optChart" checked>
+            <span>仪表盘显示统计图表</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">关于</div>
+        <div class="kv">
+          <div class="k">版本</div><div class="v num" id="aboutVer">Go2-Bridge</div>
+          <div class="k">板端地址</div>
+          <div class="v">
+            <span class="num" id="aboutAddr">—</span>
+            <span style="display:flex;gap:6px;margin-top:6px;max-width:260px">
+              <input id="ipInput" class="num" placeholder="192.168.8.53"
+                style="flex:1;min-width:0;padding:6px 10px;font-size:13px;
+                       border:1px solid var(--border-medium);border-radius:8px;
+                       background:var(--bg-secondary);color:var(--text-primary)">
+              <button class="btn btn-primary btn-sm" id="btnApplyIp">应用</button>
+            </span>
+            <span class="mut" style="margin-top:6px" id="ipMsg">修改 App 里存的板子地址, 应用后 App 自动切换重连; 电脑浏览器里点应用无效</span>
+          </div>
+          <div class="k">页面</div><div class="v"><a href="/">遥控页 /</a> · <a href="/sbus">调试台 /sbus</a> · <a href="sbus-old.html">旧版调试台</a></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+window.WebSocket = function(u){ this.readyState = 1; this.send = function(){}; this.close = function(){}; };
+const $ = id => document.getElementById(id);
+const ARM_ON = 1350, STAND_ON = 1000, B_MID = 1002;
+const CH_LO = 282, CH_HI = 1722;
+/* 通道映射名与阈值刻度(config.py 镜像; 改 config 时同步这里) */
+const CHS = [
+  {n:"转向 · 右横"}, {n:"前后 · 左竖"}, {n:"右竖 · 未用"}, {n:"侧移 · 左横"},
+  {n:"A 键", tick:ARM_ON}, {n:"B 键"}, {n:"C 键", tick:STAND_ON},
+  {n:"左拨杆 · 舵机"}, {n:"D 键 · 退役"}, {n:"三挡"}, {n:"右拨杆 · 未用"},
+  {n:""}, {n:""}, {n:""}, {n:""}, {n:""}
+];
+const NOM = (v) => Math.max(0, Math.min(1, (v - CH_LO) / (CH_HI - CH_LO)));
+const gearOf = v => Math.min(3, Math.max(1, Math.round((v - 172) / (1811 - 172) * 2) + 1));
+
+/* 构建: 5 关键通道(通道页) + 16 完整通道(开关控制) */
+function chRow(i){
+  const c = CHS[i];
+  const row = document.createElement("div"); row.className = "chrow";
+  row.innerHTML = `<div class="lbl"><b>ch${i}</b> ${c.n}</div>
+    <div class="bar"><div class="fill"></div>${c.tick ? `<div class="tick" style="left:${(NOM(c.tick)*100).toFixed(1)}%"></div>` : ""}</div>
+    <div class="val num">—</div>`;
+  return {fill: row.querySelector(".fill"), val: row.querySelector(".val"),
+          bar: row.querySelector(".bar")};
+}
+const KEY_CH = [0, 1, 3, 4, 9];
+const keyRows = {};
+KEY_CH.forEach(i => {
+  const r = chRow(i);
+  $("keyChannels").appendChild(r.fill.closest(".chrow"));
+  keyRows[i] = r;
+});
+const rows = CHS.map((c, i) => {
+  const r = chRow(i);
+  $("allChannels").appendChild(r.fill.closest(".chrow"));
+  return r;
+});
+
+/* 60s 帧率折线(KPI 第 4 格大小, 无轴标签; 页面隐藏时宽度为 0 跳过, 切回补画) */
+const cv = $("chart"), cx = cv.getContext("2d");
+let curPage = "dashboard";
+function drawChart(hist){
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h || !hist.length) return;
+  const dpr = devicePixelRatio || 1;
+  if (cv.width !== Math.round(w * dpr)){ cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cx.clearRect(0, 0, w, h);
+  const max = Math.max(20, ...hist), n = hist.length, lo = 2, hi = h - 3;
+  const yOf = v => hi - (v / max) * (hi - lo);
+  /* 基线 */
+  cx.strokeStyle = "#E5E7EB"; cx.lineWidth = 1;
+  cx.beginPath(); cx.moveTo(0, h - 1); cx.lineTo(w, h - 1); cx.stroke();
+  /* 折线 */
+  cx.strokeStyle = "#3B82F6"; cx.lineWidth = 1.5;
+  cx.lineJoin = "round"; cx.beginPath();
+  for (let i = 0; i < n; i++){
+    const x = n === 1 ? w : i / (n - 1) * w, y = yOf(hist[i]);
+    i ? cx.lineTo(x, y) : cx.moveTo(x, y);
+  }
+  cx.stroke();
+  /* 末点高亮 */
+  cx.fillStyle = "#3B82F6";
+  cx.beginPath(); cx.arc(w - 2, yOf(hist[n - 1]), 2.2, 0, 7); cx.fill();
+}
+
+/* 灯/KPI/按键 */
+function dot(el, cls){ el.className = "dot" + (cls ? " " + cls : ""); }
+function setKPI(id, html, cls){
+  const el = $(id);
+  el.querySelector(".value").innerHTML = html;
+  el.className = "kpi-card" + (cls ? " " + cls : "");
+}
+function setStat(id, v, cls){ const el = $(id); el.querySelector(".v").innerHTML = v;
+  el.className = "stat" + (cls ? " " + cls : ""); }
+/* 按键迷你分段: 点亮当前态 */
+function setMini(id, val){
+  document.querySelectorAll("#" + id + " span").forEach(s =>
+    s.classList.toggle("on", s.textContent === val));
+}
+
+/* 运行状态: 顶栏胶囊短文案 + 仪表盘控制源卡完整解释(同色)
+   配色(用户定): 未解锁/狗离线=红, 已解锁=绿, 动作播放中=黄 */
+const RUN_CLR = {ok: "var(--color-success)", warn: "var(--color-warning)", bad: "var(--color-danger)"};
+function setRun(cls, short, full){
+  dot($("dRun"), cls || "");
+  $("tRun").textContent = short;
+  $("kvRun").innerHTML = '<span style="color:' + (RUN_CLR[cls] || "inherit")
+    + ';font-weight:600">' + full + "</span>";
+}
+
+let curSrc = null;   /* /state 快照里的控制源, 顶栏控制权灯用 */
+function render(s){
+  /* 指令应答帧等缺字段帧: 直接返回, 不进 lastStatus(会污染 App 端轮询) */
+  if (s && s.err) return;
+  window.lastStatus = s;   /* App 端轮询动作状态用 */
+  if (document.hidden) return;   /* 息屏/后台: 状态照记, 渲染全跳省电 */
+
+  /* 顶栏: 狗连接 / SBUS 质量 / 控制权 */
+  const L = s.link;
+  dot($("dLink"), L === "up" ? "ok" : L === "connecting" ? "warn" : "bad");
+  $("tLink").textContent = L === "up" ? "狗在线" : L === "connecting" ? "狗连接中" :
+    L === "lib_missing" ? "驱动未装" : "狗离线";
+  const dS = $("dSbus"), tS = $("tSbus");
+  if (s.sbus && s.sbus_clean){ dot(dS, "ok"); tS.textContent = "数据干净"; }
+  else if (s.sbus){ dot(dS, "warn"); tS.textContent = "丢包 · 狗已站定"; }
+  else { dot(dS, "bad"); tS.textContent = "无帧"; }
+  dot($("dCtl"), s.net_ok ? "ok" : curSrc === "sbus" ? "warn" : "");
+  $("tCtl").textContent = "控制权 " + (s.net_ok ? "App" : curSrc === "sbus" ? "遥控器" : "—");
+
+  /* 运行状态(配色用户定: 未解锁/离线=红, 已解锁=绿, 动作播放中=黄) */
+  const acting = s.action || (s.action_left || 0) > 0;
+  const m = s.mode;
+  let rT, rF, rCls;
+  if (L !== "up")       { rCls = "bad";
+                          rT = L === "connecting" ? "连接中" :
+                               L === "lib_missing" ? "驱动未装" : "狗离线";
+                          rF = L === "connecting" ? "狗连接中 · 指令暂发不出去" :
+                               L === "lib_missing" ? "驱动未装 · 狗链路起不来 (查驱动)" :
+                               "狗离线 · 解锁/摇杆指令发不出去 (查狗电/网线)"; }
+  else if (!s.rc)       { rCls = "bad"; rT = "未解锁"; rF = "未解锁 · 摇杆无效 (A 键翻拨解锁)"; }
+  else if (acting)      { rCls = "warn"; rT = "动作中";
+                          rF = `动作播放中: ${s.action || "?"} · 剩 ${(s.action_left || 0).toFixed(1)}s · 摇杆无效`; }
+  else if (m === 0)     { rCls = "ok"; rT = "趴下"; rF = "已解锁 · 趴下 (C 键拨上站立)"; }
+  else if (m === 1)     { rCls = "ok"; rT = "站立"; rF = "已解锁 · 站立平衡 (等待进入行走)"; }
+  else if (m === 3)     { rCls = "ok"; rT = "坐姿"; rF = "已解锁 · 坐姿 (C 键拨上起立)"; }
+  else if (m === 2)     { rCls = "ok"; rT = "可控·行走"; rF = "可控 —— 摇杆有效 · 行走模式"; }
+  else                  { rCls = "ok"; rT = "模式 " + m; rF = `已解锁 · 模式 ${m}`; }
+  setRun(rCls, rT, rF);
+
+  /* KPI 四联 + 丢帧计数 */
+  const loss = s.total ? (s.fs_cnt + s.lost_cnt) / s.total * 100 : null;
+  setKPI("kpiFps", `${s.fps}<small>fps</small>`);
+  setKPI("kpiLoss", loss === null ? "—" : `${loss.toFixed(2)}<small>%</small>`,
+          loss === null ? "" : loss > 5 ? "bad" : loss > 1 ? "warn" : "");
+  setKPI("kpiIv", s.last_iv === null || s.last_iv === undefined ? "—" : `${s.last_iv}<small>ms</small>`,
+          s.last_iv > 25 ? "bad" : "");
+  setStat("sTotal", String(s.total));
+  setStat("sFs", String(s.fs_cnt), s.fs_cnt ? "warn" : "");
+  setStat("sLost", String(s.lost_cnt), s.lost_cnt ? "warn" : "");
+
+  window.lastHist = s.hist || [];
+  if (curPage === "dashboard" && $("kpiChart").style.display !== "none")
+    drawChart(window.lastHist);
+
+  /* 通道条: 关键 5 + 完整 16 */
+  const ch = s.ch;
+  KEY_CH.forEach(i => { const r = keyRows[i];
+    if (!ch){ r.fill.style.width = "0"; r.val.textContent = "—"; return; }
+    r.fill.style.width = (NOM(ch[i]) * 100).toFixed(1) + "%";
+    r.val.textContent = ch[i];
+  });
+  rows.forEach((r, i) => {
+    if (!ch){ r.fill.style.width = "0"; r.val.textContent = "—"; return; }
+    r.fill.style.width = (NOM(ch[i]) * 100).toFixed(1) + "%";
+    r.val.textContent = ch[i];
+  });
+
+  /* 按键迷你分段(从 ch 推导开关位置) */
+  if (ch){
+    setMini("segA", ch[4] > ARM_ON ? "解锁" : "上锁");
+    setMini("segB", ch[5] > B_MID ? "高位" : "低位");
+    setMini("segC", ch[6] > STAND_ON ? "站立" : "趴下");
+    setMini("segG", String(gearOf(ch[9])));
+  } else {
+    ["segA","segB","segC","segG"].forEach(id =>
+      document.querySelectorAll("#" + id + " span").forEach(s => s.classList.remove("on")));
+  }
+
+  /* 控制源卡: RC / 网络遥控(配色同运行状态: 已解锁绿/上锁红) */
+  $("kvRc").innerHTML = s.rc
+    ? '<span style="color:var(--color-success);font-weight:600">已解锁</span>'
+    : '<span style="color:var(--color-danger);font-weight:600">上锁</span>';
+  $("kvNet").innerHTML = s.net_ok ? '<span style="color:var(--color-success)">App 在控</span>' : "离线";
+
+  /* 系统与事件: ws 推送带这些字段就直接用(future), 未带时落到 /state 轮询快照, 都缺显占位 */
+  renderSys(sysSnap ? Object.assign({}, sysSnap, s) : s);
+}
+
+/* ===== 系统与事件(数据源 /state 慢轮询, 字段全可选缺啥显占位; 不动桥不改 ws 协议) ===== */
+let sysSnap = null, evHtml = "";
+const esc = t => String(t).replace(/[&<>"']/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+const numv = v => typeof v === "number" && isFinite(v) ? v
+  : (typeof v === "string" && v.trim() !== "" && !isNaN(v) ? Number(v) : null);
+function fmtUp(sec){                      /* 秒 -> "2d3h" / "1h05m" / "12m03s" / "45s" */
+  const s = numv(sec); if (s == null || s < 0) return null;
+  const t = Math.floor(s), d = Math.floor(t / 86400), h = Math.floor(t % 86400 / 3600),
+        m = Math.floor(t % 3600 / 60), ss = t % 60;
+  return d ? d + "d" + h + "h" : h ? h + "h" + String(m).padStart(2, "0") + "m"
+       : m ? m + "m" + String(ss).padStart(2, "0") + "s" : ss + "s";
+}
+function fmtTs(ts){                       /* epoch 秒/毫秒 -> HH:MM:SS, 认不出给 null */
+  let v = numv(ts); if (v == null || v < 1e9) return null;
+  if (v > 1e12) v /= 1000;
+  const d = new Date(v * 1000);
+  return isNaN(d.getTime()) ? null : d.toLocaleTimeString("zh-CN", {hour12: false});
+}
+function evLevel(kind, ev){               /* 级别分色: 错误红 / 警告黄 / 信息蓝灰 / 动作绿 */
+  const k = (String(kind || "") + " " + String(ev || "")).toLowerCase();
+  if (/err|fail|bad|down|offline|diverg|abort|unclean/.test(k)) return "err";
+  if (/warn|stale|retry|timeout|slow/.test(k)) return "warn";
+  if (/act|cmd|trick|arm|gear|mode|play|talk|stand|reset/.test(k)) return "act";
+  return "info";
+}
+function renderSys(m){
+  try{
+    if (!m || typeof m !== "object") m = {};
+    const P = (m.pids && typeof m.pids === "object") ? m.pids : {};
+    const AU = (m.audio && typeof m.audio === "object") ? m.audio : {};
+    /* 上次关机: unclean 才出红横幅 */
+    $("pwBanner").style.display = m.last_stop === "unclean" ? "block" : "none";
+    $("kvStop").innerHTML = m.last_stop === "clean" ? '<span style="color:var(--ok)">正常关机</span>'
+      : m.last_stop === "unclean" ? '<span style="color:var(--bad);font-weight:600">异常断电</span>'
+      : m.last_stop === "unknown" ? "未知" : "—";
+    const up = fmtUp(m.uptime_s);
+    $("kvBridge").innerHTML = P.bridge != null
+      ? `pid ${esc(P.bridge)}` + (up ? ` · 已运行 ${up}` : "") : (up ? `已运行 ${up}` : "—");
+    const aAge = numv(P.audio_age), aBits = [];
+    if (P.audio != null) aBits.push("pid " + esc(P.audio));
+    aBits.push(AU.ready === true ? '<span style="color:var(--ok)">就绪</span>'
+              : AU.ready === false ? '<span style="color:var(--bad)">未就绪</span>' : "");
+    if (AU.volume != null) aBits.push("音量 " + esc(AU.volume));
+    if (aAge != null && aAge >= 0) aBits.push("状态 " + (fmtUp(aAge) || "0s") + " 前");
+    $("kvAudio").innerHTML = aBits.filter(Boolean).join(" · ") || "—";
+    $("kvLink").textContent = m.link_gen != null ? String(m.link_gen) : "—";
+    const SRC = m.ch_source || m.src;
+    curSrc = SRC || curSrc;
+    $("kvSrc").textContent = SRC === "sbus" ? "SBUS 遥控器"
+      : SRC === "netrc" ? "网络遥控 (App)" : "—";
+    /* 控制抑制(P1) */
+    const CT = (m.ctl && typeof m.ctl === "object") ? m.ctl : {};
+    if (CT.blocked){
+      const tg = CT.target == null ? "" : " → " + CT.target;
+      $("kvCtl").innerHTML = '<span style="color:var(--warn)">'
+        + esc(CT.blocked) + tg + "</span> · 剩 "
+        + (numv(CT.remain) == null ? "?" : numv(CT.remain).toFixed(1)) + "s";
+    } else if (m.rising === true || CT.rising_age != null){
+      $("kvCtl").innerHTML = '<span style="color:var(--warn)">起立中</span> '
+        + (numv(CT.rising_age) == null ? "" : numv(CT.rising_age).toFixed(1) + "s")
+        + (numv(CT.rise_deadline) == null ? "" : " · 兜底剩 "
+           + numv(CT.rise_deadline).toFixed(1) + "s");
+    } else if (numv(CT.q_depth) > 0){
+      $("kvCtl").innerHTML = "队列 " + numv(CT.q_depth) + " 条"
+        + (numv(CT.drop_ttl) ? " · ttl丢 " + numv(CT.drop_ttl) : "");
+    } else {
+      $("kvCtl").textContent = "—";
+    }
+    /* 最后一条命令 */
+    const C = (m.last_cmd && typeof m.last_cmd === "object") ? m.last_cmd : {};
+    if (C.name != null || C.result != null){
+      const t = fmtTs(C.ts), r = C.result == null ? "?" : String(C.result);
+      const rc = /^OK/i.test(r) ? "var(--ok)" : /^ERR/i.test(r) ? "var(--bad)" : "var(--txt)";
+      $("kvCmd").innerHTML = `${esc(C.name || "?")}`
+        + (t ? ` · <span style="color:var(--dim)">${t}</span>` : "")
+        + ` · <span style="color:${rc}">${esc(r)}</span>`;
+    } else $("kvCmd").textContent = "—";
+    /* 狗真实姿态 */
+    const D = (m.dog && typeof m.dog === "object") ? m.dog : {};
+    const dh = numv(D.height), da = numv(D.age), dBits = [];
+    dBits.push(D.fresh === true ? '<span style="color:var(--ok)">● 实时</span>'
+                                : '<span style="color:var(--dim)">○ 无数据</span>');
+    if (D.mode != null) dBits.push("mode " + esc(D.mode));
+    if (dh != null) dBits.push(dh.toFixed(3) + " m");
+    if (D.gait != null) dBits.push("步态 " + esc(D.gait));
+    if (Array.isArray(D.vel) && D.vel.length >= 3)
+      dBits.push("v " + D.vel.slice(0, 3).map(x => Number(x).toFixed(2)).join("/"));
+    if (da != null) dBits.push(da.toFixed(1) + "s 前");
+    if (m.rising === true) dBits.push('<span style="color:var(--warn)">起立中</span>');
+    $("kvDog").innerHTML = dBits.join(" · ");
+    /* 系统负载 */
+    const Y = (m.sys && typeof m.sys === "object") ? m.sys : {};
+    const ld = numv(Y.load1), mp = numv(Y.mem_pct), ct = numv(Y.cpu_temp);
+    setStat("stLoad", ld == null ? "—" : ld.toFixed(2));
+    setStat("stMem", mp == null ? "—" : `${mp.toFixed(0)}<small>%</small>`,
+            mp > 90 ? "bad" : mp > 75 ? "warn" : "");
+    setStat("stTemp", ct == null ? "—" : `${ct.toFixed(1)}<small>°C</small>`,
+            ct >= 80 ? "bad" : ct >= 60 ? "warn" : "");   /* ≥80红 / 60~80黄 / 以下默认 */
+    /* 版本(关于页) */
+    if (m.ver) $("aboutVer").textContent = "Go2-Bridge " + m.ver;
+    /* 最近 10 条事件 */
+    const list = Array.isArray(m.last_events) ? m.last_events.slice(0, 10) : [];
+    let h;
+    if (!list.length)
+      h = `<div class="evrow info"><span class="txt" style="color:var(--text-tertiary)">— 无事件记录 —</span></div>`;
+    else h = list.map(e => {
+      e = (e && typeof e === "object") ? e : {};
+      const lvl = evLevel(e.kind, e.ev), t = fmtTs(e.ts) || "--:--:--";
+      let d = e.detail; d = (d != null && typeof d === "object") ? JSON.stringify(d) : d;
+      return `<div class="evrow ${lvl}"><span class="t num">${t}</span>`
+        + `<span class="tag">${esc(e.kind || lvl)}</span>`
+        + `<span class="txt"><b>${esc(e.ev || "?")}</b>`
+        + (d ? ` <span style="color:var(--dim)">· ${esc(d)}</span>` : "") + "</span></div>";
+    }).join("");
+    if (h !== evHtml){ evHtml = h; $("evList").innerHTML = h; }   /* 内容没变不重绘 */
+  }catch(err){ /* 字段结构再离谱也只当占位, 绝不炸整个 render */ }
+}
+
+/* 侧边导航切换(切回通道页补画隐藏期间 clientWidth=0 跳过的帧; 进日志页开拉日志) */
+document.querySelectorAll(".nav-item").forEach(item => {
+  item.onclick = () => {
+    const p = item.dataset.page;
+    if (p === curPage) return;
+    curPage = p;
+    document.querySelectorAll(".nav-item").forEach(i => i.classList.toggle("active", i === item));
+    document.querySelectorAll(".page").forEach(pg =>
+      pg.classList.toggle("active", pg.id === "page-" + p));
+    if (p === "dashboard" && window.lastHist) drawChart(window.lastHist);
+    if (p === "logs") startLogs();
+  };
+});
+
+/* 显示选项(设置页, localStorage 持久) ↔ 通道页展开钮 双向同步 */
+const OPT_KEY = "sbusOpts";
+const opts = Object.assign({full:false, loss:true, chart:true}, (() => {
+  try { return JSON.parse(localStorage.getItem(OPT_KEY)) || {}; } catch (e){ return {}; }
+})());
+function applyOpts(){
+  $("optFullChannels").checked = opts.full;
+  $("optLossDetail").checked = opts.loss;
+  $("optChart").checked = opts.chart;
+  /* 通道卡单卡覆盖式切换: 16 通道就地替换关键 5 通道 */
+  $("keyChannels").hidden = opts.full;
+  $("allChannels").hidden = !opts.full;
+  $("chTitle").textContent = opts.full ? "完整 16 通道原始值" : "关键通道";
+  $("btnToggleAll").textContent = opts.full ? "只看关键 5 通道" : "显示全部 16 通道";
+  $("lossStats").style.display = opts.loss ? "" : "none";
+  $("kpiChart").style.display = opts.chart ? "" : "none";
+  if (opts.chart && curPage === "dashboard" && window.lastHist) drawChart(window.lastHist);
+}
+function setOpt(k, v){
+  opts[k] = v;
+  try { localStorage.setItem(OPT_KEY, JSON.stringify(opts)); } catch (e){}
+  applyOpts();
+}
+$("btnToggleAll").onclick = () => setOpt("full", !opts.full);
+$("optFullChannels").onchange = e => setOpt("full", e.target.checked);
+$("optLossDetail").onchange = e => setOpt("loss", e.target.checked);
+$("optChart").onchange = e => setOpt("chart", e.target.checked);
+applyOpts();
+$("aboutAddr").textContent = location.host || "—";
+
+/* /state 慢轮询: ws 推送不带系统/事件字段(不改桥), 3s 拉一次全量快照 */
+function fetchSys(){
+  if (document.hidden || !location.host) return;
+  fetch("/state").then(r => r.json()).then(m => {
+    if (!m || typeof m !== "object") return;
+    sysSnap = m;
+    renderSys(m);
+  }).catch(() => {});
+}
+fetchSys();
+setInterval(fetchSys, 3000);
+addEventListener("visibilitychange", () => { if (!document.hidden) fetchSys(); });
+
+/* WS 自动重连 */
+let ws = null, retry = 0;
+function runBad(short, full){
+  dot($("dRun"), "bad");
+  $("tRun").textContent = short;
+  $("kvRun").innerHTML = '<span style="color:var(--color-danger);font-weight:600">' + full + "</span>";
+}
+function connect(){
+  if (!location.host){
+    runBad("未连接", "请通过 http://板子IP:8000/sbus 打开本页"); return; }
+  ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onopen = () => { retry = 0; };
+  ws.onmessage = e => { try { render(JSON.parse(e.data)); } catch (err) {} };
+  /* 只让 onclose 排重连: onerror 后必跟 onclose, 两个都排会每轮翻倍攒出连接风暴 */
+  ws.onerror = () => runBad("连接断开", "连接断开，正在重连…");
+  ws.onclose = () => {
+    runBad("连接断开", "连接断开，正在重连…");
+    setTimeout(connect, Math.min(1000 * ++retry, 5000));
+  };
+}
+connect();
+addEventListener("resize", () => { if (window.lastHist) drawChart(window.lastHist); });
+
+/* 日志面板: /logs = 板端内存环形日志, 进入日志页自动开始 2s 轮询 */
+let logOn = false, logTimer = null, logStick = true;
+const logPre = $("logPre");
+function fetchLogs(){
+  if (document.hidden) return;
+  fetch("/logs").then(r => { if (!r.ok) throw 0; return r.text(); }).then(t => {
+    const near = logPre.scrollTop + logPre.clientHeight >= logPre.scrollHeight - 40;
+    logPre.textContent = t || "(暂无日志)";
+    $("logLive").textContent = "● " + new Date().toLocaleTimeString();
+    if (logStick || near) logPre.scrollTop = logPre.scrollHeight;   /* 用户没往上翻才贴底 */
+  }).catch(() => {});
+}
+function paintLogBtns(){
+  $("btnLogAuto").textContent = logStick ? "自动滚动 ●" : "自动滚动 ○";
+  $("btnLogAuto").className = "btn btn-sm " + (logStick ? "btn-primary" : "btn-secondary");
+}
+function startLogs(){
+  if (logOn) return;
+  logOn = true;
+  fetchLogs();
+  logTimer = setInterval(fetchLogs, 2000);
+}
+$("btnLogAuto").onclick = () => { logStick = !logStick; paintLogBtns();
+  if (logStick) logPre.scrollTop = logPre.scrollHeight; };
+$("btnLogClear").onclick = () => { logPre.textContent = "(已清空显示 · 2s 后刷新)"; };
+paintLogBtns();
+addEventListener("visibilitychange", () => { if (!document.hidden && logOn) fetchLogs(); });
+
+/* 板端地址修改(App 专用): 写 window.__appCmd, App 端 600ms 轮询带回并切换重连 */
+$("btnApplyIp").onclick = () => {
+  const ip = $("ipInput").value.trim();
+  const ok = /^(\d{1,3}\.){3}\d{1,3}$/.test(ip) && ip.split(".").every(x => +x <= 255);
+  if (!ok){ $("ipMsg").textContent = "地址格式不对(每段 0~255)"; return; }
+  window.__appCmd = { setIp: ip };
+  $("ipMsg").textContent = "已下发 " + ip + " · App 一秒内切换并按新地址重连";
+};
+
+/* ==== 截图桩 (真实板子数据注入) ==== */
+render({"link": "up", "mode": 1, "rc": false, "sbus": true, "web": false, "sbus_clean": true, "gear": null, "action": null, "action_left": 0.0, "src": "sbus", "rising": false, "ctl": {"blocked": null, "remain": 0.0, "target": null, "rising_age": null, "rise_deadline": null, "q_depth": 0, "drop_link": 0, "drop_ttl": 0, "last_big_age": null}, "dog": {"mode": 0, "height": 0.329088, "gait": 0, "age": 4.37, "fresh": false}, "total": 38303, "fs_cnt": 0, "lost_cnt": 0, "gap_cnt": 1, "last_iv": 10.0, "fps": 99, "hist": [100, 101, 99, 99, 102, 99, 100, 102, 100, 100, 101, 100, 101, 101, 99, 101, 99, 99, 102, 100, 95, 101, 100, 100, 101, 101, 100, 101, 100, 101, 101, 100, 101, 99, 100, 101, 99, 100, 101, 101, 100, 101, 95, 100, 101, 100, 102, 100, 100, 101, 101, 100, 101, 100, 100, 102, 100, 100, 101, 79], "ch": [1002, 1002, 1002, 1002, 1722, 282, 282, 1002, 282, 282, 282, 1002, 282, 282, 1002, 1002], "net_ok": false, "net_rx": 0, "net_lost": 0, "net_seq": -1, "net_rej": 0});
+renderSys({"ver": "5ad531e", "uptime_s": 382.9, "link": "up", "link_gen": 1, "mode": 1, "rc_armed": false, "web_armed": false, "gear": null, "action": null, "action_left": 0.0, "rising": false, "src": "sbus", "sbus": {"ok": true, "clean": true, "fps": 99, "last_iv": 10.0, "frame_age": 0.035, "total": 38308, "fs": 0, "lost": 0, "gap": 1, "ch": [1002, 1002, 1002, 1002, 1722, 282, 282, 1002, 282, 282, 282, 1002, 282, 282, 1002, 1002]}, "net": {"ok": false, "rx": 0, "lost": 0, "seq": -1}, "ch_source": "sbus", "ch_effective": [1002, 1002, 1002, 1002, 1722, 282, 282, 1002, 282, 282, 282, 1002, 282, 282, 1002, 1002], "ctl": {"blocked": null, "remain": 0.0, "target": null, "rising_age": null, "rise_deadline": null, "q_depth": 0, "drop_link": 0, "drop_ttl": 0, "last_big_age": null}, "arm_blocked": 0.0, "relay": {"on": false, "us": 1050}, "audio": {"ready": true, "volume": 25, "talk": false, "playing": null, "pid": 3328, "age": 0.29}, "dog": {"mode": 0, "height": 0.329088, "gait": 0, "vel": [0.002698, -0.010899, -0.036486], "age": 4.43, "n": 7515, "fresh": false}, "pids": {"bridge": 3333, "audio": 3328, "audio_age": 0.29}, "last_stop": "clean", "last_cmd": null, "last_events": [{"ts": 1793348005.5867593, "kind": "sys", "ev": "boot", "detail": "last_stop=clean"}, {"ts": 1793348005.5899272, "kind": "link", "ev": "connecting", "detail": ""}, {"ts": 1793348008.3428295, "kind": "link", "ev": "up", "detail": ""}, {"ts": 1793348008.4460785, "kind": "dog", "ev": "state_sync", "detail": "height=0.329 mode=1"}], "sys": {"load1": 1.03, "mem_pct": 28.0, "cpu_temp": 73.3}});
+addEventListener('load', () => { const h = location.hash.slice(1);
+  if (h){ const it = document.querySelector('.nav-item[data-page="' + h + '"]');
+    if (it) it.click(); } });
+</script>
+</body>
+</html>

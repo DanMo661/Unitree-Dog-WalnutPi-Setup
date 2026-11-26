@@ -1,0 +1,16 @@
+[Unit]
+Description=Go2 audio (talk/preset library)
+After=sound.target
+
+[Service]
+# P0-1/T2.2: 音频拆独立进程 —— 音频崩溃不再杀遥控(桥进程), 2s 自愈
+# root: 写 /run/go2-audio.json 状态文件 + ALSA 声卡访问
+User=root
+WorkingDirectory=/home/pi/go2-bridge
+ExecStart=/home/pi/go2-bridge/.venv/bin/python pa_recv.py
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

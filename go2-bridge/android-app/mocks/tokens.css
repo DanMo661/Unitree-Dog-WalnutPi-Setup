@@ -1,0 +1,30 @@
+/* FLstyle 工具类深色包 tokens — GO2控制台重构用 (1dp = 2px) */
+:root {
+  --canvas: #131315;      /* 画布 */
+  --frame: #1B1B1E;       /* 框架(对话框底/侧栏) */
+  --card: #252628;        /* 卡片 */
+  --sub: #323235;         /* 次级表面(嵌套井/未选分段/徽章) */
+  --well: #404042;        /* 交互井(OFF轨/播放圆/hover) */
+  --divider: #424346;     /* 分隔线 */
+  --txt: #F5F6FF;         /* 主文字 */
+  --txt2: #C1C6D7;        /* 次文字/图标 */
+  --blue: #2F83FF;        /* 强调蓝(7种合法载体) */
+  --blue15: rgba(47, 131, 255, .15); /* primary 15% 底+primary字 */
+  --green: #94F990;       /* 成功字 */
+  --green-bg: #005313;    /* 成功底(与字互换) */
+  --red: #FF6369;         /* 错误字(仅文字/小标记) */
+  --warn: #FBBF24;        /* 警告字(仅文字/小标记) */
+  --estop: #E5484D;       /* 急停专用(唯一例外: 安全优先, 有意偏离) */
+  --shadow: 0 8px 24px rgba(0, 0, 0, .24);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: var(--canvas); font-family: system-ui, "Microsoft YaHei", sans-serif; }
+.num { font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+.card { background: var(--card); border-radius: 32px; }            /* 16dp */
+.sub  { background: var(--sub);  border-radius: 24px; }            /* 12dp */
+.pill { border-radius: 999px; display: flex; align-items: center; justify-content: center;
+        font-weight: 600; font-size: 30px; color: var(--txt); }     /* 15dp 字 */
+.pill-blue { background: var(--blue); color: #fff; }
+.pill-sub  { background: var(--sub);  color: var(--txt); }
+.pill-well { background: var(--well); color: var(--txt); }

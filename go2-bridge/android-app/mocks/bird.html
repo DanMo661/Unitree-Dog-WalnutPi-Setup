@@ -1,0 +1,37 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="tokens.css">
+<style>
+/* 驱鸟台悬浮窗 240dp 宽 → 480px */
+body { width: 560px; height: 720px; display: flex; align-items: center; justify-content: center; }
+#panel { width: 480px; background: rgba(37,38,40,.96); border-radius: 32px; padding: 8px 28px 24px;
+         box-shadow: var(--shadow); }
+.row { display: flex; align-items: center; }
+#top { padding: 16px 0 12px; }
+#top .tt { font-size: 30px; font-weight: 600; color: var(--txt); flex: 1; }
+#top .st { font-size: 26px; color: var(--green); margin-right: 20px; }
+.ghost { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center;
+         justify-content: center; font-size: 28px; color: var(--txt2); }
+#hint { font-size: 22px; color: var(--txt2); height: 52px; }
+#lv { height: 10px; border-radius: 999px; background: var(--well); margin-top: 14px; }
+#lvf { width: 50%; height: 100%; border-radius: 999px; background: var(--blue); }
+.brow { display: flex; gap: 16px; margin-top: 22px; }
+.btn { flex: 1; height: 84px; font-size: 27px; }
+.note { margin-top: 18px; font-size: 21px; color: #6b7080; }
+</style></head><body>
+  <div id="panel">
+    <div class="row" id="top">
+      <div class="tt"><svg width="26" height="26" viewBox="0 0 24 24" style="vertical-align:middle"><path d="M4,10v4h3l4,4V6L7,10H4z" fill="#F5F6FF"/><path d="M14.5,9.5a4,4 0 0 1 0,5 M17.5,7.5a8,8 0 0 1 0,9" fill="none" stroke="#F5F6FF" stroke-width="1.8" stroke-linecap="round"/></svg> 驱鸟台</div><div class="st">●</div>
+      <div class="ghost">✕</div>
+    </div>
+    <div id="hint">超声波 开 · 爆闪 关</div>
+    <div id="lv"><div id="lvf"></div></div>
+    <div class="brow">
+      <div class="btn pill pill-blue">关闭超声波</div>
+      <div class="btn pill pill-well">开启爆闪灯</div>
+    </div>
+    <div class="brow">
+      <div class="btn pill pill-sub">全部关闭</div>
+      <div class="btn pill pill-sub">控制台</div>
+    </div>
+    <div class="note">开关状态即按钮状态: 蓝=开启</div>
+  </div>
+</body></html>

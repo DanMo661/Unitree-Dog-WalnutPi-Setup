@@ -1,0 +1,73 @@
+[2026-10-15 09:32:48] transns=4
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: No PHY found!
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: phy init again...
+  D| [Thu Oct 15 09:21:08 2026] sunxi-gmac 5030000.ethernet eth0: eth0: Type(7) PHY ID 00441400 at 0 IRQ poll (5030000.ethernet-0:00)
+  D| [Thu Oct 15 09:21:10 2026] sunxi-gmac 5030000.ethernet eth0: Link is Up - 100Mbps/Full - flow control off
+[2026-10-15 09:33:21] transns=4
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: No PHY found!
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: phy init again...
+  D| [Thu Oct 15 09:21:08 2026] sunxi-gmac 5030000.ethernet eth0: eth0: Type(7) PHY ID 00441400 at 0 IRQ poll (5030000.ethernet-0:00)
+  D| [Thu Oct 15 09:21:10 2026] sunxi-gmac 5030000.ethernet eth0: Link is Up - 100Mbps/Full - flow control off
+[2026-10-15 09:33:52] transns=4
+  J| Oct 15 09:33:23 WalnutPi python[899]: [09:33:23] 已解锁(RC)
+  J| Oct 15 09:33:28 WalnutPi python[899]: [09:33:28] 指令 -> StopMove
+  J| Oct 15 09:33:28 WalnutPi python[899]: [09:33:28] 指令 -> StandUp
+  J| Oct 15 09:33:28 WalnutPi python[899]: [09:33:28] 模式 -> 走
+  J| Oct 15 09:33:28 WalnutPi python[899]: [09:33:28] StopMove 被狗拒绝 code = -1
+  J| Oct 15 09:33:29 WalnutPi python[899]: [09:33:29] 指令 -> StopMove
+  J| Oct 15 09:33:29 WalnutPi python[899]: [09:33:29] 指令 -> StandDown
+  J| Oct 15 09:33:29 WalnutPi python[899]: [09:33:29] 模式 -> 趴
+  J| Oct 15 09:33:30 WalnutPi python[899]: [09:33:30] 指令 -> StopMove
+  J| Oct 15 09:33:30 WalnutPi python[899]: [09:33:30] 指令 -> StandUp
+  J| Oct 15 09:33:30 WalnutPi python[899]: [09:33:30] 模式 -> 走
+  J| Oct 15 09:33:30 WalnutPi python[899]: [09:33:30] StopMove 被狗拒绝 code = -1
+  J| Oct 15 09:33:31 WalnutPi python[899]: [09:33:31] 指令 -> BalanceStand
+  J| Oct 15 09:33:36 WalnutPi python[899]: [09:33:36] 心跳回读挡位: {"data":1}
+  J| Oct 15 09:33:41 WalnutPi python[899]: [09:33:41] 指令 -> StopMove
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: No PHY found!
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: phy init again...
+  D| [Thu Oct 15 09:21:08 2026] sunxi-gmac 5030000.ethernet eth0: eth0: Type(7) PHY ID 00441400 at 0 IRQ poll (5030000.ethernet-0:00)
+  D| [Thu Oct 15 09:21:10 2026] sunxi-gmac 5030000.ethernet eth0: Link is Up - 100Mbps/Full - flow control off
+[2026-10-15 09:34:23] transns=4
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: No PHY found!
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: phy init again...
+  D| [Thu Oct 15 09:21:08 2026] sunxi-gmac 5030000.ethernet eth0: eth0: Type(7) PHY ID 00441400 at 0 IRQ poll (5030000.ethernet-0:00)
+  D| [Thu Oct 15 09:21:10 2026] sunxi-gmac 5030000.ethernet eth0: Link is Up - 100Mbps/Full - flow control off
+[2026-10-15 09:34:54] transns=4
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: No PHY found!
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: phy init again...
+  D| [Thu Oct 15 09:21:08 2026] sunxi-gmac 5030000.ethernet eth0: eth0: Type(7) PHY ID 00441400 at 0 IRQ poll (5030000.ethernet-0:00)
+  D| [Thu Oct 15 09:21:10 2026] sunxi-gmac 5030000.ethernet eth0: Link is Up - 100Mbps/Full - flow control off
+[2026-10-15 09:35:24] transns=4
+  J| Oct 15 09:35:23 WalnutPi python[899]: [09:35:23] 指令 -> StandDown
+  J| Oct 15 09:35:23 WalnutPi python[899]: [09:35:23] 模式 -> 趴
+  J| Oct 15 09:35:24 WalnutPi python[899]: [09:35:24] 已上锁(RC)
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: No PHY found!
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: phy init again...
+  D| [Thu Oct 15 09:21:08 2026] sunxi-gmac 5030000.ethernet eth0: eth0: Type(7) PHY ID 00441400 at 0 IRQ poll (5030000.ethernet-0:00)
+  D| [Thu Oct 15 09:21:10 2026] sunxi-gmac 5030000.ethernet eth0: Link is Up - 100Mbps/Full - flow control off
+[2026-10-15 09:35:55] transns=4
+  J| Oct 15 09:35:24 WalnutPi python[899]: [09:35:24] 已上锁(RC)
+  J| Oct 15 09:35:26 WalnutPi python[899]: [09:35:26] 心跳回读挡位: {"data":-1}
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: No PHY found!
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: phy init again...
+  D| [Thu Oct 15 09:21:08 2026] sunxi-gmac 5030000.ethernet eth0: eth0: Type(7) PHY ID 00441400 at 0 IRQ poll (5030000.ethernet-0:00)
+  D| [Thu Oct 15 09:21:10 2026] sunxi-gmac 5030000.ethernet eth0: Link is Up - 100Mbps/Full - flow control off
+[2026-10-15 09:36:26] transns=4
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: No PHY found!
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: phy init again...
+  D| [Thu Oct 15 09:21:08 2026] sunxi-gmac 5030000.ethernet eth0: eth0: Type(7) PHY ID 00441400 at 0 IRQ poll (5030000.ethernet-0:00)
+  D| [Thu Oct 15 09:21:10 2026] sunxi-gmac 5030000.ethernet eth0: Link is Up - 100Mbps/Full - flow control off
+[2026-10-15 09:36:56] transns=4
+  J| Oct 15 09:36:51 WalnutPi python[899]: [09:36:51] 已解锁(RC)
+  J| Oct 15 09:36:53 WalnutPi python[899]: [09:36:53] 指令 -> StopMove
+  J| Oct 15 09:36:53 WalnutPi python[899]: [09:36:53] 指令 -> StandUp
+  J| Oct 15 09:36:53 WalnutPi python[899]: [09:36:53] 模式 -> 走
+  J| Oct 15 09:36:53 WalnutPi python[899]: [09:36:53] StopMove 被狗拒绝 code = -1
+  J| Oct 15 09:36:56 WalnutPi python[899]: [09:36:56] 指令 -> BalanceStand
+  J| Oct 15 09:36:57 WalnutPi python[899]: [09:36:57] 指令 -> StopMove
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: No PHY found!
+  D| [Thu Oct 15 09:21:07 2026] sunxi-gmac 5030000.ethernet eth0: phy init again...
+  D| [Thu Oct 15 09:21:08 2026] sunxi-gmac 5030000.ethernet eth0: eth0: Type(7) PHY ID 00441400 at 0 IRQ poll (5030000.ethernet-0:00)
+  D| [Thu Oct 15 09:21:10 2026] sunxi-gmac 5030000.ethernet eth0: Link is Up - 100Mbps/Full - flow control off
+[轮9] SSH 采集异常: SSHException('Timeout opening channel.')

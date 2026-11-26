@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SBUS 调试台</title>
+<style>
+:root{
+  --bg:#131315; --panel:#252628; --sub:#323235; --well:#404042; --line:#424346;
+  --txt:#F5F6FF; --dim:#C1C6D7;
+  --ok:#94F990; --warn:#FBBF24; --bad:#FF6369; --accent:#2F83FF;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  min-height:100dvh; background:var(--bg); color:var(--txt);
+  font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  display:flex; flex-direction:column; align-items:center;
+  padding:10px 14px 30px;
+}
+.num{font-family:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;
+     font-variant-numeric:tabular-nums}
+.wrap{width:100%;max-width:760px;display:flex;flex-direction:column;gap:14px}
+
+header{display:flex;align-items:center;justify-content:space-between;
+       padding:10px 2px 4px;gap:8px;flex-wrap:wrap}
+h1{font-size:15px;margin:0;letter-spacing:.12em;color:var(--dim);font-weight:600}
+h1 b{color:var(--txt);letter-spacing:.04em}
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dim);
+      border-radius:999px;padding:4px 10px;background:var(--panel)}
+.chip.main{font-size:13px;color:var(--txt);padding:6px 12px}
+.dot{width:8px;height:8px;border-radius:50%;background:#4A4B50;flex:none}
+.dot.ok{background:var(--ok);box-shadow:0 0 7px #94F99055}
+.dot.warn{background:var(--warn);box-shadow:0 0 7px #FBBF2455}
+.dot.bad{background:var(--bad);box-shadow:0 0 7px #FF636955}
+.oldlink{font-size:12px;color:var(--dim);opacity:.7}
+
+/* === 层级1: hero 状态横幅 + KPI 三联 === */
+.status-banner{text-align:center;font-size:15px;font-weight:600;padding:14px 16px;
+  border-radius:16px;background:#0A2A12;color:var(--ok)}
+.status-banner.warn{background:#3A2F12;color:var(--warn)}
+.status-banner.bad{background:#3A1517;color:var(--bad)}
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpi{background:var(--panel);border-radius:14px;padding:14px 12px;text-align:center}
+.kpi .val{font-size:28px;font-weight:600;line-height:1.1}
+.kpi .val small{font-size:13px;color:var(--dim);font-weight:400;margin-left:2px}
+.kpi .lbl{font-size:11px;color:var(--dim);margin-top:4px;letter-spacing:.06em}
+.kpi.warn .val{color:var(--warn)}
+.kpi.bad .val{color:var(--bad)}
+
+/* === 层级2: 按键紧凑行 === */
+.panel{background:var(--panel);border-radius:16px;padding:14px 16px}
+.pt{font-size:12px;color:var(--dim);letter-spacing:.1em;margin:0 0 10px;
+    display:flex;justify-content:space-between;align-items:center}
+.keys-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px}
+.key{background:var(--sub);border-radius:12px;padding:10px 8px;text-align:center;
+     position:relative}
+.key .lbl{font-size:11px;color:var(--dim);margin-bottom:4px}
+.key .val{font-size:15px;font-weight:600;color:var(--txt)}
+.key .dot{position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;
+          background:#4A4B50}
+.key .dot.ok{background:var(--ok);box-shadow:0 0 6px #94F99055}
+
+/* === 层级3: 标签切换 === */
+.tab-nav{display:flex;gap:6px;margin-bottom:14px;background:var(--sub);
+         border-radius:999px;padding:4px}
+.tab-nav button{flex:1;appearance:none;border:0;background:none;color:var(--dim);
+  font-size:13px;padding:8px 12px;border-radius:999px;cursor:pointer;font-family:inherit}
+.tab-nav button.active{background:var(--accent);color:#fff;font-weight:600}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+canvas{display:block;width:100%;height:90px}
+
+.chrow{display:grid;grid-template-columns:150px 1fr 52px;gap:10px;align-items:center;
+       padding:3px 0}
+.chrow .lbl{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chrow .lbl b{color:var(--txt);font-weight:500}
+.bar{position:relative;height:14px;background:var(--well);
+     border-radius:999px;overflow:hidden}
+.bar .fill{position:absolute;left:0;top:0;bottom:0;width:0;
+           background:var(--accent);transition:width .12s}
+.bar.dirty .fill{background:var(--warn)}
+.bar .tick{position:absolute;top:-1px;bottom:-1px;width:0;border-left:1px dashed #7A8091}
+.bar .tick i{position:absolute;top:-4px;left:-3px;width:5px;height:5px;border-radius:50%;
+             background:var(--warn)}
+.chrow .val{font-size:12px;text-align:right;color:var(--txt)}
+
+/* === 层级4: 手风琴 === */
+.accordion{display:flex;flex-direction:column;gap:8px}
+.accordion details{background:var(--panel);border-radius:14px;overflow:hidden}
+.accordion summary{padding:13px 16px;cursor:pointer;user-select:none;font-size:13px;
+  font-weight:600;color:var(--txt);list-style:none}
+.accordion summary::-webkit-details-marker{display:none}
+.accordion summary::before{content:"▶";display:inline-block;margin-right:8px;
+  color:var(--dim);font-size:11px;transition:transform .2s}
+.accordion details[open] summary::before{transform:rotate(90deg)}
+.accordion details > div{padding:2px 16px 16px}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:10px}
+.stat{background:var(--sub);border-radius:12px;padding:10px 12px}
+.stat .v{font-size:26px;line-height:1.15;font-weight:600}
+.stat .v small{font-size:13px;color:var(--dim);font-weight:400;margin-left:2px}
+.stat .k{font-size:11px;color:var(--dim);margin-top:3px}
+.stat.bad .v{color:var(--bad)}
+.stat.warn .v{color:var(--warn)}
+
+.pwbad{display:none;text-align:center;font-size:13px;font-weight:600;padding:9px 12px;
+  border-radius:999px;margin-bottom:10px;background:#3A1517;color:var(--bad)}
+.kv{display:grid;grid-template-columns:92px 1fr;gap:7px 10px;font-size:13px}
+.kv .k{font-size:12px;color:var(--dim);padding-top:1px;white-space:nowrap}
+.kv .v{color:var(--txt);word-break:break-all;min-width:0}
+.evs{display:flex;flex-direction:column;gap:3px}
+.evrow{display:flex;gap:8px;font-size:12px;line-height:1.5;align-items:baseline;min-width:0}
+.evrow .t{color:var(--dim);flex:none}
+.evrow .tag{flex:none;font-size:11px;line-height:1.4;padding:0 6px;border-radius:999px;
+  background:var(--sub);color:var(--dim)}
+.evrow.err .tag{color:var(--bad);background:#3A1517}
+.evrow.warn .tag{color:var(--warn);background:#3A2F12}
+.evrow.act .tag{color:var(--ok);background:#0A2A12}
+.evrow .txt{color:var(--dim);word-break:break-all;min-width:0}
+.evrow .txt b{color:var(--txt);font-weight:500}
+
+.tip{font-size:12px;color:var(--dim);text-align:center;line-height:1.7;margin:0}
+a{color:var(--accent)}
+.logbtn{cursor:pointer;user-select:none}
+.logbtn.main{color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+#logPre{max-height:320px;overflow:auto;font:11px/1.55 ui-monospace,monospace;
+  white-space:pre-wrap;word-break:break-all;background:var(--sub);
+  border-radius:10px;padding:8px 10px;margin:0;color:var(--dim)}
+
+@media (max-width:640px){
+  .keys-row{grid-template-columns:repeat(3,1fr)}
+  canvas{height:70px}
+  .chrow{grid-template-columns:112px 1fr 48px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1><b>SBUS</b> 调试台</h1>
+  <div class="chips">
+    <span class="chip"><span class="dot" id="dLink"></span><span id="tLink">狗连接</span></span>
+    <span class="chip"><span class="dot" id="dRc"></span><span id="tRc">RC 上锁</span></span>
+    <span class="chip main"><span class="dot" id="dSbus"></span><span id="tSbus">SBUS</span></span>
+    <span class="chip"><span class="dot" id="dNet"></span><span id="tNet">网络遥控</span></span>
+    <span class="chip logbtn" id="logBtn">☰ 日志</span>
+    <a class="oldlink" href="sbus-old.html">旧版</a>
+  </div>
+</header>
+
+<!-- 层级1: hero 状态横幅 + KPI 三联 -->
+<div class="status-banner" id="statusBanner">—</div>
+<div class="kpi-grid">
+  <div class="kpi" id="kpiFps"><div class="val num">—</div><div class="lbl">帧率 fps</div></div>
+  <div class="kpi" id="kpiLoss"><div class="val num">—</div><div class="lbl">丢包率</div></div>
+  <div class="kpi" id="kpiIv"><div class="val num">—</div><div class="lbl">帧间隔</div></div>
+</div>
+
+<!-- 层级2: 按键与状态(紧凑行, 始终展开) -->
+<section class="panel">
+  <div class="pt">按键与状态</div>
+  <div class="keys-row">
+    <div class="key"><div class="lbl">A 键</div><div class="val" id="kA">—</div><span class="dot" id="dA"></span></div>
+    <div class="key"><div class="lbl">B 键</div><div class="val" id="kB">—</div><span class="dot" id="dB"></span></div>
+    <div class="key"><div class="lbl">C 键</div><div class="val" id="kC">—</div><span class="dot" id="dC"></span></div>
+    <div class="key"><div class="lbl">三挡</div><div class="val" id="kGear">—</div><span class="dot" id="dGear"></span></div>
+    <div class="key"><div class="lbl">舵机</div><div class="val num" id="kServo">—</div><span class="dot"></span></div>
+  </div>
+</section>
+
+<!-- 层级3: 调试详情标签页 -->
+<section class="panel">
+  <div class="tab-nav">
+    <button class="active" data-tab="chart">帧率图表</button>
+    <button data-tab="channels">关键通道</button>
+    <button data-tab="system">系统状态</button>
+  </div>
+  <div class="tab-content active" id="tab-chart">
+    <canvas id="chart"></canvas>
+  </div>
+  <div class="tab-content" id="tab-channels">
+    <div id="keyChannels"></div>
+  </div>
+  <div class="tab-content" id="tab-system">
+    <div class="kv">
+      <div class="k">控制源</div><div class="v num" id="kvSrc">—</div>
+      <div class="k">狗链路代数</div><div class="v num" id="kvLink">—</div>
+      <div class="k">狗真实姿态</div><div class="v num" id="kvDog">—</div>
+    </div>
+  </div>
+</section>
+
+<!-- 层级4: 高级(手风琴, 默认全收起) -->
+<section class="accordion">
+  <details>
+    <summary>完整 16 通道原始值</summary>
+    <div id="allChannels"></div>
+  </details>
+  <details>
+    <summary>系统与事件详情</summary>
+    <div>
+      <div class="pwbad" id="pwBanner">⚠ 上次异常断电</div>
+      <div class="kv">
+        <div class="k">上次关机</div><div class="v num" id="kvStop">—</div>
+        <div class="k">桥进程</div><div class="v num" id="kvBridge">—</div>
+        <div class="k">音频服务</div><div class="v num" id="kvAudio">—</div>
+        <div class="k">控制抑制</div><div class="v num" id="kvCtl">—</div>
+        <div class="k">最后命令</div><div class="v num" id="kvCmd">—</div>
+      </div>
+      <div class="stats" style="margin-bottom:12px">
+        <div class="stat" id="sTotal"><div class="v num">—</div><div class="k">总帧数</div></div>
+        <div class="stat" id="sFs"><div class="v num">—</div><div class="k">fs 失控帧</div></div>
+        <div class="stat" id="sLost"><div class="v num">—</div><div class="k">lost 丢帧标志</div></div>
+      </div>
+      <div class="stats" style="margin-bottom:12px">
+        <div class="stat" id="stLoad"><div class="v num">—</div><div class="k">系统负载 load1</div></div>
+        <div class="stat" id="stMem"><div class="v num">—<small>%</small></div><div class="k">内存占用</div></div>
+        <div class="stat" id="stTemp"><div class="v num">—<small>°C</small></div><div class="k">CPU 温度</div></div>
+      </div>
+      <div class="pt" style="margin-top:12px;justify-content:flex-start;gap:8px">
+        <span>最近事件 · 最近 10 条</span><span id="sysLive" style="color:var(--ok)"></span>
+      </div>
+      <div class="evs" id="evList"><div class="evrow info"><span class="txt" style="color:var(--dim)">—</span></div></div>
+    </div>
+  </details>
+  <details id="logDetails">
+    <summary>实时日志（最近 600 行）</summary>
+    <div>
+      <div class="pt" style="justify-content:flex-start;gap:8px">
+        <span>板端实时日志 · 每 2s 刷新</span><span id="logLive" style="color:var(--ok)"></span>
+      </div>
+      <pre id="logPre">(点开中…)</pre>
+    </div>
+  </details>
+</section>
+
+<p class="tip">遥控页 <a href="/">/</a> · 黄灯=丢帧狗已站定等待恢复 · 10s 无干净帧才缓降趴下 ·
+帧间隔为串口批次推断均值，丢帧另有接收机 fs/lost 标志佐证</p>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const ARM_ON = 1350, STAND_ON = 1000, B_MID = 1002;
+const CH_LO = 282, CH_HI = 1722;
+/* 通道映射名与阈值刻度(config.py 镜像; 改 config 时同步这里) */
+const CHS = [
+  {n:"转向 · 右横"}, {n:"前后 · 左竖"}, {n:"右竖 · 未用"}, {n:"侧移 · 左横"},
+  {n:"A 键", tick:ARM_ON, tickName:"解锁"}, {n:"B 键"}, {n:"C 键", tick:STAND_ON, tickName:"站"},
+  {n:"左拨杆 · 舵机"}, {n:"D 键 · 退役"}, {n:"三挡"}, {n:"右拨杆 · 未用"},
+  {n:""}, {n:""}, {n:""}, {n:""}, {n:""}
+];
+const NOM = (v) => Math.max(0, Math.min(1, (v - CH_LO) / (CH_HI - CH_LO)));
+const gearOf = v => Math.min(3, Math.max(1, Math.round((v - 172) / (1811 - 172) * 2) + 1));
+
+/* 构建: 5 关键通道(标签页) + 16 完整通道(手风琴) */
+function chRow(i){
+  const c = CHS[i];
+  const row = document.createElement("div"); row.className = "chrow";
+  row.innerHTML = `<div class="lbl"><b>ch${i}</b> ${c.n}</div>
+    <div class="bar"><div class="fill"></div>${c.tick ? `<div class="tick" style="left:${NOM(c.tick)*100}%"><i></i></div>` : ""}</div>
+    <div class="val num">—</div>`;
+  return {fill: row.querySelector(".fill"), val: row.querySelector(".val"),
+          bar: row.querySelector(".bar")};
+}
+const KEY_CH = [0, 1, 3, 4, 9];
+const keyRows = {};
+KEY_CH.forEach(i => {
+  const r = chRow(i);
+  $("keyChannels").appendChild(r.fill.closest(".chrow"));
+  keyRows[i] = r;
+});
+const rows = CHS.map((c, i) => {
+  const r = chRow(i);
+  $("allChannels").appendChild(r.fill.closest(".chrow"));
+  return r;
+});
+
+/* 60s 柱状图(隐藏标签页时宽度为 0, 跳过; 切回时补画) */
+const cv = $("chart"), cx = cv.getContext("2d");
+let curTab = "chart";
+function drawChart(hist){
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return;
+  const dpr = devicePixelRatio || 1;
+  if (cv.width !== w * dpr){ cv.width = w * dpr; cv.height = h * dpr; }
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cx.clearRect(0, 0, w, h);
+  const max = Math.max(20, ...hist), n = hist.length, bw = w / n;
+  for (let i = 0; i < n; i++){
+    const v = hist[i] / max, x = i * bw;
+    cx.fillStyle = i === n - 1 ? "#2F83FF" : (v ? "#274B7A" : "#323235");
+    const bh = Math.max(v ? 2 : 1, v * (h - 14));
+    cx.fillRect(x + bw * 0.15, h - 12 - bh, bw * 0.7, bh);
+  }
+  cx.fillStyle = "#7A8091"; cx.font = "11px ui-monospace,monospace";
+  cx.fillText("0", 2, h - 2); cx.textAlign = "right";
+  cx.fillText(String(max), w - 2, h - 2); cx.textAlign = "left";
+  cx.fillText("-60s", 2, 10); cx.textAlign = "right"; cx.fillText("现在", w - 2, 10);
+}
+
+/* 灯/KPI/按键芯片 */
+function dot(el, cls){ el.className = "dot" + (cls ? " " + cls : ""); }
+function setKPI(id, html, cls){
+  const el = $(id);
+  el.querySelector(".val").innerHTML = html;
+  el.className = "kpi" + (cls ? " " + cls : "");
+}
+function setStat(id, v, cls){ const el = $(id); el.querySelector(".v").innerHTML = v;
+  el.className = "stat" + (cls ? " " + cls : ""); }
+function setKey(id, dotId, val, ok){
+  $(id).textContent = val;
+  dot($(dotId), ok ? "ok" : "");
+}
+
+function render(s){
+  window.lastStatus = s;   /* App 端 evaluateJavascript 轮询动作状态用 */
+  if (document.hidden) return;   /* 息屏/后台: 状态照记(App轮询不受影响), 渲染全跳省电 */
+  /* 狗连接 / RC */
+  const L = s.link;
+  dot($("dLink"), L === "up" ? "ok" : L === "connecting" ? "warn" : "bad");
+  $("tLink").textContent = L === "up" ? "狗在线" : L === "connecting" ? "狗连接中" :
+    L === "lib_missing" ? "驱动未装" : "狗离线";
+  dot($("dRc"), s.rc ? "ok" : "");
+  $("tRc").textContent = s.rc ? "RC 解锁" : "RC 上锁";
+
+  /* SBUS 链路质量灯 */
+  const dS = $("dSbus"), tS = $("tSbus");
+  if (s.sbus && s.sbus_clean){ dot(dS, "ok"); tS.textContent = "数据干净"; }
+  else if (s.sbus){ dot(dS, "warn"); tS.textContent = "丢包 · 狗已站定"; }
+  else { dot(dS, "bad"); tS.textContent = "无帧"; }
+
+  /* 网络遥控链路灯(App 杆量通道, 新鲜时优先于 SBUS) */
+  const dN = $("dNet"), tN = $("tNet");
+  if (s.net_ok){ dot(dN, "ok"); tN.textContent = "App 在控"; }
+  else { dot(dN, ""); tN.textContent = "网络遥控"; }
+
+  /* hero 状态横幅(原 banner+lockLine 合并, 状态机分支与旧版一致) */
+  const MODE_NAMES = {0:"趴下", 1:"站立", 2:"行走", 3:"坐姿"};
+  const banner = $("statusBanner");
+  const acting = s.action || (s.action_left || 0) > 0;
+  const m = s.mode;
+  let lockTxt, bCls = "warn", ok = false;
+  if (L !== "up")       { lockTxt = L === "connecting" ? "狗连接中 · 指令暂发不出去" :
+                            L === "lib_missing" ? "驱动未装 · 狗链路起不来" :
+                            "狗离线 · 解锁/摇杆指令发不出去 (查狗电/网线)"; bCls = "bad"; }
+  else if (!s.rc)       { lockTxt = "未解锁 · 摇杆无效 (A 键翻拨解锁)"; }
+  else if (acting)      { lockTxt = `动作播放中: ${s.action || "?"} (剩 ${(s.action_left || 0).toFixed(1)}s) 摇杆无效`; }
+  else if (m === 0)     { lockTxt = "趴下 · 摇杆无效 (C 键拨上站立)"; }
+  else if (m === 1)     { lockTxt = "站立平衡 · 摇杆无效 (等待进入行走)"; }
+  else if (m === 3)     { lockTxt = "坐姿 · 摇杆无效 (C 键拨上起立)"; }
+  else if (m === 2)     { lockTxt = "可控 —— 摇杆有效"; bCls = ""; ok = true; }
+  else                  { lockTxt = `模式 ${m} · 摇杆无效`; }
+  banner.className = "status-banner" + (bCls ? " " + bCls : "");
+  banner.textContent = (ok ? "✓ " : bCls === "bad" ? "✗ " : "⚠ ") + lockTxt
+    + " · " + (MODE_NAMES[m] || ("模式 " + m));
+
+  /* KPI 三联 + 高级统计 */
+  const loss = s.total ? (s.fs_cnt + s.lost_cnt) / s.total * 100 : null;
+  setKPI("kpiFps", `${s.fps}<small>fps</small>`);
+  setKPI("kpiLoss", loss === null ? "—" : `${loss.toFixed(2)}<small>%</small>`,
+          loss === null ? "" : loss > 5 ? "bad" : loss > 1 ? "warn" : "");
+  setKPI("kpiIv", s.last_iv === null || s.last_iv === undefined ? "—" : `${s.last_iv}<small>ms</small>`,
+          s.last_iv > 25 ? "bad" : "");
+  setStat("sTotal", String(s.total));
+  setStat("sFs", String(s.fs_cnt), s.fs_cnt ? "warn" : "");
+  setStat("sLost", String(s.lost_cnt), s.lost_cnt ? "warn" : "");
+
+  window.lastHist = s.hist || [];
+  if (curTab === "chart") drawChart(window.lastHist);
+
+  /* 通道条: 关键 5 + 完整 16 */
+  const ch = s.ch;
+  KEY_CH.forEach(i => { const r = keyRows[i];
+    if (!ch){ r.fill.style.width = "0"; r.val.textContent = "—"; return; }
+    r.fill.style.width = (NOM(ch[i]) * 100).toFixed(1) + "%";
+    r.val.textContent = ch[i];
+  });
+  rows.forEach((r, i) => {
+    if (!ch){ r.fill.style.width = "0"; r.val.textContent = "—"; return; }
+    r.fill.style.width = (NOM(ch[i]) * 100).toFixed(1) + "%";
+    r.val.textContent = ch[i];
+  });
+
+  /* 按键芯片(从 ch 推导; A 键绿灯=桥级RC解锁, 三挡绿灯=狗已同步) */
+  if (ch){
+    setKey("kA", "dA", ch[4] > ARM_ON ? "解锁" : "上锁", !!s.rc);
+    setKey("kB", "dB", ch[5] > B_MID ? "高位" : "低位", false);
+    setKey("kC", "dC", ch[6] > STAND_ON ? "站立" : "趴下", ch[6] > STAND_ON);
+    setKey("kGear", "dGear", "挡" + gearOf(ch[9]), !!s.gear);
+    $("kServo").textContent = ((ch[7] - 282) / 1440 * 180).toFixed(0) + "°";
+  } else {
+    ["kA","kB","kC","kGear","kServo"].forEach(id => $(id).textContent = "—");
+    ["dA","dB","dC","dGear"].forEach(id => dot($(id), ""));
+  }
+
+  /* 系统与事件: ws 推送带这些字段就直接用(future), 未带时落到 /state 轮询快照, 都缺显占位 */
+  renderSys(sysSnap ? Object.assign({}, sysSnap, s) : s);
+}
+
+/* ===== 系统与事件(数据源 /state 慢轮询, 字段全可选缺啥显占位; 不动桥不改 ws 协议) ===== */
+let sysSnap = null, evHtml = "";
+const esc = t => String(t).replace(/[&<>"']/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+const numv = v => typeof v === "number" && isFinite(v) ? v
+  : (typeof v === "string" && v.trim() !== "" && !isNaN(v) ? Number(v) : null);
+function fmtUp(sec){                      /* 秒 -> "2d3h" / "1h05m" / "12m03s" / "45s" */
+  const s = numv(sec); if (s == null || s < 0) return null;
+  const t = Math.floor(s), d = Math.floor(t / 86400), h = Math.floor(t % 86400 / 3600),
+        m = Math.floor(t % 3600 / 60), ss = t % 60;
+  return d ? d + "d" + h + "h" : h ? h + "h" + String(m).padStart(2, "0") + "m"
+       : m ? m + "m" + String(ss).padStart(2, "0") + "s" : ss + "s";
+}
+function fmtTs(ts){                       /* epoch 秒/毫秒 -> HH:MM:SS, 认不出给 null */
+  let v = numv(ts); if (v == null || v < 1e9) return null;
+  if (v > 1e12) v /= 1000;
+  const d = new Date(v * 1000);
+  return isNaN(d.getTime()) ? null : d.toLocaleTimeString("zh-CN", {hour12: false});
+}
+function evLevel(kind, ev){               /* 级别分色: 错误红 / 警告黄 / 信息灰 / 动作绿 */
+  const k = (String(kind || "") + " " + String(ev || "")).toLowerCase();
+  if (/err|fail|bad|down|offline|diverg|abort|unclean/.test(k)) return "err";
+  if (/warn|stale|retry|timeout|slow/.test(k)) return "warn";
+  if (/act|cmd|trick|arm|gear|mode|play|talk|stand|reset/.test(k)) return "act";
+  return "info";
+}
+function renderSys(m){
+  try{
+    if (!m || typeof m !== "object") m = {};
+    const P = (m.pids && typeof m.pids === "object") ? m.pids : {};
+    const AU = (m.audio && typeof m.audio === "object") ? m.audio : {};
+    /* 上次关机: unclean 才出红横幅 */
+    $("pwBanner").style.display = m.last_stop === "unclean" ? "block" : "none";
+    $("kvStop").innerHTML = m.last_stop === "clean" ? '<span style="color:var(--ok)">正常关机</span>'
+      : m.last_stop === "unclean" ? '<span style="color:var(--bad);font-weight:600">异常断电</span>'
+      : m.last_stop === "unknown" ? "未知" : "—";
+    const up = fmtUp(m.uptime_s);
+    $("kvBridge").innerHTML = P.bridge != null
+      ? `pid ${esc(P.bridge)}` + (up ? ` · 已运行 ${up}` : "") : (up ? `已运行 ${up}` : "—");
+    const aAge = numv(P.audio_age), aBits = [];
+    if (P.audio != null) aBits.push("pid " + esc(P.audio));
+    aBits.push(AU.ready === true ? '<span style="color:var(--ok)">就绪</span>'
+              : AU.ready === false ? '<span style="color:var(--bad)">未就绪</span>' : "");
+    if (AU.volume != null) aBits.push("音量 " + esc(AU.volume));
+    if (aAge != null && aAge >= 0) aBits.push("状态 " + (fmtUp(aAge) || "0s") + " 前");
+    $("kvAudio").innerHTML = aBits.filter(Boolean).join(" · ") || "—";
+    $("kvLink").textContent = m.link_gen != null ? String(m.link_gen) : "—";
+    const SRC = m.ch_source || m.src;
+    $("kvSrc").textContent = SRC === "sbus" ? "SBUS 遥控器"
+      : SRC === "netrc" ? "网络遥控 (App)" : "—";
+    /* 控制抑制(P1) */
+    const CT = (m.ctl && typeof m.ctl === "object") ? m.ctl : {};
+    if (CT.blocked){
+      const tg = CT.target == null ? "" : " → " + CT.target;
+      $("kvCtl").innerHTML = '<span style="color:var(--warn)">'
+        + esc(CT.blocked) + tg + "</span> · 剩 "
+        + (numv(CT.remain) == null ? "?" : numv(CT.remain).toFixed(1)) + "s";
+    } else if (m.rising === true || CT.rising_age != null){
+      $("kvCtl").innerHTML = '<span style="color:var(--warn)">起立中</span> '
+        + (numv(CT.rising_age) == null ? "" : numv(CT.rising_age).toFixed(1) + "s")
+        + (numv(CT.rise_deadline) == null ? "" : " · 兜底剩 "
+           + numv(CT.rise_deadline).toFixed(1) + "s");
+    } else if (numv(CT.q_depth) > 0){
+      $("kvCtl").innerHTML = "队列 " + numv(CT.q_depth) + " 条"
+        + (numv(CT.drop_ttl) ? " · ttl丢 " + numv(CT.drop_ttl) : "");
+    } else {
+      $("kvCtl").textContent = "—";
+    }
+    /* 最后一条命令 */
+    const C = (m.last_cmd && typeof m.last_cmd === "object") ? m.last_cmd : {};
+    if (C.name != null || C.result != null){
+      const t = fmtTs(C.ts), r = C.result == null ? "?" : String(C.result);
+      const rc = /^OK/i.test(r) ? "var(--ok)" : /^ERR/i.test(r) ? "var(--bad)" : "var(--txt)";
+      $("kvCmd").innerHTML = `${esc(C.name || "?")}`
+        + (t ? ` · <span style="color:var(--dim)">${t}</span>` : "")
+        + ` · <span style="color:${rc}">${esc(r)}</span>`;
+    } else $("kvCmd").textContent = "—";
+    /* 狗真实姿态 */
+    const D = (m.dog && typeof m.dog === "object") ? m.dog : {};
+    const dh = numv(D.height), da = numv(D.age), dBits = [];
+    dBits.push(D.fresh === true ? '<span style="color:var(--ok)">● 实时</span>'
+                                : '<span style="color:var(--dim)">○ 无数据</span>');
+    if (D.mode != null) dBits.push("mode " + esc(D.mode));
+    if (dh != null) dBits.push(dh.toFixed(3) + " m");
+    if (D.gait != null) dBits.push("步态 " + esc(D.gait));
+    if (Array.isArray(D.vel) && D.vel.length >= 3)
+      dBits.push("v " + D.vel.slice(0, 3).map(x => Number(x).toFixed(2)).join("/"));
+    if (da != null) dBits.push(da.toFixed(1) + "s 前");
+    if (m.rising === true) dBits.push('<span style="color:var(--warn)">起立中</span>');
+    $("kvDog").innerHTML = dBits.join(" · ");
+    /* 系统负载 */
+    const Y = (m.sys && typeof m.sys === "object") ? m.sys : {};
+    const ld = numv(Y.load1), mp = numv(Y.mem_pct), ct = numv(Y.cpu_temp);
+    setStat("stLoad", ld == null ? "—" : ld.toFixed(2));
+    setStat("stMem", mp == null ? "—" : `${mp.toFixed(0)}<small>%</small>`,
+            mp > 90 ? "bad" : mp > 75 ? "warn" : "");
+    setStat("stTemp", ct == null ? "—" : `${ct.toFixed(1)}<small>°C</small>`,
+            ct > 80 ? "bad" : ct > 70 ? "warn" : "");
+    /* 最近 10 条事件 */
+    const list = Array.isArray(m.last_events) ? m.last_events.slice(0, 10) : [];
+    let h;
+    if (!list.length)
+      h = `<div class="evrow info"><span class="txt" style="color:var(--dim)">— 无事件记录 —</span></div>`;
+    else h = list.map(e => {
+      e = (e && typeof e === "object") ? e : {};
+      const lvl = evLevel(e.kind, e.ev), t = fmtTs(e.ts) || "--:--:--";
+      let d = e.detail; d = (d != null && typeof d === "object") ? JSON.stringify(d) : d;
+      return `<div class="evrow ${lvl}"><span class="t num">${t}</span>`
+        + `<span class="tag">${esc(e.kind || lvl)}</span>`
+        + `<span class="txt"><b>${esc(e.ev || "?")}</b>`
+        + (d ? ` <span style="color:var(--dim)">· ${esc(d)}</span>` : "") + "</span></div>";
+    }).join("");
+    if (h !== evHtml){ evHtml = h; $("evList").innerHTML = h; }   /* 内容没变不重绘 */
+  }catch(err){ /* 字段结构再离谱也只当占位, 绝不炸整个 render */ }
+}
+
+/* 标签切换(切回图表补画, 隐藏期间 clientWidth=0 跳过的那些帧) */
+document.querySelectorAll(".tab-nav button").forEach(btn => {
+  btn.onclick = () => {
+    curTab = btn.dataset.tab;
+    document.querySelectorAll(".tab-nav button").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    btn.classList.add("active");
+    $("tab-" + curTab).classList.add("active");
+    if (curTab === "chart" && window.lastHist) drawChart(window.lastHist);
+  };
+});
+
+/* /state 慢轮询: ws 推送不带系统/事件字段(不改桥), 3s 拉一次全量快照 */
+function fetchSys(){
+  if (document.hidden || !location.host) return;
+  fetch("/state").then(r => r.json()).then(m => {
+    if (!m || typeof m !== "object") return;
+    sysSnap = m;
+    renderSys(m);
+  }).catch(() => {});
+}
+fetchSys();
+setInterval(fetchSys, 3000);
+addEventListener("visibilitychange", () => { if (!document.hidden) fetchSys(); });
+
+/* WS 自动重连 */
+let ws = null, retry = 0;
+function connect(){
+  if (!location.host){ $("statusBanner").className = "status-banner bad";
+    $("statusBanner").textContent = "✗ 请通过 http://板子IP:8000/sbus 打开本页"; return; }
+  ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onopen = () => { retry = 0; };
+  ws.onmessage = e => { try { render(JSON.parse(e.data)); } catch (err) {} };
+  /* 只让 onclose 排重连: onerror 后必跟 onclose, 两个都排会每轮翻倍攒出连接风暴 */
+  ws.onerror = () => {
+    $("statusBanner").className = "status-banner bad";
+    $("statusBanner").textContent = "✗ 连接断开，正在重连…";
+  };
+  ws.onclose = () => {
+    $("statusBanner").className = "status-banner bad";
+    $("statusBanner").textContent = "✗ 连接断开，正在重连…";
+    setTimeout(connect, Math.min(1000 * ++retry, 5000));
+  };
+}
+connect();
+addEventListener("resize", () => { if (window.lastHist) drawChart(window.lastHist); });
+
+/* 日志面板: /logs = 板端内存环形日志, 不用连网线看 journal
+   日志收纳进手风琴; header ☰ 日志 chip 一键跳到并展开 */
+let logOn = false, logTimer = null;
+const logPre = $("logPre");
+function fetchLogs(){
+  if (document.hidden) return;
+  fetch("/logs").then(r => r.text()).then(t => {
+    const atBottom = logPre.scrollTop + logPre.clientHeight >= logPre.scrollHeight - 40;
+    logPre.textContent = t || "(暂无日志)";
+    $("logLive").textContent = "● " + new Date().toLocaleTimeString();
+    if (atBottom) logPre.scrollTop = logPre.scrollHeight;   /* 用户没往上翻才贴底 */
+  }).catch(() => {});
+}
+$("logBtn").onclick = () => {
+  logOn = !logOn;
+  const det = $("logDetails");
+  det.open = logOn;
+  $("logBtn").classList.toggle("main", logOn);
+  if (logOn){ det.scrollIntoView({behavior: "smooth"}); fetchLogs(); logTimer = setInterval(fetchLogs, 2000); }
+  else { clearInterval(logTimer); logTimer = null; }
+};
+$("logDetails").addEventListener("toggle", () => {
+  if ($("logDetails").open && !logOn){ logOn = true; $("logBtn").classList.add("main");
+    fetchLogs(); logTimer = setInterval(fetchLogs, 2000); }
+});
+addEventListener("visibilitychange", () => { if (!document.hidden && logOn) fetchLogs(); });
+</script>
+
+<script>
+render({link:"up",rc:1,sbus:1,sbus_clean:1,net_ok:false,ch:[1002, 1002, 1002, 1002, 1722, 1002, 1722, 500, 1002, 1002, 1002, 1002, 1002, 1002, 1002, 1002],fps:101,total:1234567,
+fs_cnt:0,lost_cnt:2,last_iv:9,mode:2,action:null,action_left:0,gear:2,hist:[93, 90, 94, 98, 88, 89, 101, 96, 89, 93, 97, 88, 102, 96, 91, 88, 89, 94, 94, 89, 91, 89, 96, 94, 88, 101, 97, 89, 91, 98, 98, 97, 88, 97, 97, 94, 88, 91, 88, 96, 101, 90, 92, 94, 90, 96, 89, 97, 92, 96, 101, 98, 90, 89, 97, 97, 98, 91, 93, 101]});
+sysSnap={last_stop:"clean",uptime_s:262800,pids:{bridge:1234,audio:1235,audio_age:45},
+audio:{ready:true,volume:45},link_gen:3,ch_source:"sbus",ctl:{},
+last_cmd:{name:"TRICK Dance1",ts:Date.now()/1000,result:"OK TRICK Dance1 24"},
+dog:{fresh:true,mode:2,height:0.285,gait:"trt",vel:[0.12,0,0.01],age:0.4},
+sys:{load1:1.23,mem_pct:42.5,cpu_temp:48.6},
+last_events:[{ts:Date.now()/1000,kind:"act",ev:"TRICK",detail:"Dance1 24s"},
+{ts:Date.now()/1000-60,kind:"warn",ev:"SBUS_STALE",detail:"120ms"},
+{ts:Date.now()/1000-120,kind:"err",ev:"HEARTBEAT",detail:"miss 1"}]};
+renderSys(sysSnap);
+</script></body>
+</html>
